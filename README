@@ -1,0 +1,325 @@
+Flexible Water with Multiple Time Steps and Beadiabatic:
+--------------------------------------------------------
+
+dvdr holds low frequency forces
+dvdr2 holds high frequency forces.
+
+RP Contraction:
+----------------
+Splits the LJ and ewald from the intramolecular force and uses RP contraction on them.
+
+07-03-08: Split LJ into a new subroutine. Beadiabatic forces routine is now passed iopt which determines which part of the force routine to perform beadiabatic separation on.
+
+3 Split (3s) version : uses a different number of normal modes for the ewald sum as for the LJ.
+
+10_03_07 : added rg routine static properties calculation
+
+10_03_07_05 : beadd stores and repaces r rather than backwards FT.
+
+11_03: added normal mode as primitive represenation (evolve_nm) which dramatically speeds up the beadiabatic program when used with large multiple time steps (e.g. MTS=5 or MTS=10) since it reduces the FTs from 44 per timestep to 23 at MTS=1 and 8 per timestep to 5 per timestep at MTS = 1. Beadiabatic evolution also incorporated into normal mode primtive scheme using beadd_forces_nm subroutine which takes in positions in normal mode rep and produces normal mode forces.
+
+13_03 : RDF speeded up
+
+13_03_p : Program now reads parameters from a parameter file. Code tidied up using ftnchek. mts is now in input file.
+
+16_03 : Output of <vinter>,<vintra>,<tintra>,<tinter> seperately. Improved handling of exact estimators.
+
+02_04: Added output of ewald and LJ energies seperately.
+
+03_04: CHANGE IN ORDERING OF BEADD NORMAL MODE FREQUENCIES
+
+14_05 : Program code cleaned up.
+
+20_04: OCF for Classical fixed. ACMD evolution added.
+
+01_05: Smeared Charge Ewald intermolecular and Fourth Order Morse intramolecular added.
+
+06-05-f : Ice starting configuration. FCC initial lattice and non-cubic ewald.
+
+12-05 : OCF problems fixed
+
+30-05 : Linked cell list for LJ - used when nm = 700 or above.
+
+09-06 : Major speed improvements in LJ evaluation and electrostatic contraction scheme. For large systems a linked cell list is used to create the neighbour list.
+
+26-06 : Added knowledge of M-site to electrostatic RP contraction. Note:// still cannot use smeared charges with electrostatic contraction scheme in this version. Renamed to water_'date' from water_bea_nm_'date'-demwald.
+
+03-07 : Minor changes. Param file now contains masses.
+
+08-07 : tem RP electrostatic contraction implemented. Replacing dem method (although routines still included)
+
+09-07 : Minor fixes to problems that stopped earlier versions comiling correctly using g77. Final version written in g77 :-(.
+
+09-07-f90 : Program converted to take advantage of fortran 90. Allocatable arrays used allowing  the use of large system sizes. Globals.inc no longer contains fixed size array parameters.
+
+3-08 : Non-cubic linked cell list for non-cubic LJ and rwald.
+
+4-08 : Non-cubic smeared charges added. Pressure calculation and Berendsen barostat.
+
+5-08 : Cubic pressure calculation added. RP contraction NPT now working.
+
+31-08 : Interface setup, Non-isotropic berendsen barostat, Option for harmonic bend with anharmonic stretch.
+
+05-09 : Rigid water evolution added for NVT. Rigid virial not yet complete.
+
+08-09 : Rigid NPT complete.
+
+09-09 : Buckingham O-O interaction added.
+
+16_09im : A few small problems removed and unneccesary variables culled.
+
+13-10 : Dielectric constant calculation error corrected. RDF calculation and exact estimators now controlled by switches in input file.
+
+14-10 : Improved SHAKE/RATTLE routine. Also fixed crashingof classical simualtions when beadiabatic paramaters set and density profile error in the melting routine.
+
+16-10 : Parinello global thermostat implemented for classical rigid and flexible simulations. Parinello local thermostat also availiable : for relative merits see Comput. Phys. Comm. 179 (2008) p26-29.
+
+5-11 : Additional NPT and pressure properties calculated by md_static routine. Fixed bug in rigid classical barostat.
+
+29-01-09 : MAJOR sampling fix done!
+
+23-02-09 : Changed to Fortran 90
+
+Possible Future additions:
+---------------------------
+
+1.) Inclusion of Solute atoms/molecule.
+2.) RP electrostatic contraction for smeared charges.
+3.) NPT simulation / pressure calculation.
+4.) Polarizability.
+5.) Generalize solvent treatment.
+
+Input parameters:
+------------------
+ens      -   ensemble - option of NVT or NPT
+temp     -   temperature in K
+pres     -   pressure in bar
+rho      -   density in g cm**(-3)
+lattice  -   Starting lattice : CUB, FCC or ICE
+iamcub   -   Allows selection of non-cubic vs cubic energy evaluation
+dtfs     -   time step in fs
+ecut     -   Ewald sum accuracy parameter. Set to 0.d0 for automatic
+             selection of ewald parameters
+nt       -   Dynamic simulation trajectory length
+ne       -   Equilibration steps
+nb       -   Number of beads
+m        -   Number of dynamic trajectories
+ng       -   Number of static property sampling steps
+pt       -   Print trajectory interval
+pb       -   Print beads interval
+ncellxyz -   Number of cells in each direction for initialization (3 integers)
+irun     -   Random number seed (integer)
+itcf     -   Integers controlling calculation of dynamic properties  (3 integers, 1 or 0: Cvv, Dipole Spectrum (IR), OCF)
+itst     -   Integers controlling calculation of static properties (2 integers, 1 or 0: RDF, Exact Estimators)
+rcut     -   Real-space cut-off for LJ interactions in Angstroms
+type     -   Type of calculation: RPMD or ACMD
+therm    -   Thermostat - NON(None),AND(Anderson),PRL(Parrinello
+             Local),PRG(Parrinello Global), (....also GLE!)
+ttaufs   -   tau parameter for Parrinello thermostats
+baro     -   Barostat, 'BER' or 'MCI'
+taufs    -   tau parameter for barostat
+mts      -   Number of multiple time steps
+om       -   ACMD adiabatic separation parameter.
+nbdf1    -   RP contraction modes for ewald forces (set to zero for full nb, set to 1 for electrostatic contraction)
+nbdf2    -   RP contraction modes for LJ forces (set to zero for full nb)
+sig      -   Electrostatic RP Contraction cut-off (Angstroms, usually ~ 5.0)
+
+Parameters for popular water model
+-----------------------------------
+
+SPC/F
+------
+
+ &param
+wmass = 32831.2525d0
+omass = 29156.9471d0
+hmass = 1837.1527d0
+qo = -0.82d0
+alpha = 1.d0
+oo_sig = 5.98098d0
+oo_eps = 2.477083d-4
+oo_gam = 0.d0
+thetad = 109.47d0
+reoh = 1.889726d0
+de = 0.d0
+alp = 0.d0
+deb = 0.d0
+alpb = 0.d0
+wm = 0.d0
+wh = 0.d0
+&end
+
+SPCFW
+------
+
+ &param
+wmass = 32831.2525d0
+omass = 29156.9471d0
+hmass = 1837.1527d0
+qo = -0.82d0
+alpha = 1.d0
+oo_sig = 5.981913d0
+oo_eps = 2.47686d-4
+oo_gam = 0.d0
+thetad = 113.24d0
+reoh = 1.912403d0
+apot = 0.472655d0
+bpot = 0.120954d0
+alp = 0.d0
+alpb = 0.d0
+wm = 0.d0
+wh = 0.d0
+&end
+
+
+TIP3P/FS
+--------
+
+ &param
+wmass = 32831.2525d0
+omass = 29156.9471d0
+hmass = 1837.1527d0
+qo = -0.834d0
+alpha = 1.d0
+oo_sig = 5.95377d0
+oo_eps = 2.42542d-4
+oo_gam = 0.d0
+thetad = 104.5d0
+reoh = 1.814137d0
+apot = 0.4726468d0
+bpot = 0.10850d0
+alp = 0.d0
+alpb = 0.d0
+wm = 0.d0
+wh = 0.d0
+&end
+
+
+QSPCFW
+-------
+
+ &param
+wmass = 32831.2525d0
+omass = 29156.9471d0
+hmass = 1837.1527d0
+qo = -0.84d0
+alpha = 1.d0
+oo_sig = 5.981913d0
+oo_eps = 2.47686d-4
+oo_gam = 0.d0
+thetad = 112.d0
+reoh = 1.889726d0
+apot = 0.472655d0
+bpot = 0.120954d0
+alp = 0.d0
+alpb = 0.d0
+wm = 0.d0
+wh = 0.d0
+&end
+
+Scott's potential
+------------------
+
+ &param
+wmass = 32831.2525d0
+omass = 29156.9471d0
+hmass = 1837.1527d0
+qo = -1.084d0
+alpha = 0.797d0
+oo_sig = 5.761d0
+oo_eps = 3.5211d-4
+oo_gam = 0.d0
+thetad = 106.416d0
+reoh = 1.77956d0
+apot = 0.17d0
+bpot = 0.52d0
+alp = 1.22d0
+alpb = 0.37d0
+wm = 0.482d0
+wh = 0.686d0
+&end
+
+
+TIP4P/05 rigid
+---------------
+
+ &param
+wmass = 32831.2525d0
+omass = 29156.9471d0
+hmass = 1837.1527d0
+qo = -1.1128d0
+alpha = 0.73612d0
+sigma = 5.96946d0
+epslon = 2.95147d-4
+thetad = 104.52d0
+reoh = 1.8088465d0
+apot = 0.d0
+bpot = 0.d0
+alp = 0.d0
+alpb = 0.d0
+wm = 0.d0
+wh = 0.d0
+&end
+
+TIP4P/05 flexible - Scott
+--------------------------
+
+ &param
+wmass = 32831.2525d0
+omass = 29156.9471d0
+hmass = 1837.1527d0
+qo = -1.1128d0
+alpha = 0.73612d0
+oo_sig = 5.96946d0
+oo_eps = 2.95147d-4
+oo_gam = 0.d0
+thetad = 107.4d0
+reoh = 1.78d0
+apot = 0.185d0
+bpot = 0.07d0
+alp = 1.21d0
+alpb = 0.d0
+wm = 0.d0
+wh = 0.d0
+&end
+
+LJ :
+-----
+
+TIP4P/2005 :
+     epslon = 2.95147d-4
+     sigma = 5.96946d0
+
+TIP4P :
+     epslon = 2.47012d-4
+     sigma = 5.96020d0
+
+SPC :
+     epslon = 2.477083d-4
+     sigma  = 5.98098d0
+
+q-SPC/Fw :
+     epslon = 2.4768586d-4
+     sigma  = 5.981913d0
+
+Charges and alpha :
+--------------------
+
+TIP4P/2005 :
+    qo = -1.1128d0
+    alpha = 0.73612d0
+
+TIP4P :
+    qo = -1.04d0
+    alpha = 0.74398d0
+
+SPC/F :
+     qo = -0.82d0
+     alpha = 1.d0
+
+q-SPC/Fw :
+     qo = -0.84d0
+     alpha = 1.d0
+
+
+

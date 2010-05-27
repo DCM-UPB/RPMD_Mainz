@@ -1,0 +1,18 @@
+ &param
+wmass = 32831.2525d0   ! Water mass
+omass = 29156.9471d0   ! oxygen mass
+hmass = 1837.1527d0    ! hydrogen mass
+qo = -1.1128d0         ! oxygen charge
+alpha = 0.73612d0      ! fractional displacement, gamma
+oo_sig = 5.96946d0     ! LJ sigma  
+oo_eps = 2.95147d-4    ! LJ epsilon
+oo_gam = 0.d0          ! UNUSED
+thetad = 107.4d0       ! Equilibrium bond angle (in rad)
+reoh = 1.78d0          ! Equilibrium bond length (in bohr)
+apot = 0.185d0         ! apot = D_r in Eq. (4) (in Hartree)
+bpot = 0.07d0          ! bot = 1/2*k_eq in Eq. (3) (in Hartree/(rad^2))
+alp = 1.21d0           ! alp = alpha_{r} in Eq. (4) (in Bohr^{-1})
+alpb = 0.d0            ! UNUSED
+wm = 0.d0              ! UNUSED
+wh = 0.d0              ! UNUSED
+&end

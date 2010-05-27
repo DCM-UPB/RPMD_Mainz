@@ -1,0 +1,31 @@
+&input
+ens = 'NVT'      
+temp = 298.000
+pres = 1.d0
+rho = 0.997d0
+lattice = 'CUB'
+iamcub = .true.
+dtfs = 0.5d0
+ecut = 0.d0 
+nt = 0 
+ne = 50000
+nb = 1 
+m = 0 
+ng = 50000 
+ncellxyz = 6 6 6
+irun = 1
+itcf = 0 0 0
+itst = 1 0
+rcut = 9.d0
+type = 'RPMD'
+therm = 'AND'
+ttaufs = 50.d0
+baro = 'BER'
+taufs = 10000.d0
+mts = 5
+om = 0.d0
+nbdf1 = 0
+nbdf2 = 0
+sig = 0.d0
+&end
+

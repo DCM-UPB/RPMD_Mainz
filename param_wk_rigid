@@ -1,0 +1,18 @@
+ &param
+wmass = 32831.2525d0
+omass = 29156.9471d0
+hmass = 1837.1527d0
+qo = -1.24d0
+alpha = 0.744d0
+oo_sig = 6.00625d0
+oo_eps = 4.47963d-4
+oo_gam = 0.d0
+thetad = 104.52d0
+reoh = 1.8088465d0
+apot = 0.d0
+bpot = 0.d0
+alp = 0.d0
+alpb = 0.d0
+wm = 0.d0
+wh = 0.d0
+&end

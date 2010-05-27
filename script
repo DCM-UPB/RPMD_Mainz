@@ -1,0 +1,13 @@
+#!/bin/sh
+#
+#$ -cwd
+#$ -N classical 
+echo "-------------------------------"
+echo " "
+echo "Start Time : "
+date 
+~/water_15_06_09/qmd.x input param_scott > output 
+echo "End Time : "
+date
+echo " "
+echo "-------------------------------"
