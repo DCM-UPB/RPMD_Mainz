@@ -9,6 +9,7 @@ program qmd
   !--------------------------------------------------------------------
   integer nt,ne,nb,m,ng,pt,pb,irun,nm,na,narg,iargc,nbdf1,nbdf2,i,j,k
   integer nbr,mts,nlat,itcf(3),itst(2),ncellxyz(3),print(3)
+  integer reftraj
   integer nc_ice(3),nc_wat(3),nm_ice,nm_wat,nctot,nbond
   real(8) temp,rho,dtfs,ecut,test,beta,dt,dtps,boxmin,pres
   real(8) teqm,tsim,trdf,gaussian,wmass,rcut,om,ttaufs
@@ -18,14 +19,14 @@ program qmd
   real(8) box_ice(3),box_wat(3),rcut_old
   real(8), allocatable :: mass(:),z(:),r(:,:,:)
   real(8), allocatable :: p(:,:,:),dvdr(:,:,:),dvdr2(:,:,:)
-  character*20 filename
+  character*25 filename
   character*4 type
   character*3 lattice,ens,therm_backup
   logical iamcub,iamrigid
   external gaussian
 
   namelist/input/ens,temp,pres,rho,lattice,iamcub,dtfs, &
-                 ecut,nt,ne,nb,m,ng,print,pt,pb,ncellxyz,irun,itcf,itst,rcut, &
+                 ecut,nt,ne,nb,m,ng,print,reftraj,pt,pb,ncellxyz,irun,itcf,itst,rcut, &
                  type,therm,ttaufs,baro,taufs,mts,om,nbdf1,nbdf2,sig
   namelist/param/ wmass,omass,hmass,qo,alpha,oo_sig,oo_eps,oo_gam, &
                   thetad,reoh,apot,bpot,alp,alpb,wm,wh
@@ -226,40 +227,47 @@ program qmd
 
      call getarg(3,filename)
      open (61, file = filename)
-     read(61,*) nm,na,nbr
+     if (reftraj.eq.0) then
+        ! Thirt argument is equilibrium file
+        read(61,*) nm,na,nbr
 
-     allocate(r(3,na,nb))
-     r(:,:,:) = 0.d0
+        allocate(r(3,na,nb))
+        r(:,:,:) = 0.d0
 
-     if (nb.eq.nbr) then
-        read(61,*) boxlxyz(1),boxlxyz(2),boxlxyz(3)
-        read(61,*) r(:,:,:)
-        write(6,*)'* Initialized from file: ',filename
-     else
+        if (nb.eq.nbr) then
+            read(61,*) boxlxyz(1),boxlxyz(2),boxlxyz(3)
+            read(61,*) r(:,:,:)
+            write(6,*)'* Initialized from file: ',filename
+        else
 
-        ! This allows reading of classical equilibrated
-        ! configurations to start PI trajectories.
+            ! This allows reading of classical equilibrated
+            ! configurations to start PI trajectories.
 
-        write(6,*) ' Note:// all beads will start at centroid'
+            write(6,*) ' Note:// all beads will start at centroid'
 
-        ! Read first bead coordinate
+            ! Read first bead coordinate
 
-        read(61,*) boxlxyz(1),boxlxyz(2),boxlxyz(3)
-        do j = 1,na
-           read(61,*) r(1,j,1),r(2,j,1),r(3,j,1)
-        enddo
+            read(61,*) boxlxyz(1),boxlxyz(2),boxlxyz(3)
+            do j = 1,na
+                read(61,*) r(1,j,1),r(2,j,1),r(3,j,1)
+            enddo
 
-        ! Copy to all other beads
+            ! Copy to all other beads
 
-        do k = 2,nb
-           do j = 1,na
-              r(1,j,k) = r(1,j,1)
-              r(2,j,k) = r(2,j,1)
-              r(3,j,k) = r(3,j,1)
-           enddo
-        enddo
-     endif
-     close (unit=61)
+            do k = 2,nb
+                do j = 1,na
+                    r(1,j,k) = r(1,j,1)
+                    r(2,j,k) = r(2,j,1)
+                    r(3,j,k) = r(3,j,1)
+                enddo
+            enddo
+        endif
+        close (unit=61)
+    else
+        ! Thrit argument is trajectories file
+        write(6,*) 'The reftraj is currently: ', reftraj, filename
+        call EXIT(1)
+    endif
   else
      if (lattice.eq.'INT') then
 
