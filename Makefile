@@ -1,7 +1,7 @@
 MF=	Makefile
-FC=	/Users/GuestAccount/usr/local/bin/gfortran
+FC=	gfortran
 LIBS = -lfftw3 
-FFLAGS=	-O3
+FFLAGS=	-O3 -static -L.
 LFLAGS=	$(FFLAGS)
 
 EXE= qmd.x
