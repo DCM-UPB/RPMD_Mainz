@@ -9,7 +9,11 @@ program qmd
   !--------------------------------------------------------------------
   integer nt,ne,nb,m,ng,pt,pb,irun,nm,na,narg,iargc,nbdf1,nbdf2,i,j,k
   integer nbr,mts,nlat,itcf(3),itst(2),ncellxyz(3),print(3)
-  integer reftraj
+
+  ! used for reftrj
+  integer reftraj, natom
+  character*240 line
+
   integer nc_ice(3),nc_wat(3),nm_ice,nm_wat,nctot,nbond
   real(8) temp,rho,dtfs,ecut,test,beta,dt,dtps,boxmin,pres
   real(8) teqm,tsim,trdf,gaussian,wmass,rcut,om,ttaufs
@@ -266,6 +270,14 @@ program qmd
     else
         ! Thrit argument is trajectories file
         write(6,*) 'The reftraj is currently: ', reftraj, filename
+        do i = 1, reftraj
+            read(61,*) natom
+            read(61,*) line
+            do j = 1, natom
+                read(61,*) line
+            enddo
+            write(6,*) natom
+        enddo
         call EXIT(1)
     endif
   else
