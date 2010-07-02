@@ -12,6 +12,7 @@ program qmd
 
   ! used for reftrj
   integer reftraj, natom
+  logical use_traj
   character*240 line
 
   integer nc_ice(3),nc_wat(3),nm_ice,nm_wat,nctot,nbond
@@ -21,7 +22,7 @@ program qmd
   real(8) qo,qh,alpha,oo_sig,oo_eps,oo_gam,theta,reoh,thetad
   real(8) apot,bpot,alp,alpb,wm,wh,omass,hmass,sig,boxlxyz(3),vdum
   real(8) box_ice(3),box_wat(3),rcut_old
-  real(8), allocatable :: mass(:),z(:),r(:,:,:),r_traj(:,:)
+  real(8), allocatable :: mass(:),z(:),r(:,:,:),r_traj(:,:,:)
   real(8), allocatable :: p(:,:,:),dvdr(:,:,:),dvdr2(:,:,:)
   character*25 filename
   character*4 type
@@ -272,21 +273,24 @@ program qmd
         write(6,*) 'The reftraj is currently: ', reftraj
         write(6,*) 'And is loaded from file: ', filename
 
-        do i = 1, reftraj
-            read(61,*) natom
-            allocate(r_traj(natom,3))
-            r_traj(:,:) = 0.d0
+        read(61,*) natom
+        allocate(r_traj(3,natom,reftraj))
+        r_traj(:,:,:) = 0.d0
 
+        do i = 1, reftraj
             read(61,*) line,boxlxyz(1),boxlxyz(2),boxlxyz(3)
             do j = 1, natom
                 ! line will get the kind (O or H)
-                read(61,*) line, r_traj(j,:)
-
-                ! everything read in, now to the work
-
+                !read(61,*) line, r_traj(1,j,i),r_traj(2,j,i),r_traj(2,j,i)
+                read(61,*) line, r_traj(:,j,i)
+                !write(6,*) r_traj(:,j,i)
             enddo
-            deallocate(r_traj)
+            ! read natom from next snapshot (assume it's the same like before)
+            if (i.ne.reftraj) then
+                read(61,*) natom
+            endif
         enddo
+        close (unit=61)
         call EXIT(1)
     endif
   else
@@ -511,5 +515,6 @@ program qmd
   endif
   
   deallocate(r,mass,z,p,dvdr,dvdr2)
+  deallocate(r_traj)
 
 end program qmd
