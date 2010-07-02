@@ -277,7 +277,7 @@ program qmd
             allocate(r_traj(natom,3))
             r_traj(:,:) = 0.d0
 
-            read(61,*) line !,boxlxyz(1),boxlxyz(2),boxlxyz(3)
+            read(61,*) line,boxlxyz(1),boxlxyz(2),boxlxyz(3)
             do j = 1, natom
                 ! line will get the kind (O or H)
                 read(61,*) line, r_traj(j,:)
