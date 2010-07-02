@@ -21,7 +21,7 @@ program qmd
   real(8) qo,qh,alpha,oo_sig,oo_eps,oo_gam,theta,reoh,thetad
   real(8) apot,bpot,alp,alpb,wm,wh,omass,hmass,sig,boxlxyz(3),vdum
   real(8) box_ice(3),box_wat(3),rcut_old
-  real(8), allocatable :: mass(:),z(:),r(:,:,:)
+  real(8), allocatable :: mass(:),z(:),r(:,:,:),r_traj(:,:)
   real(8), allocatable :: p(:,:,:),dvdr(:,:,:),dvdr2(:,:,:)
   character*25 filename
   character*4 type
@@ -269,14 +269,23 @@ program qmd
         close (unit=61)
     else
         ! Thrit argument is trajectories file
-        write(6,*) 'The reftraj is currently: ', reftraj, filename
+        write(6,*) 'The reftraj is currently: ', reftraj
+        write(6,*) 'And is loaded from file: ', filename
+
         do i = 1, reftraj
             read(61,*) natom
-            read(61,*) line
+            allocate(r_traj(natom,3))
+            r_traj(:,:) = 0.d0
+
+            read(61,*) line !,boxlxyz(1),boxlxyz(2),boxlxyz(3)
             do j = 1, natom
-                read(61,*) line
+                ! line will get the kind (O or H)
+                read(61,*) line, r_traj(j,:)
+
+                ! everything read in, now to the work
+
             enddo
-            write(6,*) natom
+            deallocate(r_traj)
         enddo
         call EXIT(1)
     endif
