@@ -349,26 +349,27 @@ program qmd
   ! Assign masses and charges :
   ! -----------------------------
 
-  allocate (mass(na),z(na))
-  z(:) = 0.d0
-  mass(:) = 0.d0
+  if (use_traj.eqv..false.) then
+    ! when use_traj, calculate masses later on
+    allocate (mass(na),z(na))
+    z(:) = 0.d0
+    mass(:) = 0.d0
 
-  do i = 1,na,3
-     mass(i) = omass      ! Oxygen
-     mass(i+1) = hmass    ! Hydrogen
-     mass(i+2) = hmass    ! Hydrogen
-  enddo
+    do i = 1,na,3
+        mass(i) = omass      ! Oxygen
+        mass(i+1) = hmass    ! Hydrogen
+        mass(i+2) = hmass    ! Hydrogen
+    enddo
 
-  qh = -0.5d0*qo
-  do i = 1,na,3
-     z(i) = qo
-     z(i+1) = qh
-     z(i+2) = qh
-  enddo
+    qh = -0.5d0*qo
+    do i = 1,na,3
+        z(i) = qo
+        z(i+1) = qh
+        z(i+2) = qh
+    enddo
   
-  ! Write a vmd output of starting structure
+    ! Write a vmd output of starting structure
 
-  if (use_traj.eqv..false.) then   
     open (unit=12,file='vmd_start.xyz')
     call print_vmd_full(r,nb,na,nm,boxlxyz,12)
     close (unit=12)
@@ -390,10 +391,9 @@ program qmd
 
     deallocate(r_traj)
     write(6,*) "there"
-    call exit(1)
-  endif
+  else
 
-  write (6,61) na,nm,boxlxyz(1),boxlxyz(2),boxlxyz(3),rcut
+    write (6,61) na,nm,boxlxyz(1),boxlxyz(2),boxlxyz(3),rcut
 61 format( /1x, 'System setup : ' /1x, & 
                 '---------------' /1x, &
                 'na     = ',i9,' atoms'/1x, &
@@ -403,50 +403,51 @@ program qmd
                 'boxlz  = ',f9.3,' bohr'/1x, &
                 'rcut   = ',f9.3,' bohr'/1x)
 
-  ! Ewald parameters
-  ! ------------------
+    ! Ewald parameters
+    ! ------------------
 
-  call setup_ewald(na,boxlxyz)
+    call setup_ewald(na,boxlxyz)
 
-  write(6,*)'Operations to be performed : '
-  write(6,*)'-----------------------------'
+    write(6,*)'Operations to be performed : '
+    write(6,*)'-----------------------------'
 
-  ! Static properties to be calculated
-  ! --------------------------------------
+    ! Static properties to be calculated
+    ! --------------------------------------
 
-  if (itst(1).eq.1) then
-     write(6,*)'* RDF WILL be calculated... '
-  else
-     write(6,*)'* RDF WILL NOT be calculated... '
+    if (itst(1).eq.1) then
+        write(6,*)'* RDF WILL be calculated... '
+    else
+        write(6,*)'* RDF WILL NOT be calculated... '
+    endif
+    if ((nbdf1.gt.0).or.(nbdf2.gt.0)) then
+        if (itst(2).eq.1) then
+            write(6,*)'* Exact Estimators WILL be calculated... '
+        else
+            write(6,*)'* Exact Estimators WILL NOT be calculated... '
+        endif
+    endif
+
+    ! Dynamics properties to be calculated
+    ! --------------------------------------
+
+    if (itcf(1).eq.1) then
+        write(6,*)'* Cvv WILL be calculated... '
+    else
+        write(6,*)'* Cvv WILL NOT be calculated... '
+    endif
+    if (itcf(2).eq.1) then
+        write(6,*)'* Dipole spectra WILL be calculated... '
+    else
+        write(6,*)'* Dipole spectra WILL NOT be calculated... '
+    endif
+    if (itcf(3).eq.1) then
+        write(6,*)'* Orientational CFs WILL be calculated... '
+    else
+        write(6,*)'* Orientational CFs WILL NOT be calculated... '
+    endif
+    write(6,*)
+
   endif
-  if ((nbdf1.gt.0).or.(nbdf2.gt.0)) then
-     if (itst(2).eq.1) then
-        write(6,*)'* Exact Estimators WILL be calculated... '
-     else
-        write(6,*)'* Exact Estimators WILL NOT be calculated... '
-     endif
-  endif
-
-  ! Dynamics properties to be calculated
-  ! --------------------------------------
-
-  if (itcf(1).eq.1) then
-     write(6,*)'* Cvv WILL be calculated... '
-  else
-     write(6,*)'* Cvv WILL NOT be calculated... '
-  endif
-  if (itcf(2).eq.1) then
-     write(6,*)'* Dipole spectra WILL be calculated... '
-  else
-     write(6,*)'* Dipole spectra WILL NOT be calculated... '
-  endif
-  if (itcf(3).eq.1) then
-     write(6,*)'* Orientational CFs WILL be calculated... '
-  else
-     write(6,*)'* Orientational CFs WILL NOT be calculated... '
-  endif
-  write(6,*)
-
   ! Water Parameters used
   ! ----------------------
 
@@ -470,6 +471,13 @@ program qmd
   write(10,*) ' Gaussian Width M-site   = ', wm
   write(10,*) ' Gaussian Width Hydrogen = ', wh
   close (unit=10)
+
+  if (use_traj.eqv..true.) then
+    write(6,*)
+    write(6,*) "Exiting from reftraj mode."
+    write(6,*)
+    call exit(0)
+  endif
 
   ! Allocate the evolution arrays
   ! ------------------------------
