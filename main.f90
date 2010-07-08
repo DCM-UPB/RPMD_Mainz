@@ -234,6 +234,7 @@ program qmd
      open (61, file = filename)
      if (reftraj.eq.0) then
         ! Thirt argument is equilibrium file
+        use_traj = .false.
         read(61,*) nm,na,nbr
 
         allocate(r(3,na,nb))
@@ -270,8 +271,12 @@ program qmd
         close (unit=61)
     else
         ! Thrit argument is trajectories file
+        write(6,*)
         write(6,*) 'The reftraj is currently: ', reftraj
         write(6,*) 'And is loaded from file: ', filename
+        write(6,*)
+
+        use_traj = .true.
 
         read(61,*) natom
         allocate(r_traj(3,natom,reftraj))
@@ -291,9 +296,9 @@ program qmd
             endif
         enddo
         close (unit=61)
-        call EXIT(1)
     endif
   else
+     use_traj = .false.
      if (lattice.eq.'INT') then
 
         ! Setup an ice-water interface
@@ -363,20 +368,30 @@ program qmd
   
   ! Write a vmd output of starting structure
 
-  open (unit=12,file='vmd_start.xyz')
-  call print_vmd_full(r,nb,na,nm,boxlxyz,12)
-  close (unit=12)
+  if (use_traj.eqv..false.) then   
+    open (unit=12,file='vmd_start.xyz')
+    call print_vmd_full(r,nb,na,nm,boxlxyz,12)
+    close (unit=12)
+  endif
 
-   ! structure is ready, we can initialize GLE thermostat
-   if (therm.eq.'GLE') then                       !!GLE
-      call therm_gle_init(ttau,na,nb,0.5*dt,irun,beta)      !!GLE
-   end if
+  ! structure is ready, we can initialize GLE thermostat
+  if (therm.eq.'GLE') then                       !!GLE
+    call therm_gle_init(ttau,na,nb,0.5*dt,irun,beta)      !!GLE
+  end if
 
   ! Check Cut-off for LJ interactions
   ! ----------------------------
   
   boxmin = min(boxlxyz(1),boxlxyz(2),boxlxyz(3))
   rcut = min(rcut,0.5d0*boxmin)
+
+  if (use_traj.eqv..true.) then
+    ! TODO calculate forces, print them, and moooove
+
+    deallocate(r_traj)
+    write(6,*) "there"
+    call exit(1)
+  endif
 
   write (6,61) na,nm,boxlxyz(1),boxlxyz(2),boxlxyz(3),rcut
 61 format( /1x, 'System setup : ' /1x, & 
@@ -515,6 +530,5 @@ program qmd
   endif
   
   deallocate(r,mass,z,p,dvdr,dvdr2)
-  deallocate(r_traj)
 
 end program qmd
