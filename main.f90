@@ -386,12 +386,31 @@ program qmd
             !write(6,*) r_traj(:,j)
         enddo
 
+        ! Assign masses and charges :
+        ! -----------------------------
+
+        allocate (mass(natom),z(natom))
+        z(:) = 0.d0
+        mass(:) = 0.d0
+
+        do k = 1,natom,3
+            mass(k) = omass      ! Oxygen
+            mass(k+1) = hmass    ! Hydrogen
+            mass(k+2) = hmass    ! Hydrogen
+        enddo
+
+        qh = -0.5d0*qo
+        do k = 1,natom,3
+            z(k) = qo
+            z(k+1) = qh
+            z(k+2) = qh
+        enddo
+        call setup_ewald(natom,boxlxyz)
         ! TODO to the work on the configs here
 
-        deallocate(r_traj)
+        deallocate(r_traj,mass,z)
     enddo
     close (unit=61)
-    write(6,*) "there"
   else
 
     write (6,61) na,nm,boxlxyz(1),boxlxyz(2),boxlxyz(3),rcut
