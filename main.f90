@@ -278,24 +278,6 @@ program qmd
 
         use_traj = .true.
 
-        read(61,*) natom
-        allocate(r_traj(3,natom,reftraj))
-        r_traj(:,:,:) = 0.d0
-
-        do i = 1, reftraj
-            read(61,*) line,boxlxyz(1),boxlxyz(2),boxlxyz(3)
-            do j = 1, natom
-                ! line will get the kind (O or H)
-                !read(61,*) line, r_traj(1,j,i),r_traj(2,j,i),r_traj(2,j,i)
-                read(61,*) line, r_traj(:,j,i)
-                !write(6,*) r_traj(:,j,i)
-            enddo
-            ! read natom from next snapshot (assume it's the same like before)
-            if (i.ne.reftraj) then
-                read(61,*) natom
-            endif
-        enddo
-        close (unit=61)
     endif
   else
      use_traj = .false.
@@ -387,6 +369,23 @@ program qmd
   rcut = min(rcut,0.5d0*boxmin)
 
   if (use_traj.eqv..true.) then
+    read(61,*) natom
+    allocate(r_traj(3,natom,reftraj))
+    r_traj(:,:,:) = 0.d0
+
+    do i = 1, reftraj
+        read(61,*) line,boxlxyz(1),boxlxyz(2),boxlxyz(3)
+        do j = 1, natom
+            ! line will get the kind (O or H)
+            read(61,*) line, r_traj(:,j,i)
+            !write(6,*) r_traj(:,j,i)
+        enddo
+        ! read natom from next snapshot (assume it's the same like before)
+        if (i.ne.reftraj) then
+            read(61,*) natom
+        endif
+    enddo
+    close (unit=61)
     ! TODO calculate forces, print them, and moooove
 
     deallocate(r_traj)
