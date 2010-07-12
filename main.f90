@@ -381,7 +381,6 @@ program qmd
     do i = 1, reftraj
         read(61,*) na
         write(6,*) "there"
-        if (allocated(r_traj)) deallocate(r_traj)
         allocate(r_traj(3,na))
         r_traj(:,:) = 0.d0
 
@@ -393,15 +392,6 @@ program qmd
         enddo
 
         call setup_ewald(na,boxlxyz)
-        ! TODO to the work on the configs here
-        ! Allocate the evolution arrays
-        ! ------------------------------
-
-        allocate (p(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb))
-        p(:,:,:) = 0.d0
-        dvdr(:,:,:) = 0.d0
-        dvdr2(:,:,:) = 0.d0
-
         ! Initial forces and momenta
         ! ---------------------------
 
@@ -413,7 +403,6 @@ program qmd
         !call print_vmd_full_forces_bool(dvdr,dvdr2,nb,na,boxlxyz,12,.false.)
 
         deallocate(r_traj)
-        deallocate(p,dvdr,dvdr2)
     enddo
     close (unit=12)
     close (unit=61)
@@ -499,13 +488,6 @@ program qmd
   write(10,*) ' Gaussian Width Hydrogen = ', wh
   close (unit=10)
 
-  if (use_traj.eqv..true.) then
-    write(6,*)
-    write(6,*) "Exiting from reftraj mode."
-    write(6,*)
-    call exit(0)
-  endif
-
   ! Allocate the evolution arrays
   ! ------------------------------
 
@@ -517,53 +499,56 @@ program qmd
   ! Initial forces and momenta
   ! ---------------------------
 
-  call full_forces(r,na,nb,v,vew,vlj,vint,vir,z,boxlxyz,dvdr,dvdr2)
-  write(6,'(a,f10.5,a)') ' * Initial energy =', v/dble(na), ' E_h per atom'
-  write(6,*)
-  call sample(p,na,nb,mass,beta,irun,dt)
+  if (use_traj.eqv..false.) then
+    call full_forces(r,na,nb,v,vew,vlj,vint,vir,z,boxlxyz,dvdr,dvdr2)
+    write(6,'(a,f10.5,a)') ' * Initial energy =', v/dble(na), ' E_h per atom'
+    write(6,*)
+    call sample(p,na,nb,mass,beta,irun,dt)
 
-  ! Equilibration or Interface Melting
-  ! -----------------------------------
+    ! Equilibration or Interface Melting
+    ! -----------------------------------
 
-  if (lattice.ne.'INT') then
-     call md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
-                dt,mass,irun)
-  else
-     call md_melt(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
-                  dt,mass,irun,nm_ice)
-  endif
+    if (lattice.ne.'INT') then
+      call md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
+                 dt,mass,irun)
+    else
+      call md_melt(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
+                   dt,mass,irun,nm_ice)
+    endif
 
-  ! Write Equilibration file to use for restarts
-  ! ----------------------------------------------
+    ! Write Equilibration file to use for restarts
+    ! ----------------------------------------------
 
-  open(10, file = 'eq.xyz')
-  call print_structure(r,boxlxyz,nm,na,nb,10)
-  close (unit=10)
+    open(10, file = 'eq.xyz')
+    call print_structure(r,boxlxyz,nm,na,nb,10)
+    close (unit=10)
 
-  open (unit=12,file='vmd_eq.xyz')
-  call print_vmd_full(r,nb,na,nm,boxlxyz,12)
-  close (unit=12)
+    open (unit=12,file='vmd_eq.xyz')
+    call print_vmd_full(r,nb,na,nm,boxlxyz,12)
+    close (unit=12)
 
-  ! Static Properties
-  ! ------------------
+    ! Static Properties
+    ! ------------------
   
-  if (ng .gt. 0) then
-     write(6,*) '* Sampling Static Properties '
-     call sample(p,na,nb,mass,beta,irun,dt)
-     call md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta,&
-                    dt,mass,irun,itst,pt,pb,print)
-  endif
+    if (ng .gt. 0) then
+      write(6,*) '* Sampling Static Properties '
+      call sample(p,na,nb,mass,beta,irun,dt)
+      call md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta,&
+                     dt,mass,irun,itst,pt,pb,print)
+    endif
 
-  ! Dynamical Properties
-  ! ----------------------
+    ! Dynamical Properties
+    ! ----------------------
 
-  if (nt.gt.0.and.m.gt.0) then
-     write(6,*) '* Sampling Dynamical Properties'
-     call sample(p,na,nb,mass,beta,irun,dt)
-     call dynamics(nt,m,p,r,dvdr,dvdr2,na,nm,nb,boxlxyz,z,beta, &
-                   dt,mass,irun,itcf,pt,pb,print)
-  endif
+    if (nt.gt.0.and.m.gt.0) then
+      write(6,*) '* Sampling Dynamical Properties'
+      call sample(p,na,nb,mass,beta,irun,dt)
+      call dynamics(nt,m,p,r,dvdr,dvdr2,na,nm,nb,boxlxyz,z,beta, &
+                    dt,mass,irun,itcf,pt,pb,print)
+    endif
   
-  deallocate(r,mass,z,p,dvdr,dvdr2)
+    deallocate(r)
+  endif
+  deallocate(mass,z,p,dvdr,dvdr2)
 
 end program qmd
