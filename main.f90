@@ -371,7 +371,10 @@ program qmd
   boxmin = min(boxlxyz(1),boxlxyz(2),boxlxyz(3))
   rcut = min(rcut,0.5d0*boxmin)
 
+  ! Ewald parameters
+  ! ------------------
 
+  call setup_ewald(na,boxlxyz)
 
   if (use_traj.eqv..false.) then
     write (6,61) na,nm,boxlxyz(1),boxlxyz(2),boxlxyz(3),rcut
@@ -383,11 +386,6 @@ program qmd
                 'boxly  = ',f9.3,' bohr'/1x, &
                 'boxlz  = ',f9.3,' bohr'/1x, &
                 'rcut   = ',f9.3,' bohr'/1x)
-
-    ! Ewald parameters
-    ! ------------------
-
-    call setup_ewald(na,boxlxyz)
 
     write(6,*)'Operations to be performed : '
     write(6,*)'-----------------------------'
@@ -469,10 +467,11 @@ program qmd
     open (unit=12,file='output_forces.frc')
     do i = 1, reftraj
       read(61,*) na
-      write(6,*) "there"
       allocate(r_traj(3,na))
       r_traj(:,:) = 0.d0
 
+      ! setup_ewald is not needed, ecut, wrcut, walpha, rkmax and kmax
+      !   are all independent of boxlxyz, so just set that
       read(61,*) line,boxlxyz(1),boxlxyz(2),boxlxyz(3)
       do j = 1, na
         ! line will get the kind (O or H)
@@ -480,7 +479,6 @@ program qmd
         !write(6,*) r_traj(:,j)
       enddo
 
-      call setup_ewald(na,boxlxyz)
       ! Initial forces and momenta
       ! ---------------------------
 
