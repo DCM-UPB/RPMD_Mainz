@@ -334,36 +334,36 @@ program qmd
   ! Assign masses and charges :
   ! -----------------------------
 
-  if (use_traj.eqv..false.) then
-    ! when use_traj, calculate masses later on
-    allocate (mass(na),z(na))
-    z(:) = 0.d0
-    mass(:) = 0.d0
+  write(6,*) na, "natom"
+  allocate (mass(na),z(na))
+  z(:) = 0.d0
+  mass(:) = 0.d0
 
-    do i = 1,na,3
-        mass(i) = omass      ! Oxygen
-        mass(i+1) = hmass    ! Hydrogen
-        mass(i+2) = hmass    ! Hydrogen
-    enddo
+  do i = 1,na,3
+    mass(i) = omass      ! Oxygen
+    mass(i+1) = hmass    ! Hydrogen
+    mass(i+2) = hmass    ! Hydrogen
+  enddo
 
-    qh = -0.5d0*qo
-    do i = 1,na,3
-        z(i) = qo
-        z(i+1) = qh
-        z(i+2) = qh
-    enddo
+  qh = -0.5d0*qo
+  do i = 1,na,3
+    z(i) = qo
+    z(i+1) = qh
+    z(i+2) = qh
+  enddo
   
-    ! Write a vmd output of starting structure
+  ! Write a vmd output of starting structure
 
+  if (use_traj.eqv..false.) then
     open (unit=12,file='vmd_start.xyz')
-    call print_vmd_full(r,nb,na,nm,boxlxyz,12)
+      call print_vmd_full(r,nb,na,nm,boxlxyz,12)
     close (unit=12)
-  endif
 
-  ! structure is ready, we can initialize GLE thermostat
-  if (therm.eq.'GLE') then                       !!GLE
-    call therm_gle_init(ttau,na,nb,0.5*dt,irun,beta)      !!GLE
-  end if
+    ! structure is ready, we can initialize GLE thermostat
+    if (therm.eq.'GLE') then                       !!GLE
+      call therm_gle_init(ttau,na,nb,0.5*dt,irun,beta)      !!GLE
+    end if
+  endif
 
   ! Check Cut-off for LJ interactions
   ! ----------------------------
@@ -392,25 +392,6 @@ program qmd
             !write(6,*) r_traj(:,j)
         enddo
 
-        ! Assign masses and charges :
-        ! -----------------------------
-
-        allocate (mass(na),z(na))
-        z(:) = 0.d0
-        mass(:) = 0.d0
-
-        do k = 1,na,3
-            mass(k) = omass      ! Oxygen
-            mass(k+1) = hmass    ! Hydrogen
-            mass(k+2) = hmass    ! Hydrogen
-        enddo
-
-        qh = -0.5d0*qo
-        do k = 1,na,3
-            z(k) = qo
-            z(k+1) = qh
-            z(k+2) = qh
-        enddo
         call setup_ewald(na,boxlxyz)
         ! TODO to the work on the configs here
         ! Allocate the evolution arrays
@@ -431,7 +412,7 @@ program qmd
         !call print_vmd_full(r,nb,na,nm,boxlxyz,12)
         !call print_vmd_full_forces_bool(dvdr,dvdr2,nb,na,boxlxyz,12,.false.)
 
-        deallocate(r_traj,mass,z)
+        deallocate(r_traj)
         deallocate(p,dvdr,dvdr2)
     enddo
     close (unit=12)
