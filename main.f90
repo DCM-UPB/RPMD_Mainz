@@ -11,7 +11,7 @@ program qmd
   integer nbr,mts,nlat,itcf(3),itst(2),ncellxyz(3),print(3)
 
   ! used for reftrj
-  integer reftraj, natom
+  integer reftraj
   logical use_traj
   character*240 line
 
@@ -374,42 +374,64 @@ program qmd
   ! ----------------------------
 
   if (use_traj.eqv..true.) then
+    open (unit=12,file='output_forces.frc')
     do i = 1, reftraj
-        read(61,*) natom
-        allocate(r_traj(3,natom))
+        read(61,*) na
+        write(6,*) "there"
+        if (allocated(r_traj)) deallocate(r_traj)
+        allocate(r_traj(3,na))
         r_traj(:,:) = 0.d0
 
         read(61,*) line,boxlxyz(1),boxlxyz(2),boxlxyz(3)
-        do j = 1, natom
+        do j = 1, na
             ! line will get the kind (O or H)
             read(61,*) line, r_traj(:,j)
-            !write(6,*) r_traj(:,j)
+            write(6,*) r_traj(:,j)
         enddo
 
         ! Assign masses and charges :
         ! -----------------------------
 
-        allocate (mass(natom),z(natom))
+        allocate (mass(na),z(na))
         z(:) = 0.d0
         mass(:) = 0.d0
 
-        do k = 1,natom,3
+        do k = 1,na,3
             mass(k) = omass      ! Oxygen
             mass(k+1) = hmass    ! Hydrogen
             mass(k+2) = hmass    ! Hydrogen
         enddo
 
         qh = -0.5d0*qo
-        do k = 1,natom,3
+        do k = 1,na,3
             z(k) = qo
             z(k+1) = qh
             z(k+2) = qh
         enddo
-        call setup_ewald(natom,boxlxyz)
+        call setup_ewald(na,boxlxyz)
         ! TODO to the work on the configs here
+        ! Allocate the evolution arrays
+        ! ------------------------------
+
+        allocate (p(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb))
+        p(:,:,:) = 0.d0
+        dvdr(:,:,:) = 0.d0
+        dvdr2(:,:,:) = 0.d0
+
+        ! Initial forces and momenta
+        ! ---------------------------
+
+        !call full_forces(r_traj,na,nb,v,vew,vlj,vint,vir,z,boxlxyz,dvdr,dvdr2)
+        !write(6,'(a,f10.5,a)') ' * Initial energy =', v/dble(na), ' E_h per atom'
+        !call sample(p,na,nb,mass,beta,irun,dt)
+
+        !call print_vmd_full(r,nb,na,nm,boxlxyz,12)
+        !call print_vmd_full_forces_bool(dvdr,dvdr2,nb,na,boxlxyz,12,.false.)
 
         deallocate(r_traj,mass,z)
+        deallocate(p,dvdr,dvdr2)
     enddo
+    close (unit=12)
     close (unit=61)
   else
 
