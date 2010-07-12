@@ -466,7 +466,7 @@ program qmd
   if (use_traj.eqv..true.) then
     open (unit=12,file='output_forces.frc')
     do i = 1, reftraj
-      read(61,*) na
+      read(61,*) line
       allocate(r_traj(3,na))
       r_traj(:,:) = 0.d0
 
