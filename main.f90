@@ -372,41 +372,6 @@ program qmd
   rcut = min(rcut,0.5d0*boxmin)
 
 
-  ! ----------------------------
-  ! Do the work for REFTRAJ
-  ! ----------------------------
-
-  if (use_traj.eqv..true.) then
-    open (unit=12,file='output_forces.frc')
-    do i = 1, reftraj
-        read(61,*) na
-        write(6,*) "there"
-        allocate(r_traj(3,na))
-        r_traj(:,:) = 0.d0
-
-        read(61,*) line,boxlxyz(1),boxlxyz(2),boxlxyz(3)
-        do j = 1, na
-            ! line will get the kind (O or H)
-            read(61,*) line, r_traj(:,j)
-            !write(6,*) r_traj(:,j)
-        enddo
-
-        call setup_ewald(na,boxlxyz)
-        ! Initial forces and momenta
-        ! ---------------------------
-
-        !call full_forces(r_traj,na,nb,v,vew,vlj,vint,vir,z,boxlxyz,dvdr,dvdr2)
-        !write(6,'(a,f10.5,a)') ' * Initial energy =', v/dble(na), ' E_h per atom'
-        !call sample(p,na,nb,mass,beta,irun,dt)
-
-        !call print_vmd_full(r,nb,na,nm,boxlxyz,12)
-        !call print_vmd_full_forces_bool(dvdr,dvdr2,nb,na,boxlxyz,12,.false.)
-
-        deallocate(r_traj)
-    enddo
-    close (unit=12)
-    close (unit=61)
-  endif
 
   if (use_traj.eqv..false.) then
     write (6,61) na,nm,boxlxyz(1),boxlxyz(2),boxlxyz(3),rcut
@@ -495,6 +460,42 @@ program qmd
   p(:,:,:) = 0.d0
   dvdr(:,:,:) = 0.d0
   dvdr2(:,:,:) = 0.d0
+
+  ! ----------------------------
+  ! Do the work for REFTRAJ
+  ! ----------------------------
+
+  if (use_traj.eqv..true.) then
+    open (unit=12,file='output_forces.frc')
+    do i = 1, reftraj
+        read(61,*) na
+        write(6,*) "there"
+        allocate(r_traj(3,na))
+        r_traj(:,:) = 0.d0
+
+        read(61,*) line,boxlxyz(1),boxlxyz(2),boxlxyz(3)
+        do j = 1, na
+            ! line will get the kind (O or H)
+            read(61,*) line, r_traj(:,j)
+            !write(6,*) r_traj(:,j)
+        enddo
+
+        call setup_ewald(na,boxlxyz)
+        ! Initial forces and momenta
+        ! ---------------------------
+
+        !call full_forces(r_traj,na,nb,v,vew,vlj,vint,vir,z,boxlxyz,dvdr,dvdr2)
+        !write(6,'(a,f10.5,a)') ' * Initial energy =', v/dble(na), ' E_h per atom'
+        !call sample(p,na,nb,mass,beta,irun,dt)
+
+        !call print_vmd_full(r,nb,na,nm,boxlxyz,12)
+        !call print_vmd_full_forces_bool(dvdr,dvdr2,nb,na,boxlxyz,12,.false.)
+
+        deallocate(r_traj)
+    enddo
+    close (unit=12)
+    close (unit=61)
+  endif
 
   ! Initial forces and momenta
   ! ---------------------------
