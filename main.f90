@@ -228,55 +228,58 @@ program qmd
 
   if (narg.eq.3) then
 
-     ! Read from file
+    ! Read from file
 
-     call getarg(3,filename)
-     open (61, file = filename)
-     if (reftraj.eq.0) then
-        ! Thirt argument is equilibrium file
-        use_traj = .false.
-        read(61,*) nm,na,nbr
+    call getarg(3,filename)
+    open (61, file = filename)
+    if (reftraj.eq.0) then
+    ! Thirt argument is equilibrium file
+    use_traj = .false.
+    read(61,*) nm,na,nbr
 
-        allocate(r(3,na,nb))
-        r(:,:,:) = 0.d0
+    allocate(r(3,na,nb))
+    r(:,:,:) = 0.d0
 
-        if (nb.eq.nbr) then
-            read(61,*) boxlxyz(1),boxlxyz(2),boxlxyz(3)
-            read(61,*) r(:,:,:)
-            write(6,*)'* Initialized from file: ',filename
-        else
-
-            ! This allows reading of classical equilibrated
-            ! configurations to start PI trajectories.
-
-            write(6,*) ' Note:// all beads will start at centroid'
-
-            ! Read first bead coordinate
-
-            read(61,*) boxlxyz(1),boxlxyz(2),boxlxyz(3)
-            do j = 1,na
-                read(61,*) r(1,j,1),r(2,j,1),r(3,j,1)
-            enddo
-
-            ! Copy to all other beads
-
-            do k = 2,nb
-                do j = 1,na
-                    r(1,j,k) = r(1,j,1)
-                    r(2,j,k) = r(2,j,1)
-                    r(3,j,k) = r(3,j,1)
-                enddo
-            enddo
-        endif
-        close (unit=61)
+    if (nb.eq.nbr) then
+      read(61,*) boxlxyz(1),boxlxyz(2),boxlxyz(3)
+      read(61,*) r(:,:,:)
+      write(6,*)'* Initialized from file: ',filename
     else
-        ! Thrit argument is trajectories file
-        write(6,*)
-        write(6,*) 'The reftraj is currently: ', reftraj
-        write(6,*) 'And is loaded from file: ', filename
-        write(6,*)
 
-        use_traj = .true.
+      ! This allows reading of classical equilibrated
+      ! configurations to start PI trajectories.
+
+      write(6,*) ' Note:// all beads will start at centroid'
+
+      ! Read first bead coordinate
+
+      read(61,*) boxlxyz(1),boxlxyz(2),boxlxyz(3)
+      do j = 1,na
+        read(61,*) r(1,j,1),r(2,j,1),r(3,j,1)
+      enddo
+
+      ! Copy to all other beads
+
+      do k = 2,nb
+        do j = 1,na
+          r(1,j,k) = r(1,j,1)
+          r(2,j,k) = r(2,j,1)
+          r(3,j,k) = r(3,j,1)
+        enddo
+      enddo
+    endif
+    close (unit=61)
+  else
+    ! Thrit argument is trajectories file
+    write(6,*)
+    write(6,*) 'The reftraj is currently: ', reftraj
+    write(6,*) 'And is loaded from file: ', filename
+    write(6,*)
+
+    call setup_box_size(lattice,rho,nm,boxlxyz,wmass)
+    na = 3*nm
+
+    use_traj = .true.
 
     endif
   else
@@ -386,7 +389,7 @@ program qmd
         do j = 1, na
             ! line will get the kind (O or H)
             read(61,*) line, r_traj(:,j)
-            write(6,*) r_traj(:,j)
+            !write(6,*) r_traj(:,j)
         enddo
 
         ! Assign masses and charges :
@@ -433,8 +436,9 @@ program qmd
     enddo
     close (unit=12)
     close (unit=61)
-  else
+  endif
 
+  if (use_traj.eqv..false.) then
     write (6,61) na,nm,boxlxyz(1),boxlxyz(2),boxlxyz(3),rcut
 61 format( /1x, 'System setup : ' /1x, & 
                 '---------------' /1x, &
