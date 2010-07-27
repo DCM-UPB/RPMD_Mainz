@@ -14,6 +14,7 @@ program qmd
   integer reftraj
   logical use_traj
   character*240 line
+  common /reftraj/ reftraj,use_traj
 
   integer nc_ice(3),nc_wat(3),nm_ice,nm_wat,nctot,nbond
   real(8) temp,rho,dtfs,ecut,test,beta,dt,dtps,boxmin,pres
@@ -22,7 +23,7 @@ program qmd
   real(8) qo,qh,alpha,oo_sig,oo_eps,oo_gam,theta,reoh,thetad
   real(8) apot,bpot,alp,alpb,wm,wh,omass,hmass,sig,boxlxyz(3),vdum
   real(8) box_ice(3),box_wat(3),rcut_old
-  real(8), allocatable :: mass(:),z(:),r(:,:,:),r_traj(:,:)
+  real(8), allocatable :: mass(:),z(:),r(:,:,:)
   real(8), allocatable :: p(:,:,:),dvdr(:,:,:),dvdr2(:,:,:)
   character*25 filename
   character*4 type
@@ -463,42 +464,32 @@ program qmd
   ! Do the work for REFTRAJ
   ! ----------------------------
 
-  if (use_traj.eqv..true.) then
-    open (unit=12,file='output_forces.frc')
-    do i = 1, reftraj
+  if (use_traj.eqv..false.) then
+    reftraj = 1
+  endif
+
+  do i = 1, reftraj
+    if (use_traj.eqv..true.) then
+      write(6,*) "** Configuration number:", i
       read(61,*) line
-      allocate(r_traj(3,na))
-      r_traj(:,:) = 0.d0
+      allocate(r(3,na,1))
+      r(:,:,:) = 0.d0
 
       ! setup_ewald is not needed, ecut, wrcut, walpha, rkmax and kmax
       !   are all independent of boxlxyz, so just set that
       read(61,*) line,boxlxyz(1),boxlxyz(2),boxlxyz(3)
+      boxlxyz(:) = boxlxyz(:) * (1.0d0/toA)
       do j = 1, na
         ! line will get the kind (O or H)
-        read(61,*) line, r_traj(:,j)
-        !write(6,*) r_traj(:,j)
+        read(61,*) line, r(:,j,1)
+        r(:,j,1) = r(:,j,1) * (1.0d0/toA)
       enddo
+    endif
 
-      ! Initial forces and momenta
-      ! ---------------------------
-
-      !call full_forces(r_traj,na,nb,v,vew,vlj,vint,vir,z,boxlxyz,dvdr,dvdr2)
-      !write(6,'(a,f10.5,a)') ' * Initial energy =', v/dble(na), ' E_h per atom'
-      !call sample(p,na,nb,mass,beta,irun,dt)
-
-      !call print_vmd_full(r,nb,na,nm,boxlxyz,12)
-      !call print_vmd_full_forces_bool(dvdr,dvdr2,nb,na,boxlxyz,12,.false.)
-
-      deallocate(r_traj)
-    enddo
-    close (unit=12)
-    close (unit=61)
-  endif
 
   ! Initial forces and momenta
   ! ---------------------------
 
-  if (use_traj.eqv..false.) then
     call full_forces(r,na,nb,v,vew,vlj,vint,vir,z,boxlxyz,dvdr,dvdr2)
     write(6,'(a,f10.5,a)') ' * Initial energy =', v/dble(na), ' E_h per atom'
     write(6,*)
@@ -507,17 +498,20 @@ program qmd
     ! Equilibration or Interface Melting
     ! -----------------------------------
 
-    if (lattice.ne.'INT') then
-      call md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
-                 dt,mass,irun)
-    else
-      call md_melt(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
+    if (use_traj.eqv..false.) then
+      if (lattice.ne.'INT') then
+        call md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
+                   dt,mass,irun)
+      else
+        call md_melt(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
                    dt,mass,irun,nm_ice)
+      endif
     endif
 
     ! Write Equilibration file to use for restarts
     ! ----------------------------------------------
 
+      write(6,*) "boxlength3", boxlxyz(:)
     open(10, file = 'eq.xyz')
     call print_structure(r,boxlxyz,nm,na,nb,10)
     close (unit=10)
@@ -528,6 +522,7 @@ program qmd
 
     ! Static Properties
     ! ------------------
+    call print_vmd_full_forces(dvdr,dvdr2,nb,na,boxlxyz,12)
   
     if (ng .gt. 0) then
       write(6,*) '* Sampling Static Properties '
@@ -547,7 +542,9 @@ program qmd
     endif
   
     deallocate(r)
-  endif
+  enddo ! end of traj do-loop
+
+  close (unit=61)
   deallocate(mass,z,p,dvdr,dvdr2)
 
 end program qmd

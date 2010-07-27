@@ -28,6 +28,9 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   external ran2
   common /ensemble/ ens
   common /beaddiabatic/ nbdf1,nbdf2
+  integer reftraj
+  logical use_traj
+  common /reftraj/ reftraj,use_traj
 
   nbaro = 0
   if (ens.eq.'NPT') then
@@ -188,6 +191,9 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
         endif
      endif
 
+     !   write(6,*) "afsfe",use_traj.eqv..true.
+     !if (use_traj.eqv..true. .or. mod(je,10).eq.0) then
+     !TODO TODO TODO
      if (mod(je,10).eq.0) then
         nrdf = nrdf + 1
 
@@ -374,7 +380,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
 
      ! Progress indicator
      
-     if (mod(je,(ng/10)).eq.0) then
+     if (ng.gt.1 .and.  mod(je,(ng/10)).eq.0) then
         write(6,*) 10*(je/(ng/10)), ' %'
      endif
      
