@@ -12,9 +12,11 @@ program qmd
 
   ! used for reftrj
   integer reftraj
+  ! r_traj(xyz,molecules,nb,reftraj)
+  real(8), allocatable :: r_traj(:,:,:,:),boxlxyz_traj(:,:)
   logical use_traj
   character*240 line
-  common /reftraj/ reftraj,use_traj
+  common /reftraj/ reftraj,use_traj,line!,r_traj
 
   integer nc_ice(3),nc_wat(3),nm_ice,nm_wat,nctot,nbond
   real(8) temp,rho,dtfs,ecut,test,beta,dt,dtps,boxmin,pres
@@ -233,8 +235,8 @@ program qmd
 
     call getarg(3,filename)
     open (61, file = filename)
-    if (reftraj.eq.0) then
-    ! Thirt argument is equilibrium file
+  if (reftraj.eq.0) then
+    ! Third argument is equilibrium file
     use_traj = .false.
     read(61,*) nm,na,nbr
 
@@ -271,16 +273,19 @@ program qmd
     endif
     close (unit=61)
   else
-    ! Thrit argument is trajectories file
+    ! Thrid argument is trajectories file
     write(6,*)
-    write(6,*) 'The reftraj is currently: ', reftraj
+    write(6,*) 'The current reftraj ID is: ', reftraj
     write(6,*) 'And is loaded from file: ', filename
     write(6,*)
+
+    use_traj = .true.
 
     call setup_box_size(lattice,rho,nm,boxlxyz,wmass)
     na = 3*nm
 
-    use_traj = .true.
+    allocate(r(3,na,nb))
+    r(:,:,:) = 0.d0
 
     endif
   else
@@ -359,12 +364,12 @@ program qmd
     open (unit=12,file='vmd_start.xyz')
       call print_vmd_full(r,nb,na,nm,boxlxyz,12)
     close (unit=12)
+  end if
 
-    ! structure is ready, we can initialize GLE thermostat
-    if (therm.eq.'GLE') then                       !!GLE
-      call therm_gle_init(ttau,na,nb,0.5*dt,irun,beta)      !!GLE
-    end if
-  endif
+  ! structure is ready, we can initialize GLE thermostat
+  if (therm.eq.'GLE') then                       !!GLE
+    call therm_gle_init(ttau,na,nb,0.5*dt,irun,beta)      !!GLE
+  end if
 
   ! Check Cut-off for LJ interactions
   ! ----------------------------
@@ -377,8 +382,7 @@ program qmd
 
   call setup_ewald(na,boxlxyz)
 
-  if (use_traj.eqv..false.) then
-    write (6,61) na,nm,boxlxyz(1),boxlxyz(2),boxlxyz(3),rcut
+  write (6,61) na,nm,boxlxyz(1),boxlxyz(2),boxlxyz(3),rcut
 61 format( /1x, 'System setup : ' /1x, & 
                 '---------------' /1x, &
                 'na     = ',i9,' atoms'/1x, &
@@ -388,6 +392,7 @@ program qmd
                 'boxlz  = ',f9.3,' bohr'/1x, &
                 'rcut   = ',f9.3,' bohr'/1x)
 
+  if (use_traj.eqv..false.) then
     write(6,*)'Operations to be performed : '
     write(6,*)'-----------------------------'
 
@@ -466,29 +471,31 @@ program qmd
 
   if (use_traj.eqv..false.) then
     reftraj = 1
+  else
+    allocate(r_traj(3,na,nb,reftraj))
+    r_traj(:,:,:,:) = 0.d0
+    allocate(boxlxyz_traj(3,reftraj))
+
+    do k = 1, nb
+      do i = 1, reftraj
+        read(61,*) line
+
+        ! setup_ewald is not needed, ecut, wrcut, walpha, rkmax and kmax
+        !   are all independent of boxlxyz, so just set that
+        read(61,*) line,boxlxyz_traj(:,i)
+        boxlxyz_traj(:,i) = boxlxyz_traj(:,i) * (1.0d0/toA)
+        do j = 1, na
+          ! line will get the kind (O or H)
+          read(61,*) line, r_traj(:,j,k,i)
+          r_traj(:,j,k,i) = r_traj(:,j,k,i) * (1.0d0/toA)
+        enddo
+      enddo
+    enddo
   endif
 
-  do i = 1, reftraj
-    if (use_traj.eqv..true.) then
-      write(6,*) "** Configuration number:", i
-      read(61,*) line
-      allocate(r(3,na,1))
-      r(:,:,:) = 0.d0
-
-      ! setup_ewald is not needed, ecut, wrcut, walpha, rkmax and kmax
-      !   are all independent of boxlxyz, so just set that
-      read(61,*) line,boxlxyz(1),boxlxyz(2),boxlxyz(3)
-      boxlxyz(:) = boxlxyz(:) * (1.0d0/toA)
-      do j = 1, na
-        ! line will get the kind (O or H)
-        read(61,*) line, r(:,j,1)
-        r(:,j,1) = r(:,j,1) * (1.0d0/toA)
-      enddo
-    endif
-
-
-  ! Initial forces and momenta
-  ! ---------------------------
+  if (use_traj.eqv..false.) then
+    ! Initial forces and momenta
+    ! ---------------------------
 
     call full_forces(r,na,nb,v,vew,vlj,vint,vir,z,boxlxyz,dvdr,dvdr2)
     write(6,'(a,f10.5,a)') ' * Initial energy =', v/dble(na), ' E_h per atom'
@@ -498,20 +505,17 @@ program qmd
     ! Equilibration or Interface Melting
     ! -----------------------------------
 
-    if (use_traj.eqv..false.) then
-      if (lattice.ne.'INT') then
-        call md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
-                   dt,mass,irun)
-      else
-        call md_melt(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
+    if (lattice.ne.'INT') then
+      call md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
+                 dt,mass,irun)
+    else
+      call md_melt(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
                    dt,mass,irun,nm_ice)
-      endif
     endif
 
     ! Write Equilibration file to use for restarts
     ! ----------------------------------------------
 
-      write(6,*) "boxlength3", boxlxyz(:)
     open(10, file = 'eq.xyz')
     call print_structure(r,boxlxyz,nm,na,nb,10)
     close (unit=10)
@@ -519,17 +523,33 @@ program qmd
     open (unit=12,file='vmd_eq.xyz')
     call print_vmd_full(r,nb,na,nm,boxlxyz,12)
     close (unit=12)
+  endif
+
 
     ! Static Properties
     ! ------------------
-    call print_vmd_full_forces(dvdr,dvdr2,nb,na,boxlxyz,12)
   
-    if (ng .gt. 0) then
-      write(6,*) '* Sampling Static Properties '
-      call sample(p,na,nb,mass,beta,irun,dt)
-      call md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta,&
-                     dt,mass,irun,itst,pt,pb,print)
+    if (use_traj.eqv..false.) then
+      call print_vmd_full_forces(dvdr,dvdr2,nb,na,boxlxyz,12)
+
+      if (ng .gt. 0) then
+        write(6,*) '* Sampling Static Properties '
+        call sample(p,na,nb,mass,beta,irun,dt)
+        call md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta,&
+                       dt,mass,irun,itst,pt,pb,print)
+      endif
+    else
+      do i = 1, reftraj
+        boxlxyz(:) = boxlxyz_traj(:,i)
+        r(:,:,:) = r_traj(:,:,:,i)
+
+        call md_static(1,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta,&
+                       dt,mass,irun,itst,pt,pb,print)
+      enddo
     endif
+
+
+  if (use_traj.eqv..false.) then
 
     ! Dynamical Properties
     ! ----------------------
@@ -540,11 +560,12 @@ program qmd
       call dynamics(nt,m,p,r,dvdr,dvdr2,na,nm,nb,boxlxyz,z,beta, &
                     dt,mass,irun,itcf,pt,pb,print)
     endif
-  
-    deallocate(r)
-  enddo ! end of traj do-loop
+  endif
 
   close (unit=61)
-  deallocate(mass,z,p,dvdr,dvdr2)
+  deallocate(r,mass,z,p,dvdr,dvdr2)
+  if (use_traj.eqv..true.) then
+    deallocate(r_traj)
+  endif
 
 end program qmd

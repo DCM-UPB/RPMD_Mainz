@@ -29,8 +29,11 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   common /ensemble/ ens
   common /beaddiabatic/ nbdf1,nbdf2
   integer reftraj
+  !,ref
+  !character*240 line
   logical use_traj
-  common /reftraj/ reftraj,use_traj
+  common /reftraj/ reftraj,use_traj!,line
+  !real(8), allocatable :: r_traj(:,:,:,:)
 
   nbaro = 0
   if (ens.eq.'NPT') then
@@ -117,6 +120,17 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   endif
   open (24,file='pressure_st.out')
   if (pt.gt.0) then
+    if (use_traj.eqv..true.) then
+     if (print(1).eq.1) then
+        open(32,file='vmd_traj.xyz',access= 'APPEND')
+     endif
+     if (print(2).eq.1) then
+        open(33,file='vmd_traj.frc',access= 'APPEND')
+     endif
+     if (print(3).eq.1) then
+        open(34,file='vmd_traj.vel',access= 'APPEND')
+     endif
+    else
      if (print(1).eq.1) then
         open(32,file='vmd_traj.xyz')
      endif
@@ -126,8 +140,29 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
      if (print(3).eq.1) then
         open(34,file='vmd_traj.vel')
      endif
+    endif
   endif
   if (pb.gt.0) then
+    if (use_traj.eqv..true.) then
+     if (print(1).eq.1) then
+        do ib = 1,nb
+           write(file_name,'(A,I0,A)') 'vmd_bead-',ib,'.xyz'
+           open(127+ib,file=file_name,access= 'APPEND')
+        enddo
+     endif
+     if (print(2).eq.1) then
+        do ib = 1,nb
+           write(file_name,'(A,I0,A)') 'vmd_bead-',ib,'.frc'
+           open(100127+ib,file=file_name,access= 'APPEND')
+        enddo
+     endif
+     if (print(3).eq.1) then
+        do ib = 1,nb
+           write(file_name,'(A,I0,A)') 'vmd_bead-',ib,'.vel'
+           open(200127+ib,file=file_name,access= 'APPEND')
+        enddo
+     endif
+    else
      if (print(1).eq.1) then
         do ib = 1,nb
            write(file_name,'(A,I0,A)') 'vmd_bead-',ib,'.xyz'
@@ -146,6 +181,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
            open(200127+ib,file=file_name)
         enddo
      endif
+    endif
   endif
 
   ! Evolve for ng steps, calculating properties
@@ -191,9 +227,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
         endif
      endif
 
-     !   write(6,*) "afsfe",use_traj.eqv..true.
-     !if (use_traj.eqv..true. .or. mod(je,10).eq.0) then
-     !TODO TODO TODO
+    if (use_traj.eqv..false.) then
      if (mod(je,10).eq.0) then
         nrdf = nrdf + 1
 
@@ -383,7 +417,8 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
      if (ng.gt.1 .and.  mod(je,(ng/10)).eq.0) then
         write(6,*) 10*(je/(ng/10)), ' %'
      endif
-     
+
+    endif
   enddo
   close(unit=20)
   close(unit=21)
@@ -422,6 +457,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
      endif
   endif
 
+  if (use_traj.eqv..false.) then
   tavang = tavang / dble(nrdf * nm * nb)
   tavoh = tavoh / dble(nrdf * nm * nb)
 
@@ -566,6 +602,8 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   write (6,*)'* Static properties calculation complete. '
   if (itst(1).eq.1) then
      call print_rdf(ihoo,ihoh,ihhh,na,boxlxyz,ng,nb,nrdf)
+  endif
+
   endif
 
   deallocate (dist,ihhh,ihoo,ihoh)
