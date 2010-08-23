@@ -29,11 +29,8 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   common /ensemble/ ens
   common /beaddiabatic/ nbdf1,nbdf2
   integer reftraj
-  !,ref
-  !character*240 line
   logical use_traj
-  common /reftraj/ reftraj,use_traj!,line
-  !real(8), allocatable :: r_traj(:,:,:,:)
+  common /reftraj/ use_traj,reftraj
 
   nbaro = 0
   if (ens.eq.'NPT') then

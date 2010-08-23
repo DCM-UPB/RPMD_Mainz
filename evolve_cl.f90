@@ -18,6 +18,14 @@ subroutine evolve_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
   character*4 type
   common /multiple_ts/ mts
   common /path_i/ om,type
+  logical use_traj
+  common /reftraj/ use_traj
+
+  real(8) boxlxyz_backup(3)
+  real(8), allocatable :: r_backup(:,:,:)
+  allocate (r_backup(3,na,nb))
+  r_backup(:,:,:) = r(:,:,:)
+  boxlxyz_backup(:) = boxlxyz(:)
 
   allocate (monod(3,4,nb),delp(3,nb))
   monod(:,:,:) = 0.d0
@@ -60,17 +68,21 @@ subroutine evolve_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
      endif
 
      ! Evaluate the high frequency force
+     r(:,:,:) = r_backup(:,:,:)
+     boxlxyz(:) = boxlxyz_backup(:)
 
      call forces(r,v_hf,dvdr2,nb,na,boxlxyz,z,vir_tmp,4)
      vir_hf(:,:) = vir_hf(:,:) + vir_tmp(:,:)
 
      p(:,:,:) = p(:,:,:)- halfdtsmall*dvdr2(:,:,:)
-     if (therm.eq.'PRG') then
-        call parinello_therm(p,mass,ttau,na,nb, &
-                             halfdtsmall,irun,beta)
-     else if (therm.eq.'PRL') then
-        call parinello_therm_loc(p,mass,ttau,na,nb, &
-                                 halfdtsmall,irun,beta)
+     if (use_traj.eqv..false.) then
+       if (therm.eq.'PRG') then
+          call parinello_therm(p,mass,ttau,na,nb, &
+                               halfdtsmall,irun,beta)
+       else if (therm.eq.'PRL') then
+          call parinello_therm_loc(p,mass,ttau,na,nb, &
+                                   halfdtsmall,irun,beta)
+       endif
      endif
   enddo
 
@@ -84,7 +96,7 @@ subroutine evolve_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
   ! (note:// COMs scaled therefore do not need to recalculate
   ! intramolecular forces as they remain the same)
 
-  if (nbaro.eq.1) then
+  if (use_traj.eqv..false. .and. nbaro.eq.1) then
      if (baro.eq.'BER') then
         call virial_ke(r,dvdr,dvdr2,tv,tvxyz,tq1,tq2,beta,na,nb)
         call beren_driver(vir,tv,tvxyz,dt,r,boxlxyz,na,nb)
@@ -98,6 +110,7 @@ subroutine evolve_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
 
   ! Evaluatation of the low frequency forces
 
+  r(:,:,:) = r_backup(:,:,:)
   call forces(r,v_lf,dvdr,nb,na,boxlxyz,z,vir_lf,1)
   v = v_lf + v_hf
 

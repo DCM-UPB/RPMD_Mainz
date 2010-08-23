@@ -227,6 +227,9 @@ subroutine print_vmd_full(r,nb,na,nm,boxlxyz,nunit)
   real(8) dh1x,dh2x,dh1y,dh2y,dh1z,dh2z
   real(8), allocatable :: rc(:,:)
 
+  logical use_traj
+  common /reftraj/ use_traj
+
   allocate (rc(3,na))
   rc(:,:) = 0.d0
 
@@ -252,28 +255,31 @@ subroutine print_vmd_full(r,nb,na,nm,boxlxyz,nunit)
   enddo
 
   ! Apply Boundary Conditions to oxygen positions:
+  ! when not in reftraj mode
 
-  do i = 0,nm-1
-     ! Vector of Hydrogen relative to Oxygen:
-     ni = 3*i+1
-     dh1x = rc(1,ni+1) - rc(1,ni)
-     dh2x = rc(1,ni+2) - rc(1,ni)
-     dh1y = rc(2,ni+1) - rc(2,ni)
-     dh2y = rc(2,ni+2) - rc(2,ni)
-     dh1z = rc(3,ni+1) - rc(3,ni)
-     dh2z = rc(3,ni+2) - rc(3,ni)
-     ! Shift Oxygen atoms into box:
-     rc(1,ni) = rc(1,ni) - xbox*(nint(rc(1,ni)*onboxlx)-0.5d0)
-     rc(2,ni) = rc(2,ni) - ybox*(nint(rc(2,ni)*onboxly)-0.5d0)
-     rc(3,ni) = rc(3,ni) - zbox*(nint(rc(3,ni)*onboxlz)-0.5d0)
-     ! Move Hydrogens relative to Oxygen:
-     rc(1,ni+1) = dh1x + rc(1,ni)
-     rc(1,ni+2) = dh2x + rc(1,ni)
-     rc(2,ni+1) = dh1y + rc(2,ni)
-     rc(2,ni+2) = dh2y + rc(2,ni)
-     rc(3,ni+1) = dh1z + rc(3,ni)
-     rc(3,ni+2) = dh2z + rc(3,ni)
-  enddo
+  if (use_traj.eqv..false.) then
+    do i = 0,nm-1
+      ! Vector of Hydrogen relative to Oxygen:
+      ni = 3*i+1
+      dh1x = rc(1,ni+1) - rc(1,ni)
+      dh2x = rc(1,ni+2) - rc(1,ni)
+      dh1y = rc(2,ni+1) - rc(2,ni)
+      dh2y = rc(2,ni+2) - rc(2,ni)
+      dh1z = rc(3,ni+1) - rc(3,ni)
+      dh2z = rc(3,ni+2) - rc(3,ni)
+      ! Shift Oxygen atoms into box:
+      rc(1,ni) = rc(1,ni) - xbox*(nint(rc(1,ni)*onboxlx)-0.5d0)
+      rc(2,ni) = rc(2,ni) - ybox*(nint(rc(2,ni)*onboxly)-0.5d0)
+      rc(3,ni) = rc(3,ni) - zbox*(nint(rc(3,ni)*onboxlz)-0.5d0)
+      ! Move Hydrogens relative to Oxygen:
+      rc(1,ni+1) = dh1x + rc(1,ni)
+      rc(1,ni+2) = dh2x + rc(1,ni)
+      rc(2,ni+1) = dh1y + rc(2,ni)
+      rc(2,ni+2) = dh2y + rc(2,ni)
+      rc(3,ni+1) = dh1z + rc(3,ni)
+      rc(3,ni+2) = dh2z + rc(3,ni)
+    enddo
+  endif
   write(nunit,*) na
   write(nunit,*) "BOX ", toA*xbox, toA*ybox, toA*zbox          !!GLE: PRINT ALSO BOX PARS, THIS IS A GOOD PLACE!!!
   do k = 1,na,3
@@ -383,6 +389,9 @@ subroutine print_vmd_bead(r,nb,ib,na,nm,boxlxyz,nunit)
    real(8) dh1x,dh2x,dh1y,dh2y,dh1z,dh2z
    real(8), allocatable :: rb(:,:)
 
+   logical use_traj
+   common /reftraj/ use_traj
+
    allocate (rb(3,na))
    rb(:,:) = 0.d0
 
@@ -403,28 +412,31 @@ subroutine print_vmd_bead(r,nb,ib,na,nm,boxlxyz,nunit)
    enddo
 
   ! Apply Boundary Conditions to oxygen positions:
+  ! when not in reftraj mode
 
-  do i = 0,nm-1
-     ! Vector of Hydrogen relative to Oxygen:
-     ni = 3*i+1
-     dh1x = rb(1,ni+1) - rb(1,ni)
-     dh2x = rb(1,ni+2) - rb(1,ni)
-     dh1y = rb(2,ni+1) - rb(2,ni)
-     dh2y = rb(2,ni+2) - rb(2,ni)
-     dh1z = rb(3,ni+1) - rb(3,ni)
-     dh2z = rb(3,ni+2) - rb(3,ni)
-     ! Shift Oxygen atoms into box:
-     rb(1,ni) = rb(1,ni) - xbox*(nint(rb(1,ni)*onboxlx)-0.5d0)
-     rb(2,ni) = rb(2,ni) - ybox*(nint(rb(2,ni)*onboxly)-0.5d0)
-     rb(3,ni) = rb(3,ni) - zbox*(nint(rb(3,ni)*onboxlz)-0.5d0)
-     ! Move Hydrogens relative to Oxygen:
-     rb(1,ni+1) = dh1x + rb(1,ni)
-     rb(1,ni+2) = dh2x + rb(1,ni)
-     rb(2,ni+1) = dh1y + rb(2,ni)
-     rb(2,ni+2) = dh2y + rb(2,ni)
-     rb(3,ni+1) = dh1z + rb(3,ni)
-     rb(3,ni+2) = dh2z + rb(3,ni)
-  enddo
+  if (use_traj.eqv..false.) then
+    do i = 0,nm-1
+      ! Vector of Hydrogen relative to Oxygen:
+      ni = 3*i+1
+      dh1x = rb(1,ni+1) - rb(1,ni)
+      dh2x = rb(1,ni+2) - rb(1,ni)
+      dh1y = rb(2,ni+1) - rb(2,ni)
+      dh2y = rb(2,ni+2) - rb(2,ni)
+      dh1z = rb(3,ni+1) - rb(3,ni)
+      dh2z = rb(3,ni+2) - rb(3,ni)
+      ! Shift Oxygen atoms into box:
+      rb(1,ni) = rb(1,ni) - xbox*(nint(rb(1,ni)*onboxlx)-0.5d0)
+      rb(2,ni) = rb(2,ni) - ybox*(nint(rb(2,ni)*onboxly)-0.5d0)
+      rb(3,ni) = rb(3,ni) - zbox*(nint(rb(3,ni)*onboxlz)-0.5d0)
+      ! Move Hydrogens relative to Oxygen:
+      rb(1,ni+1) = dh1x + rb(1,ni)
+      rb(1,ni+2) = dh2x + rb(1,ni)
+      rb(2,ni+1) = dh1y + rb(2,ni)
+      rb(2,ni+2) = dh2y + rb(2,ni)
+      rb(3,ni+1) = dh1z + rb(3,ni)
+      rb(3,ni+2) = dh2z + rb(3,ni)
+    enddo
+  endif
   write(nunit,*) na
   write(nunit,*) "BOX ", toA*xbox, toA*ybox, toA*zbox          !!GLE: PRINT ALSO BOX PARS, THIS IS A GOOD PLACE!!!
   do k = 1,na,3

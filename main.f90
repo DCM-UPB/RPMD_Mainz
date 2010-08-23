@@ -16,7 +16,7 @@ program qmd
   real(8), allocatable :: r_traj(:,:,:,:),boxlxyz_traj(:,:)
   logical use_traj
   character*240 line
-  common /reftraj/ reftraj,use_traj,line!,r_traj
+  common /reftraj/ use_traj,reftraj,line!,r_traj
 
   integer nc_ice(3),nc_wat(3),nm_ice,nm_wat,nctot,nbond
   real(8) temp,rho,dtfs,ecut,test,beta,dt,dtps,boxmin,pres
@@ -52,6 +52,8 @@ program qmd
   common /structure/ iamrigid
   common /ensemble/ ens
   common /constraint/ nctot,nbond
+
+  use_traj = .false.
 
   write(6,*)  '-------------------------------------------'
   write(6,*)  '            Flexible Water Code            '
@@ -237,7 +239,6 @@ program qmd
     open (61, file = filename)
   if (reftraj.eq.0) then
     ! Third argument is equilibrium file
-    use_traj = .false.
     read(61,*) nm,na,nbr
 
     allocate(r(3,na,nb))
@@ -289,7 +290,6 @@ program qmd
 
     endif
   else
-     use_traj = .false.
      if (lattice.eq.'INT') then
 
         ! Setup an ice-water interface
