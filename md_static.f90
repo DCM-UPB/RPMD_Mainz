@@ -1,3 +1,74 @@
+subroutine md_static_prepare_traj(nb,pt,pb,print)
+  use thermostat
+  use barostat
+  implicit none
+  include 'globals.inc'
+  integer nb,pt,pb
+  integer print(3)
+  integer ib
+  character*128 file_name
+  if (pt.gt.0) then
+    if (print(1).eq.1) then
+      open(32,file='vmd_traj.xyz',STATUS='replace')
+    endif
+    if (print(2).eq.1) then
+      open(33,file='vmd_traj.frc',STATUS='replace')
+    endif
+    if (print(3).eq.1) then
+      open(34,file='vmd_traj.vel',STATUS='replace')
+    endif
+  endif
+  if (pb.gt.0) then
+     if (print(1).eq.1) then
+        do ib = 1,nb
+           write(file_name,'(A,I0,A)') 'vmd_bead-',ib,'.xyz'
+           open(127+ib,file=file_name,STATUS='replace')
+        enddo
+     endif
+     if (print(2).eq.1) then
+        do ib = 1,nb
+           write(file_name,'(A,I0,A)') 'vmd_bead-',ib,'.frc'
+           open(100127+ib,file=file_name,STATUS='replace')
+        enddo
+     endif
+     if (print(3).eq.1) then
+        do ib = 1,nb
+           write(file_name,'(A,I0,A)') 'vmd_bead-',ib,'.vel'
+           open(200127+ib,file=file_name,STATUS='replace')
+        enddo
+     endif
+  endif
+
+  if (pt.gt.0) then
+     if (print(1).eq.1) then
+       close(unit=32)
+     endif
+     if (print(2).eq.1) then
+       close(unit=33)
+     endif
+     if (print(3).eq.1) then
+       close(unit=34)
+     endif
+  endif
+  if (pb.gt.0) then
+     if (print(1).eq.1) then
+        do ib = 1,nb
+           close(unit=127+ib)
+        enddo
+     endif
+     if (print(2).eq.1) then
+        do ib = 1,nb
+           close(unit=100127+ib)
+        enddo
+     endif
+     if (print(3).eq.1) then
+        do ib = 1,nb
+           close(unit=200127+ib)
+        enddo
+     endif
+  endif
+end subroutine md_static_prepare_traj
+
 subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
                      dt,mass,irun,itst,pt,pb,print)
   use thermostat

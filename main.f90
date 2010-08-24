@@ -539,6 +539,7 @@ program qmd
                        dt,mass,irun,itst,pt,pb,print)
       endif
     else
+      call md_static_prepare_traj(nb,pt,pb,print)
       do i = 1, reftraj
         boxlxyz(:) = boxlxyz_traj(:,i)
         r(:,:,:) = r_traj(:,:,:,i)
