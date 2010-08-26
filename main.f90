@@ -282,12 +282,35 @@ program qmd
 
     use_traj = .true.
 
-    call setup_box_size(lattice,rho,nm,boxlxyz,wmass)
+    !call setup_box_size(lattice,rho,nm,boxlxyz,wmass)
+    nm = ncellxyz(1)*ncellxyz(2)*ncellxyz(3)
     na = 3*nm
 
     allocate(r(3,na,nb))
     r(:,:,:) = 0.d0
 
+    allocate(r_traj(3,na,nb,reftraj))
+    r_traj(:,:,:,:) = 0.d0
+    allocate(boxlxyz_traj(3,reftraj))
+
+    do k = 1, nb
+      do i = 1, reftraj
+        read(61,*) line
+
+        ! setup_ewald is not needed, ecut, wrcut, walpha, rkmax and kmax
+        !   are all independent of boxlxyz, so just set that
+        read(61,*) line,boxlxyz_traj(:,i)
+        boxlxyz_traj(:,i) = boxlxyz_traj(:,i) * (1.0d0/toA)
+        do j = 1, na
+          ! line will get the kind (O or H)
+          read(61,*) line, r_traj(:,j,k,i)
+          r_traj(:,j,k,i) = r_traj(:,j,k,i) * (1.0d0/toA)
+        enddo
+      enddo
+    enddo
+    ! use physical default values
+    boxlxyz(:) = boxlxyz_traj(:,1)
+    r(:,:,:)   = r_traj(:,:,:,1)
     endif
   else
      if (lattice.eq.'INT') then
@@ -464,34 +487,6 @@ program qmd
   p(:,:,:) = 0.d0
   dvdr(:,:,:) = 0.d0
   dvdr2(:,:,:) = 0.d0
-
-  ! ----------------------------
-  ! Do the work for REFTRAJ
-  ! ----------------------------
-
-  if (use_traj.eqv..false.) then
-    reftraj = 1
-  else
-    allocate(r_traj(3,na,nb,reftraj))
-    r_traj(:,:,:,:) = 0.d0
-    allocate(boxlxyz_traj(3,reftraj))
-
-    do k = 1, nb
-      do i = 1, reftraj
-        read(61,*) line
-
-        ! setup_ewald is not needed, ecut, wrcut, walpha, rkmax and kmax
-        !   are all independent of boxlxyz, so just set that
-        read(61,*) line,boxlxyz_traj(:,i)
-        boxlxyz_traj(:,i) = boxlxyz_traj(:,i) * (1.0d0/toA)
-        do j = 1, na
-          ! line will get the kind (O or H)
-          read(61,*) line, r_traj(:,j,k,i)
-          r_traj(:,j,k,i) = r_traj(:,j,k,i) * (1.0d0/toA)
-        enddo
-      enddo
-    enddo
-  endif
 
   if (use_traj.eqv..false.) then
     ! Initial forces and momenta
