@@ -24,8 +24,6 @@ subroutine evolve_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
   real(8) boxlxyz_backup(3)
   real(8), allocatable :: r_backup(:,:,:)
   allocate (r_backup(3,na,nb))
-  r_backup(:,:,:) = r(:,:,:)
-  boxlxyz_backup(:) = boxlxyz(:)
 
   allocate (monod(3,4,nb),delp(3,nb))
   monod(:,:,:) = 0.d0
@@ -59,6 +57,10 @@ subroutine evolve_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
      p(:,:,:) = p(:,:,:)- halfdtsmall*dvdr2(:,:,:)
 
      ! Free ring polymer evolution
+     if (use_traj.eqv..true.) then
+       r_backup(:,:,:) = r(:,:,:)
+       boxlxyz_backup(:) = boxlxyz(:)
+     endif
 
      if (type.eq.'ACMD') then
         call freerp_acmd (p,r,dtsmall,mass,na,nb,beta,irun,om, &
@@ -68,8 +70,10 @@ subroutine evolve_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
      endif
 
      ! Evaluate the high frequency force
-     r(:,:,:) = r_backup(:,:,:)
-     boxlxyz(:) = boxlxyz_backup(:)
+     if (use_traj.eqv..true.) then
+       r(:,:,:) = r_backup(:,:,:)
+       boxlxyz(:) = boxlxyz_backup(:)
+     endif
 
      call forces(r,v_hf,dvdr2,nb,na,boxlxyz,z,vir_tmp,4)
      vir_hf(:,:) = vir_hf(:,:) + vir_tmp(:,:)
@@ -110,7 +114,6 @@ subroutine evolve_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
 
   ! Evaluatation of the low frequency forces
 
-  r(:,:,:) = r_backup(:,:,:)
   call forces(r,v_lf,dvdr,nb,na,boxlxyz,z,vir_lf,1)
   v = v_lf + v_hf
 
