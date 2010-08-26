@@ -526,70 +526,70 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   endif
 
   if (use_traj.eqv..false.) then
-  tavang = tavang / dble(nrdf * nm * nb)
-  tavoh = tavoh / dble(nrdf * nm * nb)
+    tavang = tavang / dble(nrdf * nm * nb)
+    tavoh = tavoh / dble(nrdf * nm * nb)
 
-  tavdip = tavdip / dble(nrdf)
-  tavdipx = tavdipx / dble(nrdf)
-  tavdipy = tavdipy / dble(nrdf)
-  tavdipz = tavdipz / dble(nrdf)
-  tavdip2 = tavdip2 / dble(nrdf)
+    tavdip = tavdip / dble(nrdf)
+    tavdipx = tavdipx / dble(nrdf)
+    tavdipy = tavdipy / dble(nrdf)
+    tavdipz = tavdipz / dble(nrdf)
+    tavdip2 = tavdip2 / dble(nrdf)
 
-  tave  = tave / dble(nrdf * nm)
-  tavee = tavee / dble(nrdf * nm)
-  tq1ave = tq1ave / dble(nrdf * nm)
-  tq2ave = tq2ave / dble(nrdf * nm)
-  tq1aee = tq1aee / dble(nrdf * nm)
-  tq2aee = tq2aee / dble(nrdf * nm)
+    tave  = tave / dble(nrdf * nm)
+    tavee = tavee / dble(nrdf * nm)
+    tq1ave = tq1ave / dble(nrdf * nm)
+    tq2ave = tq2ave / dble(nrdf * nm)
+    tq1aee = tq1aee / dble(nrdf * nm)
+    tq2aee = tq2aee / dble(nrdf * nm)
   
-  vave = vave / dble(ng * nm)
-  v1ave = v1ave / dble(ng * nm)
-  v2ave = v2ave / dble(ng * nm)
-  v3ave = v3ave / dble(ng * nm)
-  v1eeav = v1eeav / dble(nrdf * nm)
-  v2eeav = v2eeav / dble(nrdf * nm)
-  v3eeav = v3eeav / dble(nrdf * nm)
+    vave = vave / dble(ng * nm)
+    v1ave = v1ave / dble(ng * nm)
+    v2ave = v2ave / dble(ng * nm)
+    v3ave = v3ave / dble(ng * nm)
+    v1eeav = v1eeav / dble(nrdf * nm)
+    v2eeav = v2eeav / dble(nrdf * nm)
+    v3eeav = v3eeav / dble(nrdf * nm)
 
-  pav = pav / dble(nrdf)
-  if (ens.eq.'NPT') then
-     volav = volav / dble(nrdf)
-     xav = xav / dble(nrdf)
-     yav = yav / dble(nrdf)
-     zav = zav / dble(nrdf)
-     pvav = pvav / dble(nrdf * nm)
-  endif
+    pav = pav / dble(nrdf)
+    if (ens.eq.'NPT') then
+      volav = volav / dble(nrdf)
+      xav = xav / dble(nrdf)
+      yav = yav / dble(nrdf)
+      zav = zav / dble(nrdf)
+      pvav = pvav / dble(nrdf * nm)
+    endif
 
-  rgoav = rgoav / dble(nrdf)
-  rghav = rghav / dble(nrdf)
-  rgcmav = rgcmav / dble(nrdf)
+    rgoav = rgoav / dble(nrdf)
+    rghav = rghav / dble(nrdf)
+    rgcmav = rgcmav / dble(nrdf)
 
-  ! Print average KE and V
+    ! Print average KE and V
 
-  write(6,*)
-  write(6,*)'* Energies '
-  write(6,*)'----------------------------'
-  if (nb.eq.1) then
-     write(6,*)'<V> per molecule = ',toKjmol*vave,' KJ mol^-1'
-     write(6,*)'<V>_inter = ', toKjmol*v1ave,' KJ mol^-1'
-     write(6,*)'<V>_intra = ', toKjmol*v2ave,' KJ mol^-1'
-     write(6,*)
-!     write(6,*)'<Virial KE> per molecule = ',toKjmol*tave, &
+    write(6,*)
+    write(6,*)'* Energies '
+    write(6,*)'----------------------------'
+    if (nb.eq.1) then
+      write(6,*)'<V> per molecule = ',toKjmol*vave,' KJ mol^-1'
+      write(6,*)'<V>_inter = ', toKjmol*v1ave,' KJ mol^-1'
+      write(6,*)'<V>_intra = ', toKjmol*v2ave,' KJ mol^-1'
+      write(6,*)
+!      write(6,*)'<Virial KE> per molecule = ',toKjmol*tave, &
 !                                           ' KJ mol^-1'
-     write(6,*)'<Virial KE> per molecule = ',toK*tave*(2.0/3.0),' K ' 
-     write(6,*)'<Virial KE>_inter = ', toKjmol*tq1ave,' KJ mol^-1'
-     write(6,*)'<Virial KE>_intra = ', toKjmol*tq2ave,' KJ mol^-1'
-  else
-     write(6,*)'<V> per molecule = ',toKjmol*vave
-     write(6,*)'<V>_ew = ', toKjmol*v1ave,' KJ mol^-1'
-     write(6,*)'<V>_lj = ', toKjmol*v2ave,' KJ mol^-1'
-     write(6,*)'<V>_inter = ', toKjmol*(v1ave+v2ave),' KJ mol^-1'
-     write(6,*)'<V>_intra = ', toKjmol*v3ave,' KJ mol^-1'
-     write(6,*)
-     write(6,*)'<Virial KE> per molecule = ',toK*tave*(2.0/3.0),' K '
-!     write(6,*)'<Virial KE> per molecule = ',toKjmol*tave,' Kjmol-1 '
-     write(6,*)'<Virial KE>_inter = ', toKjmol*tq1ave,' KJ mol^-1'
-     write(6,*)'<Virial KE>_intra = ', toKjmol*tq2ave,' KJ mol^-1'
-     if (itst(2).eq.1) then
+      write(6,*)'<Virial KE> per molecule = ',toK*tave*(2.0/3.0),' K ' 
+      write(6,*)'<Virial KE>_inter = ', toKjmol*tq1ave,' KJ mol^-1'
+      write(6,*)'<Virial KE>_intra = ', toKjmol*tq2ave,' KJ mol^-1'
+    else
+      write(6,*)'<V> per molecule = ',toKjmol*vave
+      write(6,*)'<V>_ew = ', toKjmol*v1ave,' KJ mol^-1'
+      write(6,*)'<V>_lj = ', toKjmol*v2ave,' KJ mol^-1'
+      write(6,*)'<V>_inter = ', toKjmol*(v1ave+v2ave),' KJ mol^-1'
+      write(6,*)'<V>_intra = ', toKjmol*v3ave,' KJ mol^-1'
+      write(6,*)
+      write(6,*)'<Virial KE> per molecule = ',toK*tave*(2.0/3.0),' K '
+!      write(6,*)'<Virial KE> per molecule = ',toKjmol*tave,' Kjmol-1 '
+      write(6,*)'<Virial KE>_inter = ', toKjmol*tq1ave,' KJ mol^-1'
+      write(6,*)'<Virial KE>_intra = ', toKjmol*tq2ave,' KJ mol^-1'
+      if (itst(2).eq.1) then
         if ((nbdf1.gt.0).or.(nbdf2.gt.0)) then
            write(6,*)
            write(6,*)'* Energies using Exact Estimators '
@@ -609,68 +609,68 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
            write(6,*)'<Virial KE>_intra = ', toKjmol*tq2aee, &
                 ' KJ mol^-1'
         endif
-     endif
-  endif
+      endif
+    endif
 
-  ! Print Radius of Gyration
+    ! Print Radius of Gyration
 
-  if (nb.gt.1) then
-     write(6,*)
-     write(6,*)'* Radius of Gyration '
-     write(6,*)'----------------------------'
-     write(6,*)'RMS Rg Hydrogen = ', dsqrt(rghav),' bohr'
-     write(6,*)'RMS Rg Oxygen   = ', dsqrt(rgoav),' bohr'
-     write(6,*)'RMS Rg COM      = ', dsqrt(rgcmav),' bohr'
-  endif
+    if (nb.gt.1) then
+      write(6,*)
+      write(6,*)'* Radius of Gyration '
+      write(6,*)'----------------------------'
+      write(6,*)'RMS Rg Hydrogen = ', dsqrt(rghav),' bohr'
+      write(6,*)'RMS Rg Oxygen   = ', dsqrt(rgoav),' bohr'
+      write(6,*)'RMS Rg COM      = ', dsqrt(rgcmav),' bohr'
+    endif
 
-  ! Pressure, volume and enthalpy
+    ! Pressure, volume and enthalpy
 
-  write(6,*)
-  write(6,*) '* Volume,Pressure and Enthalpy'
-  write(6,*) '-------------------------------'
-  write(6,*) ' Average Pressure = ', pav*tobar, ' bar'
-  if (ens.eq.'NPT') then
-     denav = (dble(nm)*wmass*tokgcm3)/volav
-     write(6,*) ' Average Volume   = ', volav,' bohr^3'
-     write(6,*) ' Average Length x = ', xav ,' bohr'
-     write(6,*) ' Average Length y = ', yav ,' bohr'
-     write(6,*) ' Average Length z = ', zav ,' bohr'
-     write(6,*) ' Average Density  = ', denav,' g cm^-3'
-     write(6,*) ' Average PV       = ', tokjmol*pvav, ' KJ mol^-1'
-  endif
-  write(6,*)
+    write(6,*)
+    write(6,*) '* Volume,Pressure and Enthalpy'
+    write(6,*) '-------------------------------'
+    write(6,*) ' Average Pressure = ', pav*tobar, ' bar'
+    if (ens.eq.'NPT') then
+      denav = (dble(nm)*wmass*tokgcm3)/volav
+      write(6,*) ' Average Volume   = ', volav,' bohr^3'
+      write(6,*) ' Average Length x = ', xav ,' bohr'
+      write(6,*) ' Average Length y = ', yav ,' bohr'
+      write(6,*) ' Average Length z = ', zav ,' bohr'
+      write(6,*) ' Average Density  = ', denav,' g cm^-3'
+      write(6,*) ' Average PV       = ', tokjmol*pvav, ' KJ mol^-1'
+    endif
+    write(6,*)
 
-  ! Dielectric constant
+    ! Dielectric constant
 
-  vol = boxlxyz(1)*boxlxyz(2)*boxlxyz(3)
-  fac = (4.d0*pi*beta)/(3.d0*vol)
-  tavdipsq = tavdipx**2 + tavdipy**2 + tavdipz**2
-  eps = 1.d0 + fac * (tavdip2-tavdipsq)
-  write(6,*)' * Dielectric constant '
-  write(6,*)'-------------------------------------------'
-  write(6,*) ' <M_x>               =  ', dconv*tavdipx,' Debye'
-  write(6,*) ' <M_y>               =  ', dconv*tavdipy, ' Debye'
-  write(6,*) ' <M_z>               =  ', dconv*tavdipz, ' Debye'
-  write(6,*) ' <M>^2               =  ', dconv2*tavdipsq,' Debye'
-  write(6,*) ' <M^2>               =  ', dconv2*tavdip2, ' Debye'
-  write(6,*) ' Dielectric constant =  ', eps
-  write(6,*)
+    vol = boxlxyz(1)*boxlxyz(2)*boxlxyz(3)
+    fac = (4.d0*pi*beta)/(3.d0*vol)
+    tavdipsq = tavdipx**2 + tavdipy**2 + tavdipz**2
+    eps = 1.d0 + fac * (tavdip2-tavdipsq)
+    write(6,*)' * Dielectric constant '
+    write(6,*)'-------------------------------------------'
+    write(6,*) ' <M_x>               =  ', dconv*tavdipx,' Debye'
+    write(6,*) ' <M_y>               =  ', dconv*tavdipy, ' Debye'
+    write(6,*) ' <M_z>               =  ', dconv*tavdipz, ' Debye'
+    write(6,*) ' <M>^2               =  ', dconv2*tavdipsq,' Debye'
+    write(6,*) ' <M^2>               =  ', dconv2*tavdip2, ' Debye'
+    write(6,*) ' Dielectric constant =  ', eps
+    write(6,*)
 
-  ! Print molecular properties
+    ! Print molecular properties
 
-  write(6,*)'* Molecular Properties: '
-  write(6,*)'-------------------------------------------'
-  write(6,*)' Average O-H bond length =  ',tavoh*ToA,' Angstroms '
-  write(6,*)' Average bond angle      =  ',tavang,' degrees '
-  write(6,*)' Average dipole          =  ',dconv*tavdip,' Debye '
-  write(6,*)
+    write(6,*)'* Molecular Properties: '
+    write(6,*)'-------------------------------------------'
+    write(6,*)' Average O-H bond length =  ',tavoh*ToA,' Angstroms '
+    write(6,*)' Average bond angle      =  ',tavang,' degrees '
+    write(6,*)' Average dipole          =  ',dconv*tavdip,' Debye '
+    write(6,*)
 
-  ! Print the RDF output
+    ! Print the RDF output
 
-  write (6,*)'* Static properties calculation complete. '
-  if (itst(1).eq.1) then
-     call print_rdf(ihoo,ihoh,ihhh,na,boxlxyz,ng,nb,nrdf)
-  endif
+    write (6,*)'* Static properties calculation complete. '
+    if (itst(1).eq.1) then
+      call print_rdf(ihoo,ihoh,ihhh,na,boxlxyz,ng,nb,nrdf)
+    endif
 
   endif
 

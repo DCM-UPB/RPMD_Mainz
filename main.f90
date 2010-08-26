@@ -237,80 +237,80 @@ program qmd
 
     call getarg(3,filename)
     open (61, file = filename)
-  if (reftraj.eq.0) then
-    ! Third argument is equilibrium file
-    read(61,*) nm,na,nbr
+    if (reftraj.eq.0) then
+      ! Third argument is equilibrium file
+      read(61,*) nm,na,nbr
 
-    allocate(r(3,na,nb))
-    r(:,:,:) = 0.d0
+      allocate(r(3,na,nb))
+      r(:,:,:) = 0.d0
 
-    if (nb.eq.nbr) then
-      read(61,*) boxlxyz(1),boxlxyz(2),boxlxyz(3)
-      read(61,*) r(:,:,:)
-      write(6,*)'* Initialized from file: ',filename
-    else
+      if (nb.eq.nbr) then
+        read(61,*) boxlxyz(1),boxlxyz(2),boxlxyz(3)
+        read(61,*) r(:,:,:)
+        write(6,*)'* Initialized from file: ',filename
+      else
 
-      ! This allows reading of classical equilibrated
-      ! configurations to start PI trajectories.
+        ! This allows reading of classical equilibrated
+        ! configurations to start PI trajectories.
 
-      write(6,*) ' Note:// all beads will start at centroid'
+        write(6,*) ' Note:// all beads will start at centroid'
 
-      ! Read first bead coordinate
+        ! Read first bead coordinate
 
-      read(61,*) boxlxyz(1),boxlxyz(2),boxlxyz(3)
-      do j = 1,na
-        read(61,*) r(1,j,1),r(2,j,1),r(3,j,1)
-      enddo
-
-      ! Copy to all other beads
-
-      do k = 2,nb
+        read(61,*) boxlxyz(1),boxlxyz(2),boxlxyz(3)
         do j = 1,na
-          r(1,j,k) = r(1,j,1)
-          r(2,j,k) = r(2,j,1)
-          r(3,j,k) = r(3,j,1)
+          read(61,*) r(1,j,1),r(2,j,1),r(3,j,1)
+        enddo
+
+        ! Copy to all other beads
+
+        do k = 2,nb
+          do j = 1,na
+            r(1,j,k) = r(1,j,1)
+            r(2,j,k) = r(2,j,1)
+            r(3,j,k) = r(3,j,1)
+          enddo
+        enddo
+      endif
+      close (unit=61)
+    else
+      ! Thrid argument is trajectories file
+      write(6,*)
+      write(6,*) 'The current reftraj ID is: ', reftraj
+      write(6,*) 'And is loaded from file: ', filename
+      write(6,*)
+
+      use_traj = .true.
+
+      !call setup_box_size(lattice,rho,nm,boxlxyz,wmass)
+      nm = ncellxyz(1)*ncellxyz(2)*ncellxyz(3)
+      na = 3*nm
+
+      allocate(r(3,na,nb))
+      r(:,:,:) = 0.d0
+
+      allocate(r_traj(3,na,nb,reftraj))
+      r_traj(:,:,:,:) = 0.d0
+      allocate(boxlxyz_traj(3,reftraj))
+
+      do k = 1, nb
+        do i = 1, reftraj
+          read(61,*) line
+
+          ! setup_ewald is not needed, ecut, wrcut, walpha, rkmax and kmax
+          !   are all independent of boxlxyz, so just set that
+          read(61,*) line,boxlxyz_traj(:,i)
+          boxlxyz_traj(:,i) = boxlxyz_traj(:,i) * (1.0d0/toA)
+          do j = 1, na
+            ! line will get the kind (O or H)
+            read(61,*) line, r_traj(:,j,k,i)
+            r_traj(:,j,k,i) = r_traj(:,j,k,i) * (1.0d0/toA)
+          enddo
         enddo
       enddo
-    endif
-    close (unit=61)
-  else
-    ! Thrid argument is trajectories file
-    write(6,*)
-    write(6,*) 'The current reftraj ID is: ', reftraj
-    write(6,*) 'And is loaded from file: ', filename
-    write(6,*)
-
-    use_traj = .true.
-
-    !call setup_box_size(lattice,rho,nm,boxlxyz,wmass)
-    nm = ncellxyz(1)*ncellxyz(2)*ncellxyz(3)
-    na = 3*nm
-
-    allocate(r(3,na,nb))
-    r(:,:,:) = 0.d0
-
-    allocate(r_traj(3,na,nb,reftraj))
-    r_traj(:,:,:,:) = 0.d0
-    allocate(boxlxyz_traj(3,reftraj))
-
-    do k = 1, nb
-      do i = 1, reftraj
-        read(61,*) line
-
-        ! setup_ewald is not needed, ecut, wrcut, walpha, rkmax and kmax
-        !   are all independent of boxlxyz, so just set that
-        read(61,*) line,boxlxyz_traj(:,i)
-        boxlxyz_traj(:,i) = boxlxyz_traj(:,i) * (1.0d0/toA)
-        do j = 1, na
-          ! line will get the kind (O or H)
-          read(61,*) line, r_traj(:,j,k,i)
-          r_traj(:,j,k,i) = r_traj(:,j,k,i) * (1.0d0/toA)
-        enddo
-      enddo
-    enddo
-    ! use physical default values
-    boxlxyz(:) = boxlxyz_traj(:,1)
-    r(:,:,:)   = r_traj(:,:,:,1)
+      ! use physical default values
+      boxlxyz(:) = boxlxyz_traj(:,1)
+      r(:,:,:)   = r_traj(:,:,:,1)
     endif
   else
      if (lattice.eq.'INT') then
@@ -524,25 +524,25 @@ program qmd
     ! Static Properties
     ! ------------------
   
-    if (use_traj.eqv..false.) then
-      call print_vmd_full_forces(dvdr,dvdr2,nb,na,boxlxyz,12)
+  if (use_traj.eqv..false.) then
+    call print_vmd_full_forces(dvdr,dvdr2,nb,na,boxlxyz,12)
 
-      if (ng .gt. 0) then
-        write(6,*) '* Sampling Static Properties '
-        call sample(p,na,nb,mass,beta,irun,dt)
-        call md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta,&
-                       dt,mass,irun,itst,pt,pb,print)
-      endif
-    else
-      call md_static_prepare_traj(nb,pt,pb,print)
-      do i = 1, reftraj
-        boxlxyz(:) = boxlxyz_traj(:,i)
-        r(:,:,:) = r_traj(:,:,:,i)
-
-        call md_static(1,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta,&
-                       dt,mass,irun,itst,pt,pb,print)
-      enddo
+    if (ng .gt. 0) then
+      write(6,*) '* Sampling Static Properties '
+      call sample(p,na,nb,mass,beta,irun,dt)
+      call md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta,&
+                     dt,mass,irun,itst,pt,pb,print)
     endif
+  else
+    call md_static_prepare_traj(nb,pt,pb,print)
+    do i = 1, reftraj
+      boxlxyz(:) = boxlxyz_traj(:,i)
+      r(:,:,:) = r_traj(:,:,:,i)
+
+      call md_static(1,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta,&
+                     dt,mass,irun,itst,pt,pb,print)
+    enddo
+  endif
 
 
   if (use_traj.eqv..false.) then
