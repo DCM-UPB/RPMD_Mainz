@@ -1,7 +1,8 @@
 MF=	Makefile
 FC=	gfortran
-LIBS = -lfftw3 
-FFLAGS=	-O3 -static -L.
+LIBS =  -L/usr/local/cluster/fftw3//fftw3_gcc-64/lib/ -lfftw3 
+#LIBS = -lfftw3 
+FFLAGS=	-O3
 LFLAGS=	$(FFLAGS)
 
 EXE= qmd.x
