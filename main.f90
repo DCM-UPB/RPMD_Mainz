@@ -7,7 +7,7 @@ program qmd
   !--------------------------------------------------------------------
   !Classical/RPMD/PACMD Simulation Program for Flexible water
   !--------------------------------------------------------------------
-  integer nt,ne,nb,m,ng,pt,pb,irun,nm,na,narg,iargc,nbdf1,nbdf2,i,j,k
+  integer nt,ne,nb,m,ng,npre_eq,pt,pb,irun,nm,na,narg,iargc,nbdf1,nbdf2,i,j,k
   integer nbr,mts,nlat,itcf(3),itst(2),ncellxyz(3),print(3)
 
   ! used for reftrj
@@ -34,7 +34,8 @@ program qmd
   external gaussian
 
   namelist/input/ens,temp,pres,rho,lattice,iamcub,dtfs, &
-                 ecut,nt,ne,nb,m,ng,print,reftraj,pt,pb,ncellxyz,irun,itcf,itst,rcut, &
+                 ecut,nt,ne,npre_eq,nb,m,ng,print,reftraj,pt,pb, &
+                 ncellxyz,irun,itcf,itst,rcut, &
                  type,therm,ttaufs,baro,taufs,mts,om,nbdf1,nbdf2,sig
   namelist/param/ wmass,omass,hmass,qo,alpha,oo_sig,oo_eps,oo_gam, &
                   thetad,reoh,apot,bpot,alp,alpb,wm,wh
@@ -52,8 +53,10 @@ program qmd
   common /structure/ iamrigid
   common /ensemble/ ens
   common /constraint/ nctot,nbond
+  common /inp/ npre_eq
 
   use_traj = .false.
+  npre_eq = 0
 
   write(6,*)  '-------------------------------------------'
   write(6,*)  '            Flexible Water Code            '

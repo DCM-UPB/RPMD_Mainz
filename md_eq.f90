@@ -7,7 +7,7 @@ subroutine md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   ! ------------------------------------------------------------------
   ! Equilibration Routine
   ! ------------------------------------------------------------------
-  integer na,nb,ne,irun,jout,je,k,k1,k2,i,nm,nprog,nbaro
+  integer na,nb,ne,npre_eq,irun,jout,je,k,k1,k2,i,nm,nprog,nbaro
   integer jq,nq,nqprog,nden,nctot,nbond
   real(8) boxlxyz(3),beta,v,v1,v2,v3,dt,px,py,pz
   real(8) p(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb),z(na),mass(na)
@@ -22,6 +22,7 @@ subroutine md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   common /ensemble/ ens
   common /symmetry/ iamcub
   common /constraint/ nctot,nbond
+  common /inp/ npre_eq
 
   nbaro = 0
   if (ens.eq.'NPT') then
@@ -63,6 +64,10 @@ subroutine md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
      open (unit=45,file='E_pre_eq.out')
 
      nq = min(20000,ne/10)
+     if (npre_eq.ne.0) then
+        write(6,*) 'Using npre_eq pre-equilibration steps from input:', npre_eq
+        nq = npre_eq
+     endif
      nqprog = max(nq/10,1)
      dtqt = 1.d-3*dble(nq)*dtfs
      write(6,'(a,f6.2,a)') ' * NVT pre-equilibration for: ', &
