@@ -7,7 +7,7 @@ subroutine evolve_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
   ! ------------------------------------------------------------------
   ! Classical evolution using multiple time step method
   ! ------------------------------------------------------------------
-  integer na,nb,irun,i,mts,nbaro
+  integer na,nb,irun,i,mts,nbaro,reftraj
   real(8) p(3,na,nb), r(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb)
   real(8) vir(3,3), vir_lf(3,3),vir_hf(3,3),vir_tmp(3,3)
   real(8) halfdtsmall,dt,boxlxyz(3),tvxyz(3),v,beta,dtsmall
@@ -19,7 +19,7 @@ subroutine evolve_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
   common /multiple_ts/ mts
   common /path_i/ om,type
   logical use_traj
-  common /reftraj/ use_traj
+  common /reftraj/ use_traj,reftraj
 
   real(8) boxlxyz_backup(3)
   real(8), allocatable :: r_backup(:,:,:)
@@ -57,7 +57,7 @@ subroutine evolve_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
      p(:,:,:) = p(:,:,:)- halfdtsmall*dvdr2(:,:,:)
 
      ! Free ring polymer evolution
-     if (use_traj.eqv..true.) then
+     if (reftraj.ne.0) then
        r_backup(:,:,:) = r(:,:,:)
        boxlxyz_backup(:) = boxlxyz(:)
      endif
@@ -70,7 +70,7 @@ subroutine evolve_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
      endif
 
      ! Evaluate the high frequency force
-     if (use_traj.eqv..true.) then
+     if (reftraj.ne.0) then
        r(:,:,:) = r_backup(:,:,:)
        boxlxyz(:) = boxlxyz_backup(:)
      endif
@@ -79,7 +79,7 @@ subroutine evolve_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
      vir_hf(:,:) = vir_hf(:,:) + vir_tmp(:,:)
 
      p(:,:,:) = p(:,:,:)- halfdtsmall*dvdr2(:,:,:)
-     if (use_traj.eqv..false.) then
+     if (reftraj.eq.0) then
        if (therm.eq.'PRG') then
           call parinello_therm(p,mass,ttau,na,nb, &
                                halfdtsmall,irun,beta)
@@ -100,7 +100,7 @@ subroutine evolve_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
   ! (note:// COMs scaled therefore do not need to recalculate
   ! intramolecular forces as they remain the same)
 
-  if (use_traj.eqv..false. .and. nbaro.eq.1) then
+  if (reftraj.eq.0 .and. nbaro.eq.1) then
      if (baro.eq.'BER') then
         call virial_ke(r,dvdr,dvdr2,tv,tvxyz,tq1,tq2,beta,na,nb)
         call beren_driver(vir,tv,tvxyz,dt,r,boxlxyz,na,nb)

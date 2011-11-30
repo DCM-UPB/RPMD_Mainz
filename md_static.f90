@@ -188,7 +188,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   endif
   open (24,file='pressure_st.out')
   if (pt.gt.0) then
-    if (use_traj.eqv..true.) then
+    if (reftraj.ne.0) then
      if (print(1).eq.1) then
         open(32,file='vmd_traj.xyz',access= 'APPEND')
      endif
@@ -211,7 +211,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
     endif
   endif
   if (pb.gt.0) then
-    if (use_traj.eqv..true.) then
+    if (reftraj.ne.0) then
      if (print(1).eq.1) then
         do ib = 1,nb
            write(file_name,'(A,I0,A)') 'vmd_bead-',ib,'.xyz'
@@ -295,7 +295,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
         endif
      endif
 
-    if (use_traj.eqv..false.) then
+    if (reftraj.eq.0) then
      if (mod(je,10).eq.0) then
         nrdf = nrdf + 1
 
@@ -525,7 +525,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
      endif
   endif
 
-  if (use_traj.eqv..false.) then
+  if (reftraj.eq.0) then
     tavang = tavang / dble(nrdf * nm * nb)
     tavoh = tavoh / dble(nrdf * nm * nb)
 

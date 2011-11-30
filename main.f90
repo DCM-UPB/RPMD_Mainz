@@ -56,6 +56,7 @@ program qmd
   common /inp/ npre_eq
 
   use_traj = .false.
+  reftraj = 0
   npre_eq = 0
 
   write(6,*)  '-------------------------------------------'
@@ -386,7 +387,7 @@ program qmd
   
   ! Write a vmd output of starting structure
 
-  if (use_traj.eqv..false.) then
+  if (reftraj.eq.0) then
     open (unit=12,file='vmd_start.xyz')
       call print_vmd_full(r,nb,na,nm,boxlxyz,12)
     close (unit=12)
@@ -418,7 +419,7 @@ program qmd
                 'boxlz  = ',f9.3,' bohr'/1x, &
                 'rcut   = ',f9.3,' bohr'/1x)
 
-  if (use_traj.eqv..false.) then
+  if (reftraj.eq.0) then
     write(6,*)'Operations to be performed : '
     write(6,*)'-----------------------------'
 
@@ -491,7 +492,7 @@ program qmd
   dvdr(:,:,:) = 0.d0
   dvdr2(:,:,:) = 0.d0
 
-  if (use_traj.eqv..false.) then
+  if (reftraj.eq.0) then
     ! Initial forces and momenta
     ! ---------------------------
 
@@ -527,7 +528,7 @@ program qmd
     ! Static Properties
     ! ------------------
   
-  if (use_traj.eqv..false.) then
+  if (reftraj.eq.0) then
     call print_vmd_full_forces(dvdr,dvdr2,nb,na,boxlxyz,12)
 
     if (ng .gt. 0) then
@@ -548,7 +549,7 @@ program qmd
   endif
 
 
-  if (use_traj.eqv..false.) then
+  if (reftraj.eq.0) then
 
     ! Dynamical Properties
     ! ----------------------
@@ -563,7 +564,7 @@ program qmd
 
   close (unit=61)
   deallocate(r,mass,z,p,dvdr,dvdr2)
-  if (use_traj.eqv..true.) then
+  if (reftraj.ne.0) then
     deallocate(r_traj)
   endif
 
