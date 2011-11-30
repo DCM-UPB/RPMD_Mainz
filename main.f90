@@ -14,9 +14,8 @@ program qmd
   integer reftraj
   ! r_traj(xyz,molecules,nb,reftraj)
   real(8), allocatable :: r_traj(:,:,:,:),boxlxyz_traj(:,:)
-  logical use_traj
   character*240 line
-  common /reftraj/ use_traj,reftraj,line!,r_traj
+  common /reftraj/ reftraj,line!,r_traj
 
   integer nc_ice(3),nc_wat(3),nm_ice,nm_wat,nctot,nbond
   real(8) temp,rho,dtfs,ecut,test,beta,dt,dtps,boxmin,pres
@@ -55,7 +54,6 @@ program qmd
   common /constraint/ nctot,nbond
   common /inp/ npre_eq
 
-  use_traj = .false.
   reftraj = 0
   npre_eq = 0
 
@@ -283,8 +281,6 @@ program qmd
       write(6,*) 'The current reftraj ID is: ', reftraj
       write(6,*) 'And is loaded from file: ', filename
       write(6,*)
-
-      use_traj = .true.
 
       !call setup_box_size(lattice,rho,nm,boxlxyz,wmass)
       nm = ncellxyz(1)*ncellxyz(2)*ncellxyz(3)

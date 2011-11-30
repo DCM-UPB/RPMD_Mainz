@@ -100,8 +100,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   common /ensemble/ ens
   common /beaddiabatic/ nbdf1,nbdf2
   integer reftraj
-  logical use_traj
-  common /reftraj/ use_traj,reftraj
+  common /reftraj/ reftraj
 
   nbaro = 0
   if (ens.eq.'NPT') then

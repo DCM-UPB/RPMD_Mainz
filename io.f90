@@ -227,8 +227,8 @@ subroutine print_vmd_full(r,nb,na,nm,boxlxyz,nunit)
   real(8) dh1x,dh2x,dh1y,dh2y,dh1z,dh2z
   real(8), allocatable :: rc(:,:)
 
-  logical use_traj
-  common /reftraj/ use_traj
+  integer reftraj
+  common /reftraj/ reftraj
 
   allocate (rc(3,na))
   rc(:,:) = 0.d0
@@ -257,7 +257,7 @@ subroutine print_vmd_full(r,nb,na,nm,boxlxyz,nunit)
   ! Apply Boundary Conditions to oxygen positions:
   ! when not in reftraj mode
 
-  if (use_traj.eqv..false.) then
+  if (reftraj.eq.0) then
     do i = 0,nm-1
       ! Vector of Hydrogen relative to Oxygen:
       ni = 3*i+1
@@ -389,8 +389,8 @@ subroutine print_vmd_bead(r,nb,ib,na,nm,boxlxyz,nunit)
    real(8) dh1x,dh2x,dh1y,dh2y,dh1z,dh2z
    real(8), allocatable :: rb(:,:)
 
-   logical use_traj
-   common /reftraj/ use_traj
+   integer reftraj
+   common /reftraj/ reftraj
 
    allocate (rb(3,na))
    rb(:,:) = 0.d0
@@ -414,7 +414,7 @@ subroutine print_vmd_bead(r,nb,ib,na,nm,boxlxyz,nunit)
   ! Apply Boundary Conditions to oxygen positions:
   ! when not in reftraj mode
 
-  if (use_traj.eqv..false.) then
+  if (reftraj.eq.0) then
     do i = 0,nm-1
       ! Vector of Hydrogen relative to Oxygen:
       ni = 3*i+1

@@ -18,8 +18,7 @@ subroutine evolve_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
   character*4 type
   common /multiple_ts/ mts
   common /path_i/ om,type
-  logical use_traj
-  common /reftraj/ use_traj,reftraj
+  common /reftraj/ reftraj
 
   real(8) boxlxyz_backup(3)
   real(8), allocatable :: r_backup(:,:,:)
