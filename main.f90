@@ -363,7 +363,6 @@ program qmd
   ! Assign masses and charges :
   ! -----------------------------
 
-  write(6,*) na, "natom"
   allocate (mass(na),z(na))
   z(:) = 0.d0
   mass(:) = 0.d0
@@ -400,11 +399,6 @@ program qmd
   boxmin = min(boxlxyz(1),boxlxyz(2),boxlxyz(3))
   rcut = min(rcut,0.5d0*boxmin)
 
-  ! Ewald parameters
-  ! ------------------
-
-  call setup_ewald(na,boxlxyz)
-
   write (6,61) na,nm,boxlxyz(1),boxlxyz(2),boxlxyz(3),rcut
 61 format( /1x, 'System setup : ' /1x, & 
                 '---------------' /1x, &
@@ -414,6 +408,11 @@ program qmd
                 'boxly  = ',f9.3,' bohr'/1x, &
                 'boxlz  = ',f9.3,' bohr'/1x, &
                 'rcut   = ',f9.3,' bohr'/1x)
+
+  ! Ewald parameters
+  ! ------------------
+
+  call setup_ewald(na,boxlxyz)
 
   if (reftraj.eq.0) then
     write(6,*)'Operations to be performed : '
