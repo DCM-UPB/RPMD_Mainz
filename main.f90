@@ -524,7 +524,6 @@ program qmd
     ! ------------------
   
   if (reftraj.eq.0) then
-    call print_vmd_full_forces(dvdr,dvdr2,nb,na,boxlxyz,12)
 
     if (ng .gt. 0) then
       write(6,*) '* Sampling Static Properties '
