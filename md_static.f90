@@ -298,33 +298,6 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
      if (mod(je,10).eq.0) then
         nrdf = nrdf + 1
 
-        if (itst(2).eq.1) then
-           if ((nbdf1.gt.0).or.(nbdf2.gt.0)) then
-              
-              ! Exact Estimators for Beadiabatic
-
-              ! Ewald
-              call forces(r,v1,dvdre,nb,na,boxlxyz,z,vir,2)
-              call virial_ke_ee(r,dvdre,tv,tqe,beta,na,nb)
-              
-              ! LJ
-              call forces(r,v2,dvdre,nb,na,boxlxyz,z,vir,3)
-              call virial_ke_ee(r,dvdre,tv,tq1,beta,na,nb)
-              tq1 = tq1 + tqe
-
-              ! Intramolecular
-              call forces(r,v3,dvdre,nb,na,boxlxyz,z,vir,4)
-              call virial_ke_ee(r,dvdre,tv,tq2,beta,na,nb)
-              tv = tv + tq1
-              tavee = tavee + tv
-              tq1aee = tq1aee + tq1
-              tq2aee = tq2aee + tq2
-              v1eeav = v1eeav + v1
-              v2eeav = v2eeav + v2
-              v3eeav = v3eeav + v3
-           endif
-        endif
-        
         ! Potential and Virial KE
         
         call virial_ke(r,dvdr,dvdr2,tv,tvxyz,tq1,tq2,beta,na,nb,mass)  !!!! CHANGED
@@ -356,6 +329,33 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
               write(23,*) je*dtps,tokjmol*pres*vol,vol
               denc = (dble(nm)*wmass*tokgcm3)/vol
               write(25,*) je*dtps,denc
+           endif
+        endif
+
+        if (itst(2).eq.1) then
+           if ((nbdf1.gt.0).or.(nbdf2.gt.0)) then
+
+              ! Exact Estimators for Beadiabatic
+
+              ! Ewald
+              call forces(r,v1,dvdre,nb,na,boxlxyz,z,vir,2)
+              call virial_ke_ee(r,dvdre,tv,tqe,beta,na,nb)
+
+              ! LJ
+              call forces(r,v2,dvdre,nb,na,boxlxyz,z,vir,3)
+              call virial_ke_ee(r,dvdre,tv,tq1,beta,na,nb)
+              tq1 = tq1 + tqe
+
+              ! Intramolecular
+              call forces(r,v3,dvdre,nb,na,boxlxyz,z,vir,4)
+              call virial_ke_ee(r,dvdre,tv,tq2,beta,na,nb)
+              tv = tv + tq1
+              tavee = tavee + tv
+              tq1aee = tq1aee + tq1
+              tq2aee = tq2aee + tq2
+              v1eeav = v1eeav + v1
+              v2eeav = v2eeav + v2
+              v3eeav = v3eeav + v3
            endif
         endif
 
