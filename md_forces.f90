@@ -359,7 +359,7 @@ subroutine full_forces(r,na,nb,v,vew,voo,vint,vir,z,boxlxyz, &
 
   ! Sum ewald and O-O forces if needed
 
-  if ((nbdf1.le.0).or.(nbdf2.le.0)) then
+  if ((nb.eq.1).or.(nbdf1.le.0).or.(nbdf2.le.0)) then
      dvdr(:,:,:) = dvdr(:,:,:) + dvdrl(:,:,:)
   endif
 
