@@ -89,7 +89,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   real(8) vave,tave,tq1ave,tq2ave,tv,tvxyz(3),tavee,tq1aee,tq2aee
   real(8) tavdip,tavdipx,tavdipy,tavdipz,tavdip2,tavdipsq,eps
   real(8) dipx,dipy,dipz,dip2,dipm,dtps
-  real(8) boxlx,boxly,boxlz,onboxx,onboxy,onboxz,boxmax
+  real(8) boxmax
   real(8) rgh,rgo,rgcm,rghav,rgoav,rgcmav,tq1,tq2,tqe
   real(8) v1,v2,v3,v1ave,v2ave,v1eeav,v2eeav,v3ave,v3eeav,denc
   real(8) pres,volav,pav,pvav,xav,yav,zav,denav,wmass
@@ -112,11 +112,8 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
 
   ! Define some useful local constants and zero-out arrays
 
-  boxmax = max(boxlxyz(1),boxlxyz(2),boxlxyz(3))
-
   pi = dacos(-1.d0)
   dtps = 1d-3*dt/tofs
-  delr = dble(0.5d0*boxmax/dble(imaxbin))
   dmu = 4.d0 / imaxbin
   dconv = (ToA * 1d-10 * echarge) / ToDebye
   dconv2 = dconv*dconv
@@ -126,12 +123,6 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   no = na/3
   wmass = mass(1)+mass(2)+mass(3)
   
-  boxlx = boxlxyz(1)
-  boxly = boxlxyz(2)
-  boxlz = boxlxyz(3)
-  onboxx = 1.d0/boxlx
-  onboxy = 1.d0/boxly
-  onboxz = 1.d0/boxlz
 
   ihoo(:) = 0
   ihoh(:) = 0
@@ -409,9 +400,9 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
                     dx = r(1,i,k) - r(1,j,k)
                     dy = r(2,i,k) - r(2,j,k)
                     dz = r(3,i,k) - r(3,j,k)
-                    dx = dx-boxlx*nint(onboxx*dx)
-                    dy = dy-boxly*nint(onboxy*dy)
-                    dz = dz-boxlz*nint(onboxz*dz)
+                    dx = dx-boxlxyz(1)*nint(dx/boxlxyz(1))
+                    dy = dy-boxlxyz(2)*nint(dy/boxlxyz(2))
+                    dz = dz-boxlxyz(3)*nint(dz/boxlxyz(3))
                     dist(i,j) = dsqrt(dx*dx+dy*dy+dz*dz)
                     dist(j,i) = dist(i,j)
                  enddo
@@ -423,6 +414,9 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
 
               ! calculate and bin O - O pair distances
 
+
+              boxmax = max(boxlxyz(1),boxlxyz(2),boxlxyz(3))
+              delr = dble(0.5d0*boxmax/dble(imaxbin))
               do i = 1, no - 1
                  do j = i + 1, no
                     ii = 3*i - 2
