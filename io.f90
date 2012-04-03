@@ -322,7 +322,8 @@ subroutine print_vmd_full_forces(dvdr,dvdr2,nb,na,boxlxyz,nunit)
         frc(j,i) = frc(j,i)/dble(nb)     
      enddo
   enddo
-
+	 ! print out force and not dvdr
+	frc(:,:) = - frc(:,:)
   write(nunit,*) na
   write(nunit,*) "BOX ", toA*xbox, toA*ybox, toA*zbox          !!GLE: PRINT ALSO BOX PARS, THIS IS A GOOD PLACE!!!
   do k = 1,na,3
@@ -474,7 +475,8 @@ subroutine print_vmd_bead_forces(dvdr,dvdr2,nb,ib,na,boxlxyz,nunit)
          frc(j,i) = dvdr(j,i,ib) + dvdr2(j,i,ib)
       enddo
    enddo
-
+	 ! print out force and not dvdr
+	frc(:,:) = - frc(:,:)
   write(nunit,*) na
   write(nunit,*) "BOX ", toA*xbox, toA*ybox, toA*zbox          !!GLE: PRINT ALSO BOX PARS, THIS IS A GOOD PLACE!!!
   do k = 1,na,3

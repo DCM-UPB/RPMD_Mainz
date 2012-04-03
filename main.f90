@@ -2,6 +2,7 @@ program qmd
   use thermostat
   use barostat
   use gle
+  use f_env
   implicit none
   include 'globals.inc'
   !--------------------------------------------------------------------
@@ -10,23 +11,24 @@ program qmd
   integer nt,ne,nb,m,ng,npre_eq,pt,pb,irun,nm,na,narg,iargc,nbdf1,nbdf2,i,j,k
   integer nbr,mts,nlat,itcf(3),itst(2),ncellxyz(3),print(3)
 
-  ! used for reftrj
-  integer reftraj
+  ! used for reftrj and RPMD-DFT
+  integer reftraj,rpmddft,ierr,rpmddfthelp
+	character*35 CP2K_path
   ! r_traj(xyz,molecules,nb,reftraj)
   real(8), allocatable :: r_traj(:,:,:,:),boxlxyz_traj(:,:)
   character*240 line
-  common /reftraj/ reftraj,line!,r_traj
-
+  common /reftraj/ reftraj,line
+	
   integer nc_ice(3),nc_wat(3),nm_ice,nm_wat,nctot,nbond
   real(8) temp,rho,dtfs,ecut,test,beta,dt,dtps,boxmin,pres
   real(8) teqm,tsim,trdf,gaussian,wmass,rcut,om,ttaufs
-  real(8) taufs,v,vew,vlj,vint,pi,vir(3,3)
+  real(8) taufs,v,vew,vlj,vint,pi,vir(3,3),cell(3,3)
   real(8) qo,qh,alpha,oo_sig,oo_eps,oo_gam,theta,reoh,thetad
   real(8) apot,bpot,alp,alpb,wm,wh,omass,hmass,sig,boxlxyz(3),vdum
   real(8) box_ice(3),box_wat(3),rcut_old
   real(8), allocatable :: mass(:),z(:),r(:,:,:)
   real(8), allocatable :: p(:,:,:),dvdr(:,:,:),dvdr2(:,:,:)
-  character*25 filename
+	character*25 filename
   character*4 type
   character*3 lattice,ens,therm_backup
   logical iamcub,iamrigid
@@ -35,7 +37,7 @@ program qmd
   namelist/input/ens,temp,pres,rho,lattice,iamcub,dtfs, &
                  ecut,nt,ne,npre_eq,nb,m,ng,print,reftraj,pt,pb, &
                  ncellxyz,irun,itcf,itst,rcut, &
-                 type,therm,ttaufs,baro,taufs,mts,om,nbdf1,nbdf2,sig
+                 type,therm,ttaufs,baro,taufs,mts,om,nbdf1,nbdf2,sig,rpmddft,CP2K_path
   namelist/param/ wmass,omass,hmass,qo,alpha,oo_sig,oo_eps,oo_gam, &
                   thetad,reoh,apot,bpot,alp,alpb,wm,wh
 
@@ -53,9 +55,12 @@ program qmd
   common /ensemble/ ens
   common /constraint/ nctot,nbond
   common /inp/ npre_eq
-
+ 	common /RPMDDFT/ rpmddft
+	
+	rpmddft = 0
   reftraj = 0
   npre_eq = 0
+	cell(:,:) = 0.d0
 
   write(6,*)  '-------------------------------------------'
   write(6,*)  '            Flexible Water Code            '
@@ -77,7 +82,12 @@ program qmd
   open(60,file=filename)
   read(60,input)
   close (unit=60)
-  
+
+
+
+
+
+
   ! Parameters File
 
   call getarg (2,filename)
@@ -244,6 +254,7 @@ program qmd
       read(61,*) nm,na,nbr
 
       allocate(r(3,na,nb))
+			
       r(:,:,:) = 0.d0
 
       if (nb.eq.nbr) then
@@ -487,11 +498,20 @@ program qmd
   dvdr(:,:,:) = 0.d0
   dvdr2(:,:,:) = 0.d0
 
+	! Allocate force enviroment id:
+	! -----------------------
+	allocate(f_env_id(nb))
+
+	! set rpmddft = 0 because classical equilibration, set it back to old value later
+	rpmddfthelp = rpmddft
+	rpmddft = 0
+
+
   if (reftraj.eq.0) then
     ! Initial forces and momenta
     ! ---------------------------
 
-    call full_forces(r,na,nb,v,vew,vlj,vint,vir,z,boxlxyz,dvdr,dvdr2)
+    call full_forces(r,na,nb,v,vew,vlj,vint,vir,z,boxlxyz,dvdr,dvdr2)  
     write(6,'(a,f10.5,a)') ' * Initial energy =', v/dble(na), ' E_h per atom'
     write(6,*)
     call sample(p,na,nb,mass,beta,irun,dt)
@@ -513,12 +533,33 @@ program qmd
     open(10, file = 'eq.xyz')
     call print_structure(r,boxlxyz,nm,na,nb,10)
     close (unit=10)
-
     open (unit=12,file='vmd_eq.xyz')
     call print_vmd_full(r,nb,na,nm,boxlxyz,12)
     close (unit=12)
   endif
 
+
+	! set rpmddft back to old value
+	rpmddft = rpmddfthelp
+
+
+		!	RPMD-DFT
+		! -----------------------
+	if (rpmddft.eq.1) then
+		call cp_init_cp2k(1,ierr)	
+
+
+
+		do i = 1, nb ! if nb > 1 set up nb versions of cp2k f_env_id = i 
+			call cp_create_fenv(f_env_id(i),CP2K_path,"out.out",ierr)
+			! set cell in CP2K
+			cell(1,1) = boxlxyz(1)
+			cell(2,2) = boxlxyz(2)
+			cell(3,3) = boxlxyz(3)
+			call cp_set_cell(f_env_id(i),cell,ierr) 
+			if (ierr.ne.0) STOP "set_cell"
+		enddo
+	endif
 
     ! Static Properties
     ! ------------------

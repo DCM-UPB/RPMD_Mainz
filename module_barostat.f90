@@ -32,17 +32,17 @@ contains
     !
     ! compi is the isothermal compressibility of water in atomic units
     ! ------------------------------------------------------------------
-    integer na,nm,nb,i,j,k,ii,jj,kk,nacc,nmove
+    integer na,nm,nb,i,j,k,ii,jj,kk,nacc,nmove,rpmddft
     real(8) r(3,na,nb),boxlxyz(3),scale(3),pres(3),patm,dt
     real(8) vir(3,3),tvxyz(3),compi,bstat,dv,ptail,vol
     character*3 baro
     real(8) oo_eps,oo_sig,oo_gam,rcut
     real(8), allocatable :: rcm(:,:)
     common /oo_param/ oo_eps,oo_sig,oo_gam,rcut
-    
+    common /RPMDDFT/ rpmddft
     ! Current pressure in x, y and z directions
     
-    if (oo_gam.eq.0.d0) then
+    if (oo_gam.eq.0.d0.and.rpmddft.eq.0) then !!! LJ correction nicht bei RPMDDFT
        call pres_lj_tail(ptail,boxlxyz,na)
     else
        ptail = 0.d0
@@ -153,7 +153,7 @@ contains
 
     if (ran2(irun,0.d0,1.d0) .lt. thresh) then
 
-      call full_forces(r,na,nb,eo,vew,vlj,vint,vir,z,boxlxyz, &
+      call full_forces(r,na,nb,eo,vew,vlj,vint,vir,z,boxlxyz, &   !dvdr und dvdr2 wird neu berechnet
                        dvdr,dvdr2)
 
        nmove = nmove + 1
@@ -190,7 +190,7 @@ contains
        ! Calculate new forces and energy
 
        call full_forces(rn,na,nb,en,vew,vlj,vint,virn,z,boxlxyzn, &
-                        dvdrn,dvdr2n)
+                        dvdrn,dvdr2n)                                 !!!!!!!!!!!!!!!!11 hier sieht man, dass dvdr und dvdr2 immer neu berechnet werden bei full_forces call
 
        ! Acceptance test
 

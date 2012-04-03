@@ -99,8 +99,9 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   external ran2
   common /ensemble/ ens
   common /beaddiabatic/ nbdf1,nbdf2
-  integer reftraj
+  integer reftraj,rpmddft
   common /reftraj/ reftraj
+	common /RPMDDFT/ rpmddft
 
   nbaro = 0
   if (ens.eq.'NPT') then
@@ -110,8 +111,13 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   allocate (dist(na,na),dvdre(3,na,nb))
   allocate (ihhh(imaxbin),ihoo(imaxbin),ihoh(imaxbin))
 
-  ! Define some useful local constants and zero-out arrays
-
+    ! Define some useful local constants and zero-out arrays
+!!!!!!!!!!!!!!!!!!!!!!!!!!!! ich will alles Nullen am Anfang, was nicht reingeht
+	v = 0.d0
+  v1 = 0.d0
+	v2 = 0.d0
+	v3 = 0.d0
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   pi = dacos(-1.d0)
   dtps = 1d-3*dt/tofs
   dmu = 4.d0 / imaxbin
@@ -323,15 +329,15 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
            endif
         endif
 
-        if (itst(2).eq.1) then
+         if ((itst(2).eq.1).and.(rpmddft.eq.0)) then   ! hier müsste ich was ändern für RPMD-DFT
            if ((nbdf1.gt.0).or.(nbdf2.gt.0)) then
-
+              
               ! Exact Estimators for Beadiabatic
 
               ! Ewald
               call forces(r,v1,dvdre,nb,na,boxlxyz,z,vir,2)
               call virial_ke_ee(r,dvdre,tv,tqe,beta,na,nb)
-
+              
               ! LJ
               call forces(r,v2,dvdre,nb,na,boxlxyz,z,vir,3)
               call virial_ke_ee(r,dvdre,tv,tq1,beta,na,nb)

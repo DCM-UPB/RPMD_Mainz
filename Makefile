@@ -1,8 +1,12 @@
 MF=	Makefile
 FC=	gfortran
-LIBS =  -L/usr/local/cluster/fftw3//fftw3_gcc-64/lib/ -lfftw3 
-#LIBS = -lfftw3 
-FFLAGS=	-O3
+LIBS =	-L/home/cp2k/trunk/cp2k/lib/Linux-x86-64-gfortran/sopt -lcp2k_lib -lcp2k_base_lib -lcp2k_fft_lib -lcp2k_ma_lib -lcp2k_dbcsr_lib \
+				-L/usr/lib -llapack -lblas -lstdc++ -lfftw3\
+				/home/grizzly/Programme_fuer_CP2K/libint-1.1.4/lib/libderiv.a \
+        /home/grizzly/Programme_fuer_CP2K/libint-1.1.4/lib/libint.a \
+					 
+  
+FFLAGS=	-O3 
 LFLAGS=	$(FFLAGS)
 
 EXE= qmd.x
@@ -11,7 +15,9 @@ SRC= \
 	module_thermostat.f90 \
 	module_barostat.f90 \
 	module_gle.f90 \
+	module_f_env.f90 \
         main.f90 \
+	RPMDDFT.f90\
 	setup_positions.f90\
 	setup_ice.f90 \
         setup_interface.f90 \
@@ -24,12 +30,13 @@ SRC= \
 	md_forces.f90 \
 	md_tools.f90 \
 	md_rattle.f90 \
-	md_pressure.f90 \
 	evolve.f90 \
 	evolve_basic.f90 \
 	evolve_cl.f90 \
 	evolve_pi.f90 \
 	evolve_rigid.f90 \
+	evolve_cl_RPMDDFT.f90 \
+	evolve_pi_RPMDDFT.f90 \
 	random.f90 \
 	kinetic.f90 \
 	fourier.f90 \
@@ -47,7 +54,7 @@ SRC= \
 	neigh_list.f90 \
 	correct_tem.f90 \
 	blas_lapack.f90 \
-
+	md_pressure.f90 \
 ###############################
 
 .SUFFIXES:
