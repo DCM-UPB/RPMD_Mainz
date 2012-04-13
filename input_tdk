@@ -1,0 +1,38 @@
+&input
+ens = 'NPT'
+temp = 298.000
+pres = 1.d0
+rho = 0.997d0
+lattice = 'CUB'
+iamcub = .true.
+dtfs = 0.5d0
+ecut = 0.d0 
+nt = 0 
+npre_eq = 250000
+ne = 1000000
+nb = 2
+m = 0 
+ng = 1000000
+print = 1 1 1
+pt = 1000
+pb = 0
+reftraj = 0
+ncellxyz = 8 8 8
+irun = 4711
+itcf = 0 0 0
+itst = 1 0
+rcut = 9.d0
+type = 'RPMD'
+therm = 'AND'
+ttaufs = 100.d0
+baro = 'BER'
+taufs = 5000.d0
+mts = 1
+om = 0.d0
+nbdf1 = 0
+nbdf2 = 0
+sig = 4.5d0
+rpmddft = 1
+CP2K_path = "./cp2k/H2O.inp"
+&end
+
