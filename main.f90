@@ -8,7 +8,7 @@ program qmd
   !--------------------------------------------------------------------
   !Classical/RPMD/PACMD Simulation Program for Flexible water
   !--------------------------------------------------------------------
-  integer nt,ne,nb,m,ng,npre_eq,pt,pb,irun,nm,na,narg,iargc,nbdf1,nbdf2,i,j,k
+  integer nt,ne,nb,m,ng,npre_eq,pt,pb,irun,nm,na,narg,iargc,nbdf1,nbdf2,nbdf3,i,j,k
   integer nbr,mts,nlat,itcf(3),itst(2),ncellxyz(3),print(3)
 
   ! used for reftrj and RPMD-DFT
@@ -37,7 +37,7 @@ program qmd
   namelist/input/ens,temp,pres,rho,lattice,iamcub,dtfs, &
                  ecut,nt,ne,npre_eq,nb,m,ng,print,reftraj,pt,pb, &
                  ncellxyz,irun,itcf,itst,rcut, &
-                 type,therm,ttaufs,baro,taufs,mts,om,nbdf1,nbdf2,sig,rpmddft,CP2K_path
+                 type,therm,ttaufs,baro,taufs,mts,om,nbdf1,nbdf2,sig,rpmddft,CP2K_path,nbdf3
   namelist/param/ wmass,omass,hmass,qo,alpha,oo_sig,oo_eps,oo_gam, &
                   thetad,reoh,apot,bpot,alp,alpb,wm,wh
 
@@ -55,12 +55,15 @@ program qmd
   common /ensemble/ ens
   common /constraint/ nctot,nbond
   common /inp/ npre_eq
- 	common /RPMDDFT/ rpmddft
+ 	common /RPMDDFT/ rpmddft,nbdf3
 	
 	rpmddft = 0
   reftraj = 0
   npre_eq = 0
 	cell(:,:) = 0.d0
+  CP2K_path =""
+	nbdf3 = 0
+
 
   write(6,*)  '-------------------------------------------'
   write(6,*)  '            Flexible Water Code            '
@@ -500,7 +503,13 @@ program qmd
 
 	! Allocate force enviroment id:
 	! -----------------------
-	allocate(f_env_id(nb))
+	if (nbdf3.eq.0) then 
+		allocate(f_env_id(nb))
+	else
+  	allocate(f_env_id(nbdf3))
+	endif
+
+
 
 	! set rpmddft = 0 because classical equilibration, set it back to old value later
 	rpmddfthelp = rpmddft
@@ -548,17 +557,28 @@ program qmd
 	if (rpmddft.eq.1) then
 		call cp_init_cp2k(1,ierr)	
 
-
-
-		do i = 1, nb ! if nb > 1 set up nb versions of cp2k f_env_id = i 
-			call cp_create_fenv(f_env_id(i),CP2K_path,"out.out",ierr)
-			! set cell in CP2K
-			cell(1,1) = boxlxyz(1)
-			cell(2,2) = boxlxyz(2)
-			cell(3,3) = boxlxyz(3)
-			call cp_set_cell(f_env_id(i),cell,ierr) 
-			if (ierr.ne.0) STOP "set_cell"
-		enddo
+		if (nbdf3.eq.0) then
+			do i = 1, nb ! if nbdf3 > 1 set up nbdf3 versions of cp2k f_env_id = i 
+				call cp_create_fenv(f_env_id(i),CP2K_path,"out.out",ierr)
+				! set cell in CP2K
+				cell(1,1) = boxlxyz(1)
+				cell(2,2) = boxlxyz(2)
+				cell(3,3) = boxlxyz(3)
+				call cp_set_cell(f_env_id(i),cell,ierr) 
+				if (ierr.ne.0) STOP "set_cell"
+			enddo
+	  else
+			do i = 1, nbdf3 ! if nbdf3 > 1 set up nbdf3 versions of cp2k f_env_id = i 
+				call cp_create_fenv(f_env_id(i),CP2K_path,"out.out",ierr)
+				write(*,*) "f_env_id:",f_env_id(i)
+				! set cell in CP2K
+				cell(1,1) = boxlxyz(1)
+				cell(2,2) = boxlxyz(2)
+				cell(3,3) = boxlxyz(3)
+				call cp_set_cell(f_env_id(i),cell,ierr) 
+				if (ierr.ne.0) STOP "set_cell"
+			enddo
+		endif
 	endif
 
     ! Static Properties

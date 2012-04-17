@@ -5,7 +5,7 @@ subroutine forces(r,v,dvdr,nb,na,boxlxyz,z,virial,iopt)
   ! Calculate the potential energy v and forces dvdr of the
   ! system.
   ! ------------------------------------------------------------------
-  integer nb,na,k,j,iopt,rpmddft,l,jj,ii
+  integer nb,na,k,j,iopt,rpmddft,nbdf3,l,jj,ii
   real(8) r(3,na,nb),dvdr(3,na,nb),z(na),boxlxyz(3)
   real(8) v,dv,oo_eps,oo_sig,oo_gam,rcut,sig,cut,boxmin
   real(8) rgmax,vir(3,3),virial(3,3)
@@ -13,8 +13,7 @@ subroutine forces(r,v,dvdr,nb,na,boxlxyz,z,virial,iopt)
   integer, allocatable :: point(:),list(:)
   common /oo_param/ oo_eps,oo_sig,oo_gam,rcut
   common /correct/ sig
-	common /RPMDDFT/ rpmddft
-
+	common /RPMDDFT/ rpmddft,nbdf3
   ! Allocate
 
   allocate (point(na+3),list(maxnab*na))

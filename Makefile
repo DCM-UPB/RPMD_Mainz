@@ -37,6 +37,7 @@ SRC= \
 	evolve_rigid.f90 \
 	evolve_cl_RPMDDFT.f90 \
 	evolve_pi_RPMDDFT.f90 \
+	evolve_pi_rc_RPMDDFT.f90 \
 	random.f90 \
 	kinetic.f90 \
 	fourier.f90 \
