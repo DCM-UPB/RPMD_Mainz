@@ -1,0 +1,165 @@
+&GLOBAL
+  PROJECT H2O
+  RUN_TYPE ENERGY_FORCE #MD
+  PRINT_LEVEL MEDIUM
+  SEED 4711
+&END GLOBAL
+&MOTION
+  &MD
+    ENSEMBLE NVT
+    STEPS 20000
+    TIMESTEP 0.5
+    TEMPERATURE 300.0
+    &THERMOSTAT
+      REGION GLOBAL #MASSIVE
+      TYPE CSVR
+      &CSVR
+        TIMECON 1000.0
+      &END CSVR
+    &END THERMOSTAT
+  &END MD
+  &PRINT
+    &RESTART
+      BACKUP_COPIES 0
+      &EACH 
+        MD 1
+      &END EACH
+    &END RESTART
+    &RESTART_HISTORY OFF
+    &END RESTART_HISTORY
+    &VELOCITIES ON
+    &END VELOCITIES
+    &STRUCTURE_DATA
+      DISTANCE 1 2
+      DISTANCE 1 3
+      DISTANCE 2 3
+      ANGLE  2 1 3
+    &END STRUCTURE_DATA
+  &END PRINT
+&END MOTION
+&FORCE_EVAL
+  METHOD FIST #QUICKSTEP
+  STRESS_TENSOR ANALYTICAL
+  &PRINT
+    #&FORCES ON
+    #  FILENAME =CP2K_forces.frc
+    #&END FORCES
+    #&STRESS_TENSOR ON
+    #  FILENAME =CP2K_stress.str
+    #&END STRESS_TENSOR
+  &END PRINT
+  &MM
+    &FORCEFIELD
+      &SPLINE
+        EPS_SPLINE 1.E-6
+      &END
+      &BOND
+        ATOMS O H
+        KIND QUARTIC
+        K 0.4015204 0.0 0.0
+        R0 1.812
+      &END BOND
+      &BOND
+        ATOMS H H
+        KIND QUARTIC
+        K 0.02384043 -0.0506033 0.0287044
+        R0 3.0699
+      &END BOND
+      &CHARGE
+        ATOM O
+        CHARGE -0.7699784
+      &END CHARGE
+      &CHARGE
+        ATOM H
+        CHARGE 0.3849892
+      &END CHARGE
+      &NONBONDED
+        &IPBV
+          atoms O O
+          RCUT 7.8
+        &END IPBV
+        &IPBV
+          atoms H O
+          RCUT 7.8
+        &END IPBV
+        &IPBV
+          atoms H H
+          RCUT 7.8
+        &END IPBV
+      &END NONBONDED
+    &END FORCEFIELD
+    &POISSON
+      &EWALD
+        EWALD_TYPE spme
+        ALPHA .44
+        GMAX 16
+        O_SPLINE 8
+      &END EWALD
+    &END POISSON
+  &END MM
+  &DFT
+    &QS
+      METHOD DFTB
+      &DFTB
+        DO_EWALD           T
+        SELF_CONSISTENT    T
+        DISPERSION         F
+        HB_SR_GAMMA        F
+        &PARAMETER
+          SK_FILE H H hh.spl
+          SK_FILE O O oo.spl
+          SK_FILE H O ho.spl
+          SK_FILE O H oh.spl
+          UFF_FORCE_FIELD  ./uff_table
+        &END PARAMETER
+      &END DFTB
+      EXTRAPOLATION ASPC
+      EXTRAPOLATION_ORDER 3
+    &END QS
+    &POISSON
+      PERIODIC XYZ
+      POISSON_SOLVER PERIODIC
+      &EWALD
+       EWALD_TYPE SPME
+       GMAX 28 28 28
+       O_SPLINE 8
+      &END EWALD
+    &END POISSON
+    &SCF
+      SCF_GUESS ATOMIC
+      EPS_SCF 1.0E-6
+      MAX_SCF 100
+      &OUTER_SCF
+        MAX_SCF 100
+        EPS_SCF 1.0E-6
+      &END OUTER_SCF
+      &OT
+        MINIMIZER DIIS
+        PRECONDITIONER FULL_SINGLE_INVERSE
+        STEPSIZE 0.125
+      &END OT
+      &PRINT
+        &RESTART
+          BACKUP_COPIES 0
+        &END RESTART
+        &RESTART_HISTORY OFF
+        &END RESTART_HISTORY
+      &END PRINT
+    &END SCF
+  &END DFT
+  &SUBSYS
+    &CELL
+			ABC 24.857096537980002	24.857096537980002	24.857096537980002  
+      PERIODIC XYZ
+    &END CELL
+    &TOPOLOGY
+      COORDINATE PDB
+      #COORD_FILE_NAME ./vmd_start.xyz
+      COORD_FILE_NAME ./ipbv.pdb
+      CONNECTIVITY UPSF #OFF
+      CONN_FILE ./ipbv_flex.psf
+      &DUMP_PSF OFF
+      &END
+    &END TOPOLOGY
+  &END SUBSYS
+&END FORCE_EVAL
