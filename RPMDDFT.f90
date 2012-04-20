@@ -1,3 +1,4 @@
+#ifdef CP2K_BINDING
 subroutine RPMDDFT_force(r,dvdr,na,nb,v,vir,boxlxyz,bead)
 	use f_env
   implicit none
@@ -51,3 +52,4 @@ subroutine RPMDDFT_force(r,dvdr,na,nb,v,vir,boxlxyz,bead)
 
 	return 
 end subroutine RPMDDFT_force
+#endif

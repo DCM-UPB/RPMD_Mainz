@@ -543,6 +543,7 @@ program qmd
 	rpmddft = rpmddfthelp
 
 
+#ifdef CP2K_BINDING
 		!	RPMD-DFT
 		! -----------------------
 	if (rpmddft.eq.1) then
@@ -560,6 +561,7 @@ program qmd
 			if (ierr.ne.0) STOP "set_cell"
 		enddo
 	endif
+#endif
 
     ! Static Properties
     ! ------------------
