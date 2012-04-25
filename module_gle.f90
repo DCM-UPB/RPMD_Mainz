@@ -47,7 +47,7 @@ contains
           endif
           c3 = c2 * ck(ic)
           do i = 1, 3
-             p(i,j,k) = c1 * p(i,j,k) + gaussian(irun,c3)
+             p(i,j,k) = c1 * p(i,j,k) + c3*gaussian(irun,1)
           enddo
        enddo
     enddo
@@ -113,7 +113,7 @@ contains
           endif
           c3 = c2 * ck(ic)
           do i = 1, 3
-             p(i,j,k) = c1 * p(i,j,k) + gaussian(irun,c3)
+             p(i,j,k) = c1 * p(i,j,k) + c3*gaussian(irun,1)
           enddo
        enddo
     enddo
