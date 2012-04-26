@@ -1,10 +1,11 @@
 MF=	Makefile
-FC=	gfortran
+FC=	gfortran -cpp
 LIBS =	-L/home/cp2k/trunk/cp2k/lib/Linux-x86-64-gfortran/sopt -lcp2k_lib -lcp2k_base_lib -lcp2k_fft_lib -lcp2k_ma_lib -lcp2k_dbcsr_lib \
 				-L/usr/lib -llapack -lblas -lstdc++ -lfftw3\
 				/home/grizzly/Programme_fuer_CP2K/libint-1.1.4/lib/libderiv.a \
         /home/grizzly/Programme_fuer_CP2K/libint-1.1.4/lib/libint.a \
 					 
+LIBS = -lfftw3
   
 FFLAGS=	-O3 
 LFLAGS=	$(FFLAGS)

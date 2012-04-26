@@ -33,6 +33,7 @@ nbdf1 = 0
 nbdf2 = 0
 sig = 4.5d0
 rpmddft = 1
-CP2K_path = "./cp2k/H2O.inp"
+CP2K_path = "./H2O.inp"
+nbdf3 = 1
 &end
 
