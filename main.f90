@@ -8,7 +8,7 @@ program qmd
   !--------------------------------------------------------------------
   !Classical/RPMD/PACMD Simulation Program for Flexible water
   !--------------------------------------------------------------------
-  integer nt,ne,nb,m,ng,npre_eq,pt,pb,irun,nm,na,narg,iargc,nbdf1,nbdf2,nbdf3,i,j,k
+  integer nt,ne,nb,m,ng,npre_eq,pt,pb,irun,nm,na,narg,iargc,nbdf1,nbdf2,nbdf3,rctdk,i,j,k
   integer nbr,mts,nlat,itcf(3),itst(2),ncellxyz(3),print(3)
 
   ! used for reftrj and RPMD-DFT
@@ -37,7 +37,7 @@ program qmd
   namelist/input/ens,temp,pres,rho,lattice,iamcub,dtfs, &
                  ecut,nt,ne,npre_eq,nb,m,ng,print,reftraj,pt,pb, &
                  ncellxyz,irun,itcf,itst,rcut, &
-                 type,therm,ttaufs,baro,taufs,mts,om,nbdf1,nbdf2,sig,rpmddft,CP2K_path,nbdf3
+                 type,therm,ttaufs,baro,taufs,mts,om,nbdf1,nbdf2,sig,rpmddft,CP2K_path,nbdf3,rctdk
   namelist/param/ wmass,omass,hmass,qo,alpha,oo_sig,oo_eps,oo_gam, &
                   thetad,reoh,apot,bpot,alp,alpb,wm,wh
 
@@ -55,7 +55,7 @@ program qmd
   common /ensemble/ ens
   common /constraint/ nctot,nbond
   common /inp/ npre_eq
- 	common /RPMDDFT/ rpmddft,nbdf3
+ 	common /RPMDDFT/ rpmddft,nbdf3,rctdk
 	
 	rpmddft = 0
   reftraj = 0
@@ -63,7 +63,7 @@ program qmd
 	cell(:,:) = 0.d0
   CP2K_path =""
 	nbdf3 = 0
-
+	rctdk = 0
 
   write(6,*)  '-------------------------------------------'
   write(6,*)  '            Flexible Water Code            '

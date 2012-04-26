@@ -86,11 +86,11 @@ subroutine dynamics(nt,m,p,r,dvdr,dvdr2,na,nm,nb,boxlxyz,z,beta, &
      endif
   endif
 
-  do k = 1,m
+  do k = 1,m !Anzahl paralleler Trajektorien für Dynamik
 
      ! Find a new configuration
 
-     ntherm = 0
+     ntherm = 0                                  
      do i = 1,ntherm
         call evolve(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
                     boxlxyz,z,beta,vir,vir_lf,irun,0)
