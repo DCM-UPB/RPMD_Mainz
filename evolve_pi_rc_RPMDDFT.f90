@@ -1,4 +1,4 @@
-subroutine evolve_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
+subroutine evolve_pi_rc_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
                      boxlxyz,z,beta,vir,vir_lf,irun,nbaro)
   use thermostat
   use barostat
@@ -6,10 +6,10 @@ subroutine evolve_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   implicit none
   include 'globals.inc'
   ! ------------------------------------------------------------------
-  ! RPMD/ACMD evolution using RPMDDFT method
+  ! RPMD/ACMD evolution using Method with RingContraction
   ! 
   ! ------------------------------------------------------------------
-  integer na,nb,irun,k,j,i,nbdf1,nbdf2,im,ic,mts,nbaro,rpmddft
+  integer na,nb,irun,k,j,i,nbdf1,nbdf2,im,ic,mts,nbaro,rpmddft,nbdf3
   real(8) p(3,na,nb),r(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb)
   real(8) mass(na),z(na),boxlxyz(3)
   real(8) vir(3,3),vir_lj(3,3),vir_ew(3,3),tvxyz(3),tvxyz_itr(3)
@@ -24,7 +24,8 @@ subroutine evolve_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   common /beaddiabatic/ nbdf1,nbdf2
   common /multiple_ts/ mts
   common /correct/ sig
-	common /RPMDDFT/ rpmddft
+	common /RPMDDFT/ rpmddft,nbdf3
+	real(8) rs(3,na,nb)
 
 
   vew = 0.d0
@@ -34,8 +35,11 @@ subroutine evolve_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   vir_lj(:,:) = 0.d0
   vir_ew(:,:) = 0.d0
   vir_hf(:,:) = 0.d0
-  tv = 0.d0
+	!rc(:,:,:) = 0.d0
+	!dvdrc(:,:,:) = 0.d0
+ 	tv = 0.d0
   tvxyz(:) = 0.d0
+	
 
   halfdt = 0.5d0*dt
                                    
@@ -70,8 +74,22 @@ subroutine evolve_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
      endif
   endif
 
-	! Evaluation of the t+timestep forces 
-	call forces(r,v,dvdr,nb,na,boxlxyz,z,vir,9)  
+
+
+	! Transform to normalmode representation to use Contraction routines
+
+
+	! Convert the positions and momenta to the normal mode representation after storing bead represetation
+	rs(:,:,:) = r(:,:,:)
+  call realft (rs,3*na,nb,+1)
+
+	! Evaluation of the t+timestep forces using Ring Contraction in normal mode representation
+
+	call rp_contract_nm(rs,v,dvdr,nb,na,boxlxyz,z,vir,nbdf3,9)
+
+	! Convert dvdr back to bead representation
+  
+	call realft(dvdr,3*na,nb,-1)
 
 	! Set dvdr2 = 0 because we don't have a high frequency part
 	dvdr2(:,:,:) = 0.d0
@@ -108,4 +126,4 @@ subroutine evolve_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   comy=comy/mm
   comz=comz/mm
   return
-end subroutine evolve_pi_RPMDDFT
+end subroutine evolve_pi_rc_RPMDDFT

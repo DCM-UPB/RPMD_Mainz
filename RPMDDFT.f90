@@ -17,6 +17,8 @@ subroutine RPMDDFT_force(r,dvdr,na,nb,v,vir,boxlxyz,bead)
   vir(:,:) = 0.d0
   dvdr(:,:) = 0.d0
 	cell(:,:) = 0.d0
+	
+
 
 	! If Barostat is used set new cell
 	if(ens.eq."NPT") then	
@@ -30,11 +32,11 @@ subroutine RPMDDFT_force(r,dvdr,na,nb,v,vir,boxlxyz,bead)
 	! Set Positions in CP2K
 	call cp_set_pos(f_env_id(bead),r,SIZE(r),ierr)
 	if (ierr.ne.0) STOP "set_pos"
+!	write(*,*) "bead = ", bead, "f_env_id =", f_env_id(bead)
 
 	! Calculate new energy and force
 	call cp_calc_energy_force(f_env_id(bead), r, SIZE(r), v, dvdr, SIZE(dvdr), ierr)
 	if (ierr.ne.0) STOP "calc_energy_force"
-
 	! Get force and energy
 	call cp_get_force(f_env_id(bead),dvdr,SIZE(dvdr),ierr)
 	if (ierr.ne.0) STOP "get_force"

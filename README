@@ -122,7 +122,10 @@ mts      -   Number of multiple time steps
 om       -   ACMD adiabatic separation parameter.
 nbdf1    -   RP contraction modes for ewald forces (set to zero for full nb, set to 1 for electrostatic contraction)
 nbdf2    -   RP contraction modes for LJ forces (set to zero for full nb)
+nbdf3    -   RP contraction modes for RPMDDFT forces
 sig      -   Electrostatic RP Contraction cut-off (Angstroms, usually ~ 5.0)
+rpmddft  -   use RPMDDFT force Calculation
+
 
 Parameters for popular water model
 -----------------------------------
