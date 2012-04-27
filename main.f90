@@ -508,7 +508,7 @@ program qmd
 	else
   	allocate(f_env_id(nbdf3))
 	endif
-
+	write(*,*) nbdf3
 
 
 	! set rpmddft = 0 because classical equilibration, set it back to old value later
