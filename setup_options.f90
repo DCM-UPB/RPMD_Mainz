@@ -24,7 +24,10 @@ subroutine setup_pi(nb,beta,nbdf1,nbdf2,sig)
      sig = sig / ToA
      call setup_contraction(nbdf1,nbdf2,nb,sig)
   endif
-
+	if (nbdf3.gt.0) then
+		 write(6,'(a,i2,a)') &
+     ' * RP contraction of CP2K-Force with ', nbdf3 , ' modes'
+	endif
   return
 end subroutine setup_pi
 
