@@ -325,7 +325,7 @@ contains
     real(8), intent(in)   :: M(n,n)
     real(8), intent(out)   :: EM(n,n)
     
-    real(8) :: tc(j+1), tmp(n,n), SM(n,n)
+    real(8) :: tc(j+1), SM(n,n)
     integer p, i
     tc(1)=1.d0
     do i=1,j
