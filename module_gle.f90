@@ -1,7 +1,7 @@
 module gle
   use thermostat 
   implicit none
-  real*8, allocatable, save ::  gS(:,:), gT(:,:), gp(:,:,:,:), ngp(:,:,:,:)
+  real(8), allocatable, save ::  gS(:,:), gT(:,:), gp(:,:,:,:), ngp(:,:,:,:)
   integer ns
 contains
   
@@ -15,8 +15,8 @@ contains
     real(8), intent(inout):: p(3,na,nb)
     real(8) mass(na),gamma,dt,beta, ctau
     real(8) c1,c2,ck(3),c3,gaussian
-    real*8 pi,pibyn,twown,betan,radtwo,wk
-    real*8 mm, pcom(3)
+    real(8) pi,pibyn,twown,betan,radtwo,wk
+    real(8) mm, pcom(3)
     external gaussian
     
     betan=beta/nb
@@ -83,8 +83,8 @@ contains
     real(8), intent(inout):: p(3,na,nb)
     real(8) mass(na),gamma,dt,beta, ctau
     real(8) c1,c2,ck(3),c3,gaussian
-    real*8 pi,pibyn,twown,betan,radtwo,wk
-    real*8 mm, pcom(3)
+    real(8) pi,pibyn,twown,betan,radtwo,wk
+    real(8) mm, pcom(3)
     external gaussian
     
     betan=beta/nb
@@ -145,11 +145,11 @@ contains
   
   subroutine therm_gle_init(ttau,na,nb,dt,irun,beta)
     implicit none
-    real*8, intent(in)  :: dt, beta, ttau
+    real(8), intent(in)  :: dt, beta, ttau
     integer, intent(in) :: na, nb, irun
-    real *8, allocatable :: gA(:,:), gC(:,:), gr(:)
+    real(8), allocatable :: gA(:,:), gC(:,:), gr(:)
     integer i, j, k, h, cns, ios
-    real*8, external :: gaussian     !this is in the pH2 RPMD code, replace it with appropiate normal deviate sampler
+    real(8), external :: gaussian     !this is in the pH2 RPMD code, replace it with appropiate normal deviate sampler
     
     !reads in matrices
     !reads A (in units of the maximum frequency present)
@@ -229,12 +229,12 @@ contains
   subroutine therm_gle(p,dheat,mass,na,nb,irun)
     implicit none
     integer,intent(in)  :: na, nb,irun
-    real *8, intent(in) :: mass(na)
-    real *8, intent(inout) :: p(3,na,nb)
-    real *8, intent(out) :: dheat
-    real*8, external :: gaussian
+    real(8), intent(in) :: mass(na)
+    real(8), intent(inout) :: p(3,na,nb)
+    real(8), intent(out) :: dheat
+    real(8), external :: gaussian
     integer i, j, k, h, n
-    real*8 mfac
+    real(8) mfac
     n=3*na*nb
     dheat=0.d0
     ! write(6,*) "GLE PROPAGATOR HAS BEEN CALLED"
@@ -284,11 +284,11 @@ contains
 
   subroutine pshift_gle(gp,mass,na,nb,ns)
     integer,intent(in)  :: na, nb, ns
-    real *8, intent(in) :: mass(na)
-    real *8, intent(inout) :: gp(3,na,nb,ns+1)
+    real(8), intent(in) :: mass(na)
+    real(8), intent(inout) :: gp(3,na,nb,ns+1)
     integer i,j,k,h
-    real*8 mfac, mm
-    real*8 pcom(3)
+    real(8) mfac, mm
+    real(8) pcom(3)
     
     mm=0.d0
     do i=1,na
@@ -322,10 +322,10 @@ contains
   ! matrix exponential by scale & square      
   subroutine matrix_exp(M, n, j, k, EM)
     integer, intent(in)  :: n, j, k
-    real*8, intent(in)   :: M(n,n)
-    real*8, intent(out)   :: EM(n,n)
+    real(8), intent(in)   :: M(n,n)
+    real(8), intent(out)   :: EM(n,n)
     
-    real *8 :: tc(j+1), tmp(n,n), SM(n,n)
+    real(8) :: tc(j+1), tmp(n,n), SM(n,n)
     integer p, i
     tc(1)=1.d0
     do i=1,j
@@ -356,8 +356,8 @@ contains
   ! brute-force cholesky decomposition
   subroutine cholesky(SST, S, n)
     integer, intent(in)  :: n
-    real*8, intent(in)   :: SST(n,n)
-    real*8, intent(out)   :: S(n,n)
+    real(8), intent(in)   :: SST(n,n)
+    real(8), intent(out)   :: S(n,n)
     integer i,j,k
     S=0.d0
     S(1,1)=sqrt(SST(1,1))
