@@ -13,7 +13,7 @@ contains
     ! ------------------------------------------------------------------
     integer na,nb,irun,k,j,i,ic
     real(8), intent(inout):: p(3,na,nb)
-    real(8) mass(na),delp(3,nb),tau,gamma,dt,beta, ctau
+    real(8) mass(na),delp(3,nb),gamma,dt,beta, ctau
     real(8) c1,c2,ck(3),c3,gaussian
     real*8 pi,pibyn,twown,betan,radtwo,wk
     real*8 mm, pcom(3)
