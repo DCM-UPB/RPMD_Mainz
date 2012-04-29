@@ -1,11 +1,16 @@
 MF=	Makefile
-FC=	gfortran -cpp
+FC=	gfortran -cpp -DCP2K_BINDING
 LIBS =	-L/home/cp2k/trunk/cp2k/lib/Linux-x86-64-gfortran/sopt -lcp2k_lib -lcp2k_base_lib -lcp2k_fft_lib -lcp2k_ma_lib -lcp2k_dbcsr_lib \
 				-L/usr/lib -llapack -lblas -lstdc++ -lfftw3\
 				/home/grizzly/Programme_fuer_CP2K/libint-1.1.4/lib/libderiv.a \
         /home/grizzly/Programme_fuer_CP2K/libint-1.1.4/lib/libint.a \
+
+ifeq ($(wildcard /home/cp2k/trunk/cp2k/lib/Linux-x86-64-gfortran/sopt),)
+FC=	gfortran -cpp
+LIBS = -lfftw3
+NOCP2K="WARNING: CP2K_BINDINGS NOT COMPILED"
+endif
 					 
-#LIBS = -lfftw3
   
 FFLAGS=	-O3 
 LFLAGS=	$(FFLAGS)
@@ -66,11 +71,13 @@ SRC= \
 OBJ=	$(SRC:.f90=.o)
 
 .f90.o:
+	echo $(NOCP2K)
 	$(FC) $(FFLAGS) -c $<
 
 all:	$(EXE)
 
 $(EXE):	$(OBJ)
+	echo $(NOCP2K)
 	$(FC) $(LFLAGS) -o $@ $(OBJ) $(LIBS)
 
 $(OBJ):	$(MF)
