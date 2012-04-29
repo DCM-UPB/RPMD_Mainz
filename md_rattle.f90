@@ -58,6 +58,7 @@ subroutine rattle_s1(r,rold,p,nm,mass,dt,dvdr,vir,na)
 
   vir(:,:) = 0.d0
   tol = 1d-6
+  it = 0
   itmax = 1000
   nam = 3
   noff = 0
@@ -179,6 +180,7 @@ subroutine rattle_s2(r,p,nm,mass,dt,dvdr,vir,na)
 
   vir(:,:) = 0.d0
   tol = 1d-6
+  it = 0
   itmax = 1000
   nam = 3
   noff = 0
