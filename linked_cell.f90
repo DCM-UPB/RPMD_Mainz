@@ -190,11 +190,11 @@ subroutine cell_map_nc(mcellxyz,ncellxyz,mapx,mapy,mapz,ink,nn)
   ! Creates a neighbour map for the linked cell list
   ! (since cells are 0.5*rcut must check (5**3-1)/2 cells = 62)
   ! ------------------------------------------------------------------
+  integer nn,ix,iy,iz,jx,jy,jz,kx,ky,kz
   integer k,mcellxyz(3),ncellxyz(3),ink(3,nn)
   integer mapx(ncellxyz(1),-mcellxyz(1):mcellxyz(1))
   integer mapy(ncellxyz(2),-mcellxyz(2):mcellxyz(2))
   integer mapz(ncellxyz(3),-mcellxyz(3):mcellxyz(3))
-  integer nn,ix,iy,iz,jx,jy,jz,kx,ky,kz
 
   ! Create the ink array which contains the relative positions
   ! of all neighbours
