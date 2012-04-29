@@ -10,8 +10,13 @@ FC=	gfortran -cpp
 LIBS = -lfftw3
 NOCP2K="WARNING: CP2K_BINDINGS NOT COMPILED"
 endif
-					 
-  
+
+# warnings that could result in wrong code
+FC+=	-Wall -pedantic -Waliasing -Wcharacter-truncation -Wconversion-extra -Wsurprising -Wintrinsic-shadow
+# speed warnings
+FC+=	-Warray-temporaries
+
+
 FFLAGS=	-O3 
 LFLAGS=	$(FFLAGS)
 
