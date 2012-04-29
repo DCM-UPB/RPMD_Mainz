@@ -8,14 +8,13 @@ subroutine md_melt(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   ! Melting/Freezing Routine
   ! ------------------------------------------------------------------
   integer na,nb,ne,irun,jout,je,k,k1,k2,i,nm,nprog,nbaro
-  integer jq,nq,nqprog,imax,nctot,nbond,nm_ice,j
+  integer jq,nq,nqprog,imax,nctot,nbond,nm_ice
   real(8) boxlxyz(3),beta,v,v1,v2,v3,dt
   real(8) p(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb),z(na),mass(na)
   real(8) r(3,na,nb),vir(3,3),vir_lf(3,3),tvxyz(3)
   real(8) omegan,dx,dy,dz,dist
   real(8) vrp,vol,tps,tfs,tk,thresh,den,wmass,tq1,tq2
   real(8) dtfs,dtqt,tv,pres,ran2,gaussian,temp
-  real(8) pcx,pcy,pcz,fcx,fcy,fcz
   real(8), allocatable :: rst(:,:)
   integer, allocatable :: id(:)
   external gaussian, ran2
