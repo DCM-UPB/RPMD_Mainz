@@ -174,7 +174,7 @@ contains
     !reads C (in K)
     open(121,file='GLE-C',status='OLD',iostat=ios)
     if (ios.ne.0) then            
-       gC=0.
+       gC=0.d0
        do i=1,ns+1
           gC(i,i)=(nb/beta)
        enddo
@@ -236,7 +236,7 @@ contains
     integer i, j, k, h, n
     real*8 mfac, totm
     n=3*na*nb
-    dheat=0.
+    dheat=0.d0
     ! write(6,*) "GLE PROPAGATOR HAS BEEN CALLED"
     do k=1,na
        mfac=1.0/dsqrt(mass(k))
@@ -290,14 +290,14 @@ contains
     real*8 mfac, mm
     real*8 pcom(3)
     
-    mm=0.
+    mm=0.d0
     do i=1,na
        mm=mm+mass(i)
     enddo
     mm=1./sqrt(nb*mm)
     
     do i=1,ns+1
-       pcom=0.
+       pcom=0.d0
        do j=1,na
           mfac=dsqrt(mass(j))
           do k=1,nb
@@ -334,7 +334,7 @@ contains
     
     !scale
     SM=M*(1./2.**k)
-    EM=0.
+    EM=0.d0
     do i=1,n
        EM(i,i)=tc(j+1)
     enddo
@@ -359,7 +359,7 @@ contains
     real*8, intent(in)   :: SST(n,n)
     real*8, intent(out)   :: S(n,n)
     integer i,j,k
-    S=0.
+    S=0.d0
     S(1,1)=sqrt(SST(1,1))
     do i=1,n
        do j=1,i-1
