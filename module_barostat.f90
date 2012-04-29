@@ -142,7 +142,7 @@ contains
     real(8) r(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb),vir(3,3)
     real(8) boxlxyz(3),z(na),boxlxyzn(3),virn(3,3),vew,vlj,vint
     real(8) vo,vn,vnlog,eo,en,beta,test,scale,ran2
-    real(8) thresh,random
+    real(8) thresh
     logical accept
     external ran2
     real(8), allocatable :: rcm(:,:),rn(:,:,:),dvdrn(:,:,:)
