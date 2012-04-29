@@ -414,16 +414,19 @@ subroutine kwald (n,q,r,v,vir,dvdr,alpha,rkmax2,kmax)
         term = 2.d0*(1.d0/rk2 + b)
         xx = et * (term*rkx*rkx-1.d0)
         xy = et * (term*rkx*rky)
+       !xz = et * (term*rkx*rkz)        rkz is zero
         yy = et * (term*rky*rky-1.d0)
+       !yz = et * (term*rky*rkz)        rkz is zero
+       !zz = et * (term*rkz*rkz-1.d0)   rkz is zero, simplify
         zz = et * (-1.d0)
         vir(1,1) = vir(1,1) + xx
         vir(1,2) = vir(1,2) + xy
-        vir(1,3) = vir(1,3) + xz
+       !vir(1,3) = vir(1,3) + xz
         vir(2,1) = vir(2,1) + xy
         vir(2,2) = vir(2,2) + yy
-        vir(2,3) = vir(2,3) + yz
-        vir(3,1) = vir(3,1) + xz
-        vir(3,2) = vir(3,2) + yz
+       !vir(2,3) = vir(2,3) + yz
+       !vir(3,1) = vir(3,1) + xz
+       !vir(3,2) = vir(3,2) + yz
         vir(3,3) = vir(3,3) + zz
 
         w = w+w
