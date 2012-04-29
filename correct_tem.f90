@@ -17,6 +17,7 @@ subroutine ewc_driver_tem(r,z,dvdr,v,vir,na,boxlxyz,list,point)
      stop
   endif
 
+  alpha2 = 0.5d0 * (1.d0 - alpha)
   if (abs(alpha-1.d0).gt.1d-4) then
 
      ! Store the oxygen coordinates and replace the oxygen
@@ -24,7 +25,6 @@ subroutine ewc_driver_tem(r,z,dvdr,v,vir,na,boxlxyz,list,point)
 
      allocate (ro(3,na/3))
 
-     alpha2 = 0.5d0 * (1.d0 - alpha)
      ic = 0
      do i = 1,na,3
         ic = ic + 1
