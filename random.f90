@@ -40,7 +40,7 @@ function ran2(idum,rmin,rmax)
        ia1=40014,ia2=40692,iq1=53668,iq2=52774,ir1=12211, & 
        ir2=3791,ntab=32,ndiv=1+imm1/ntab )
   real(8) am, eps, rnmx
-  parameter ( am=1./im1, eps=1.2e-7,rnmx=1.-eps )
+  parameter ( am=1.d0/im1, eps=1.2d-7,rnmx=1.-eps )
   real(8) ran2,rmin,rmax
   integer iv(ntab),j,k,iy,idum,idum2
   save iv,iy,idum2
