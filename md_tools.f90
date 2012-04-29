@@ -316,7 +316,7 @@ subroutine orientation (r,ax1,ay1,az1,ax2,ay2,az2,it,na,nb,nm,nt,z)
   ! tensors over the beads and create a 9 x nm matrix which
   ! is returned to "solve".
 
-  wt = 1/dble(nb)
+  wt = 1.d0/dble(nb)
   do k = 1, nm
      do i = 1, 3
         ax1(i,k,it) = ax1(i,k,it) * wt
@@ -367,7 +367,7 @@ subroutine center_water (p,pc,nm,nb)
   real(8) p(9,nm,nb),pc(3,nm),wt
 
   pc(:,:) = 0.d0
-  wt = 1/dble(nb)
+  wt = 1.d0/dble(nb)
 
   do j = 1,nm
      do k = 1,nb
