@@ -234,7 +234,7 @@ contains
     real *8, intent(out) :: dheat
     real*8, external :: gaussian
     integer i, j, k, h, n
-    real*8 mfac, totm
+    real*8 mfac
     n=3*na*nb
     dheat=0.d0
     ! write(6,*) "GLE PROPAGATOR HAS BEEN CALLED"
