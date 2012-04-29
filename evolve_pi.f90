@@ -9,14 +9,14 @@ subroutine evolve_pi(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   ! RPMD/ACMD evolution using multiple time step method using normal
   ! mode primitive representation
   ! ------------------------------------------------------------------
-  integer na,nb,irun,k,j,i,nbdf1,nbdf2,im,ic,mts,nbaro
+  integer na,nb,irun,k,j,nbdf1,nbdf2,im,ic,mts,nbaro
   real(8) p(3,na,nb),r(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb)
   real(8) mass(na),z(na),boxlxyz(3)
   real(8) vir(3,3),vir_lj(3,3),vir_ew(3,3),tvxyz(3),tvxyz_itr(3)
   real(8) vir_itr(3,3),vir_ewc(3,3),vir_lf(3,3),vir_hf(3,3)
   real(8) pprime,halfdtsmall,halfdt,om,gaussian
   real(8) dt,v,beta,dtsmall,vew,vlj,vint,sig,ve
-  real(8) tv,tv_itr,tq1,tq2,c1,c2,c3
+  real(8) tv,tv_itr,tq1,tq2
   real(8), allocatable :: dvdre(:,:,:),rst(:,:,:),dvdrl(:,:,:)
   real(8), allocatable :: monod(:,:,:),delp(:,:)
   real(8) dheat, comx, comy, comz, mm !!GLE
@@ -314,9 +314,9 @@ subroutine rp_contract_nm(r,v,dvdr,nb,na,boxlxyz,z,vir, &
   ! i.e. r are normal mode coordinates and routine produces normal mode
   !      forces dvdr.
   ! ------------------------------------------------------------------
-  integer nb,na,i,j,nbdf,iopt
+  integer nb,na,nbdf,iopt
   real(8) r(3,na,nb),dvdr(3,na,nb),vir(3,3),z(na),boxlxyz(3)
-  real(8) v,scale_f,wt
+  real(8) v
   real(8), allocatable :: rb(:,:,:),dvdrb(:,:,:)
 
   ! nbdf = RP Contraction (beadibatic) factor
