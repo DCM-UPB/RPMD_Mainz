@@ -327,7 +327,7 @@ contains
     
     real *8 :: tc(j+1), tmp(n,n), SM(n,n)
     integer p, i
-    tc(1)=1
+    tc(1)=1.d0
     do i=1,j
        tc(i+1)=tc(i)/dble(i)
     enddo
