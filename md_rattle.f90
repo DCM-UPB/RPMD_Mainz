@@ -46,10 +46,10 @@ subroutine rattle_s1(r,rold,p,nm,mass,dt,dvdr,vir,na)
   ! nbtot   total number of bonds - local counter
   ! ------------------------------------------------------------------
   integer na,nm,nctot,nbtot,bond(nbondmax,2),itmax
-  integer ii,jj,it,i,nbond, nam, noff,ik,ij,kk,ijk
+  integer ii,jj,it,i,nbond,nam,noff,ik
   real(8) r(3,na),p(3,na),rold(3,na),dvdr(3,na)
   real(8) mass(na),rcb(nbondmax),vir(3,3)
-  real(8) dx1,dy1,dz1,dvx1,dvy1,dvz1,d2,diff,rm1,rm2
+  real(8) dx1,dy1,dz1,d2,diff,rm1,rm2
   real(8) dx2,dy2,dz2,dot,gamma,dmax,gdx,gdy,gdz
   real(8) tol,dt
   logical done
@@ -167,12 +167,12 @@ subroutine rattle_s2(r,p,nm,mass,dt,dvdr,vir,na)
   ! Shake/Rattle Routine : Stage 2
   ! ------------------------------------------------------------------
   integer na,nm,nctot,nbtot,bond(nbondmax,2),itmax
-  integer ii,jj,it,i,nbond, nam, noff,ik,ij,kk,ijk
+  integer ii,jj,it,i,nbond,nam,noff,ik
   real(8) r(3,na),p(3,na),dvdr(3,na)
   real(8) mass(na),rcb(nbondmax),vir(3,3)
   real(8) tol,dt,halfdt
-  real(8) dx1,dy1,dz1,dvx1,dvy1,dvz1,d2,diff,rm1,rm2
-  real(8) dx2,dy2,dz2,dot,gamma,dmax,gdx,gdy,gdz
+  real(8) dx1,dy1,dz1,dvx1,dvy1,dvz1,rm1,rm2
+  real(8) dot,gamma,dmax,gdx,gdy,gdz
   logical done
   common /rattle/ rcb,bond
   common /constraint/ nctot,nbond
