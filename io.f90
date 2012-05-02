@@ -22,8 +22,8 @@ subroutine print_rdf(ihoo,ihoh,ihhh,na,boxlxyz,ng,nb,nrdf)
   ! ------------------------------------------------------------------
   ! Outputs RDF
   ! ------------------------------------------------------------------
-  integer ihoo(imaxbin),ihoh(imaxbin)
-  integer ihhh(imaxbin),na,ng,nb,nrdf
+  integer(8) ihoo(imaxbin),ihoh(imaxbin),ihhh(imaxbin)
+  integer na,ng,nb,nrdf
   integer no,nh,i
   real(8) delr,rlower,rupper,rh,vol,boxlxyz(3)
   real(8) const,rideal,gr,pi,boxmax

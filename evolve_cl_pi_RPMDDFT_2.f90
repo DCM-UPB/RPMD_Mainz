@@ -1,4 +1,4 @@
-subroutine evolve_cl_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
+subroutine evolve_cl_pi_RPMDDFT_2(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
                      boxlxyz,z,beta,vir,vir_lf,irun,nbaro)
   use thermostat
   use barostat
@@ -35,6 +35,7 @@ subroutine evolve_cl_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
 	dvdrCP2K(:,:,:) = 0.d0
 	dvdrb(:,:,:) = 0.d0
 	rnm(:,:,:) = 0.d0
+	rb(:,:,:) = 0.d0
 	vCP2K = 0.d0
 	vMM = 0.d0
   vew = 0.d0
@@ -49,8 +50,6 @@ subroutine evolve_cl_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   tv = 0.d0
   tvxyz(:) = 0.d0
 
-  dtsmall = dt/dble(mts)
-  halfdtsmall = 0.5d0*dtsmall
   halfdt = 0.5d0*dt
 
   if (type.eq.'RPMD') then
@@ -176,18 +175,22 @@ subroutine evolve_cl_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
 		write(6,*) '* nbdf3 has to be nonzero if cl_pi is used'
     stop
 	else
-		call rp_contract_nm(rnm,vCP2K,dvdrCP2K,nb,na,boxlxyz,z,virCP2K,nbdf3,9)
-	!	! set rpmddft to 0 for fullforce evaluation using classical treatment
-	!	rpmddft = 0
-		call rp_contract_nm(rnm,vMM,dvdrMM,nb,na,boxlxyz,z,virMM,nbdf3,0)
-	!	rpmddft = 1
+
+  ! Form contracted RP coordinates
+
+  	call ring_contract(rnm,rb,na,nb,nbdf3)
+
+  ! Evaluate forces on the bead coordinates rb
+
+  	call forces(rb,vCP2K,dvdrb,nbdf3,na,boxlxyz,z,virCP2K,9)
+  	call force_contract(dvdrCP2K,dvdrb,na,nb,nbdf3)
+		dvdrb = 0.d0
+  	call forces(rb,vMM,dvdrb,nbdf3,na,boxlxyz,z,virMM,0)
+  	call force_contract(dvdrMM,dvdrb,na,nb,nbdf3)
+
 	endif
+
 	! Convert dvdrCP2K and dvdrMM back to bead representation
-  
-
-!alternativ ring_contract(rnm,...) dann forces aufrufen mit 0 und 9 !!!!!
-!dann fällt die Fouriertrafo danach weg!!!!
-
 	call realft(dvdrCP2K,3*na,nb,-1)
 	call realft(dvdrMM,3*na,nb,-1)
 
@@ -242,4 +245,4 @@ subroutine evolve_cl_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   comz=comz/mm
 !  write(*,*) "COM: ",comx,comy,comz
   return
-end subroutine evolve_cl_pi_RPMDDFT
+end subroutine evolve_cl_pi_RPMDDFT_2

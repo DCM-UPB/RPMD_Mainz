@@ -246,13 +246,13 @@ subroutine potenl_opt(r,v,dvdr,vir,na,nb,boxlxyz, &
      vir(:,:) = vir(:,:) + vir_int(:,:)
   endif
 
-#ifdef CP2K_BINDING
+!#ifdef CP2K_BINDING
 	!*** RPMD-DFT Force ***
 	if (iopt.eq.9) then
 				call RPMDDFT_force(r,dvdr,na,nb,v,vir,boxlxyz,bead) !!! übergebe auch boxlxyz, da NPT und bead, da PI
 
   endif
-#endif
+!#endif
 
   return
 end subroutine potenl_opt

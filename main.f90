@@ -238,7 +238,6 @@ program qmd
   
   ! PI Options
   ! ------------
-
   if (nb.gt.1) then
      call setup_pi(nb,beta,nbdf1,nbdf2,sig)
   endif
@@ -508,7 +507,6 @@ program qmd
 	else
   	allocate(f_env_id(nbdf3))
 	endif
-	write(*,*) nbdf3
 
 
 	! set rpmddft = 0 because classical equilibration, set it back to old value later
@@ -552,7 +550,7 @@ program qmd
 	rpmddft = rpmddfthelp
 
 
-#ifdef CP2K_BINDING
+!#ifdef CP2K_BINDING
 		!	RPMD-DFT
 		! -----------------------
 	if (rpmddft.eq.1) then
@@ -581,7 +579,7 @@ program qmd
 			enddo
 		endif
 	endif
-#endif
+!#endif
 
     ! Static Properties
     ! ------------------

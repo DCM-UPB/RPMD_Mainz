@@ -4,11 +4,12 @@ subroutine setup_pi(nb,beta,nbdf1,nbdf2,sig)
   ! ------------------------------------------------------------------
   ! Setup of path integral parameters
   ! ------------------------------------------------------------------
-  integer nb,nbdf1,nbdf2,nbdf3
+  integer nb,nbdf1,nbdf2,nbdf3,rpmddft
   real(8) beta,om,sig
   character*4 type
   common /path_i/ om,type
-	common /RPMDDFT/ nbdf3
+	common /RPMDDFT/ rpmddft,nbdf3
+	
   write(6,*)
   write(6,62) type,nb,om
 62 format( ' Path Integral Parameters : ' /1x,&
