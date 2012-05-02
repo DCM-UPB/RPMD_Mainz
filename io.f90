@@ -297,7 +297,7 @@ subroutine print_vmd_full_forces(dvdr,dvdr2,nb,na,boxlxyz,nunit)
   ! ------------------------------------------------------------------
   ! VMD output
   ! ------------------------------------------------------------------
-  integer na,nb,i,j,k,ni,nunit
+  integer na,nb,i,j,k,nunit
   real(8) dvdr(3,na,nb),dvdr2(3,na,nb),boxlxyz(3)
   real(8) xbox,ybox,zbox
   real(8), allocatable :: frc(:,:)
@@ -341,7 +341,7 @@ subroutine print_vmd_full_vels(p,mass,nb,na,boxlxyz,nunit)
   ! ------------------------------------------------------------------
   ! VMD output
   ! ------------------------------------------------------------------
-  integer na,nb,i,j,k,ni,nunit
+  integer na,nb,i,j,k,nunit
   real(8) p(3,na,nb),mass(na),boxlxyz(3)
   real(8) xbox,ybox,zbox
   real(8), allocatable :: vel(:,:)
@@ -455,7 +455,7 @@ subroutine print_vmd_bead_forces(dvdr,dvdr2,nb,ib,na,boxlxyz,nunit)
    ! ------------------------------------------------------------------
    ! VMD output
    ! ------------------------------------------------------------------
-   integer na,nb,ib,i,j,k,ni,nunit
+   integer na,nb,ib,i,j,k,nunit
    real(8) dvdr(3,na,nb),dvdr2(3,na,nb),boxlxyz(3)
    real(8) xbox,ybox,zbox
    real(8), allocatable :: frc(:,:)
@@ -494,7 +494,7 @@ subroutine print_vmd_bead_vels(p,mass,nb,ib,na,boxlxyz,nunit)
    ! ------------------------------------------------------------------
    ! VMD output
    ! ------------------------------------------------------------------
-   integer na,nb,ib,i,j,k,ni,nunit
+   integer na,nb,ib,i,j,k,nunit
    real(8) p(3,na,nb),mass(na),boxlxyz(3)
    real(8) xbox,ybox,zbox
    real(8), allocatable :: vel(:,:)

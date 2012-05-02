@@ -6,7 +6,7 @@ subroutine pressure(pres,vir,tv,na,boxlxyz)
 	! 01.02.2012 If RPMD-DFT then get pressure from CP2K and convert it 
 	! 					 from Bar to internal units
   ! ------------------------------------------------------------------
-  integer na, rpmddft,ierr
+  integer na, rpmddft
   real(8) vir(3,3),boxlxyz(3),tv,vol,pres,ptail,w
   real(8) oo_eps,oo_sig,oo_gam,rcut
   common /oo_param/ oo_eps,oo_sig,oo_gam,rcut
