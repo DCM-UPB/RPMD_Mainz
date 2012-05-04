@@ -19,7 +19,7 @@ program qmd
   character*240 line
   common /reftraj/ reftraj,line
 	
-  integer nc_ice(3),nc_wat(3),nm_ice,nm_wat,nctot,nbond
+  integer nc_ice(3),nc_wat(3),nm_ice,nm_wat,nctot,nbond,vacfac
   real(8) temp,rho,dtfs,ecut,test,beta,dt,dtps,boxmin,pres
   real(8) teqm,tsim,trdf,gaussian,wmass,rcut,om,ttaufs
   real(8) taufs,v,vew,vlj,vint,pi,vir(3,3),cell(3,3)
@@ -31,10 +31,10 @@ program qmd
 	character*25 filename
   character*4 type
   character*3 lattice,ens,therm_backup
-  logical iamcub,iamrigid
+  logical iamcub,iamrigid,vac
   external gaussian
 
-  namelist/input/ens,temp,pres,rho,lattice,iamcub,dtfs, &
+  namelist/input/ens,temp,pres,rho,lattice,vacfac,iamcub,dtfs, &
                  ecut,nt,ne,npre_eq,nb,m,ng,print,reftraj,pt,pb, &
                  ncellxyz,irun,itcf,itst,rcut, &
                  type,therm,ttaufs,baro,taufs,mts,om,nbdf1,nbdf2,sig,rpmddft,CP2K_path,nbdf3,rctdk
@@ -55,13 +55,15 @@ program qmd
   common /ensemble/ ens
   common /constraint/ nctot,nbond
   common /inp/ npre_eq
- 	common /RPMDDFT/ rpmddft,nbdf3,rctdk
+  common /RPMDDFT/ rpmddft,nbdf3,rctdk
 	
+	vac = .false.
+	vacfac = 1
 	rpmddft = 0
-  reftraj = 0
-  npre_eq = 0
+    reftraj = 0
+    npre_eq = 0
 	cell(:,:) = 0.d0
-  CP2K_path =""
+    CP2K_path =""
 	nbdf3 = 0
 	rctdk = 0
 
@@ -85,11 +87,6 @@ program qmd
   open(60,file=filename)
   read(60,input)
   close (unit=60)
-
-
-
-
-
 
   ! Parameters File
 
@@ -350,6 +347,32 @@ program qmd
         therm=therm_backup
         rcut = rcut_old
         write(6,*)  '-------------------------------------------'
+    !------Vacuum preparation----------
+    else if (lattice.eq.'VAC') then
+        write(6,*)
+        write(6,*) 'Beginning Vacuum preparation'
+        lattice='CUB'
+        iamcub=.true.
+
+        call setup_box_size(lattice,rho,nm,boxlxyz,wmass)
+        na = 3*nm
+        allocate(r(3,na,nb))
+        r(:,:,:) = 0.d0
+        call setup_positions(r,na,nb,nm,boxlxyz,qo,irun)
+
+        if (vacfac.gt.1) then
+            vac=.true.
+            boxlxyz(3)=vacfac*boxlxyz(3)
+            iamcub=.false.
+            write(6,*)'* Vacuum preparation done'
+        else if (vacfac.eq.1) then
+            vac=.false.
+            write(6,*) 'Vacuum not enabled (vacfac=1)'
+        else
+            write(6,*) 'Invalid vacfac choice (lt 1)'
+            stop
+        endif
+        write(6,*)
      else
 
         ! Use lattice
