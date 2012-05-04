@@ -31,7 +31,7 @@ program qmd
 	character*25 filename
   character*4 type
   character*3 lattice,ens,therm_backup
-  logical iamcub,iamrigid,vac
+  logical iamcub,iamrigid
   external gaussian
 
   namelist/input/ens,temp,pres,rho,lattice,vacfac,iamcub,dtfs, &
@@ -57,7 +57,6 @@ program qmd
   common /inp/ npre_eq
   common /RPMDDFT/ rpmddft,nbdf3,rctdk
 	
-	vac = .false.
 	vacfac = 1
 	rpmddft = 0
     reftraj = 0
@@ -351,22 +350,19 @@ program qmd
     else if (lattice.eq.'VAC') then
         write(6,*)
         write(6,*) 'Beginning Vacuum preparation'
-        lattice='CUB'
         iamcub=.true.
 
-        call setup_box_size(lattice,rho,nm,boxlxyz,wmass)
+        call setup_box_size('CUB',rho,nm,boxlxyz,wmass)
         na = 3*nm
         allocate(r(3,na,nb))
         r(:,:,:) = 0.d0
         call setup_positions(r,na,nb,nm,boxlxyz,qo,irun)
 
         if (vacfac.gt.1) then
-            vac=.true.
             boxlxyz(3)=vacfac*boxlxyz(3)
             iamcub=.false.
             write(6,*)'* Vacuum preparation done'
         else if (vacfac.eq.1) then
-            vac=.false.
             write(6,*) 'Vacuum not enabled (vacfac=1)'
         else
             write(6,*) 'Invalid vacfac choice (lt 1)'
