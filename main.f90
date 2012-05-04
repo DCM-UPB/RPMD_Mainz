@@ -573,7 +573,7 @@ program qmd
 	rpmddft = rpmddfthelp
 
 
-!#ifdef CP2K_BINDING
+#ifdef CP2K_BINDING
 		!	RPMD-DFT
 		! -----------------------
 	if (rpmddft.eq.1) then
@@ -602,7 +602,7 @@ program qmd
 			enddo
 		endif
 	endif
-!#endif
+#endif
 
     ! Static Properties
     ! ------------------
