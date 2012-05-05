@@ -7,8 +7,8 @@ subroutine freerp_acmd(p,r,dt,mass,na,nb,beta,irun,om,monod,delp)
   ! This version is for partially-adiabatic CMD, using Parinello's
   ! Langevin thermostat.
   ! ------------------------------------------------------------------      
-  integer na,nb,i,j,k,irun,l,ic
-  real(8) p(3,na,nb), r(3,na,nb),mass(na),c1,c2,c3
+  integer na,nb,i,j,k,irun,ic
+  real(8) p(3,na,nb), r(3,na,nb),mass(na)
   real(8) dt,beta,om,monod(3,4,nb),delp(3,nb)
   real(8) pprime,gaussian
   external gaussian
