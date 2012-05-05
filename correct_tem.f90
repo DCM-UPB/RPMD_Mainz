@@ -133,9 +133,9 @@ subroutine ewc_basic_tem(r,z,dvdr,v,vir,na,boxlxyz)
            dx = r(1,i)-r(1,j)
            dy = r(2,i)-r(2,j)
            dz = r(3,i)-r(3,j)
-           dx = dx - boxlx*nint(onboxx*dx)
-           dy = dy - boxly*nint(onboxy*dy)
-           dz = dz - boxlz*nint(onboxz*dz)
+           dx = dx - boxlx*dble(nint(onboxx*dx))
+           dy = dy - boxly*dble(nint(onboxy*dy))
+           dz = dz - boxlz*dble(nint(onboxz*dz))
            drsq = dx*dx + dy*dy + dz*dz
            if (drsq.lt.rcutsq) then
               dr = dsqrt(drsq)
@@ -249,9 +249,9 @@ subroutine ewc_list_tem(r,z,dvdr,v,vir,na,boxlxyz,list,point)
               dx = r(1,i) - rxj
               dy = r(2,i) - ryj
               dz = r(3,i) - rzj
-              dx = dx - boxx*nint(onboxx*dx)
-              dy = dy - boxy*nint(onboxy*dy)
-              dz = dz - boxz*nint(onboxz*dz)
+              dx = dx - boxx*dble(nint(onboxx*dx))
+              dy = dy - boxy*dble(nint(onboxy*dy))
+              dz = dz - boxz*dble(nint(onboxz*dz))
               drsq = dx*dx + dy*dy + dz*dz
               if (drsq .lt. rcutsq) then
                  dr = dsqrt(drsq)
@@ -381,9 +381,9 @@ subroutine ewc_cell_tem(r,z,dvdr,v,vir,na,boxlxyz)
                     dx = r(1,i)-r(1,j)
                     dy = r(2,i)-r(2,j)
                     dz = r(3,i)-r(3,j)
-                    dx = dx-boxx*nint(onboxx*dx)
-                    dy = dy-boxy*nint(onboxy*dy)
-                    dz = dz-boxz*nint(onboxz*dz)
+                    dx = dx-boxx*dble(nint(onboxx*dx))
+                    dy = dy-boxy*dble(nint(onboxy*dy))
+                    dz = dz-boxz*dble(nint(onboxz*dz))
                     drsq = dx*dx + dy*dy + dz*dz
                     if (drsq .lt. rcutsq) then
                        dr = dsqrt(drsq)
@@ -446,9 +446,9 @@ subroutine ewc_cell_tem(r,z,dvdr,v,vir,na,boxlxyz)
                        dx = r(1,i)-r(1,j)
                        dy = r(2,i)-r(2,j)
                        dz = r(3,i)-r(3,j)
-                       dx = dx-boxx*nint(onboxx*dx)
-                       dy = dy-boxy*nint(onboxy*dy)
-                       dz = dz-boxz*nint(onboxz*dz)
+                       dx = dx-boxx*dble(nint(onboxx*dx))
+                       dy = dy-boxy*dble(nint(onboxy*dy))
+                       dz = dz-boxz*dble(nint(onboxz*dz))
                        drsq = dx*dx+dy*dy+dz*dz
                        if (drsq .lt. rcutsq) then
                           dr = dsqrt(drsq)

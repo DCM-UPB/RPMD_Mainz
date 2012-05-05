@@ -46,7 +46,7 @@ subroutine print_rdf(ihoo,ihoh,ihhh,na,boxlxyz,ng,nb,nrdf)
   ! Print the RDFs
 
   do i = 1, imaxbin
-     rlower = real( i - 1 ) * delr
+     rlower = dble( i - 1 ) * delr
      rupper = rlower + delr
 
      ! oxygen - oxygen distribution
@@ -54,7 +54,7 @@ subroutine print_rdf(ihoo,ihoh,ihhh,na,boxlxyz,ng,nb,nrdf)
      rh = dble(no) / vol
      const = 4.d0 * pi * rh / 3.d0
      rideal = const * ( rupper**3 - rlower**3)
-     gr = real(ihoo(i)) / ( real( no * nb * nrdf) * rideal )
+     gr = dble(ihoo(i)) / (dble( no * nb * nrdf) * rideal)
      write(50,*)(rlower+ delr / 2.d0)*ToA, gr
 
      ! oxygen - hydrogen distribution
@@ -62,7 +62,7 @@ subroutine print_rdf(ihoo,ihoh,ihhh,na,boxlxyz,ng,nb,nrdf)
      rh = dble(no) / vol
      const = 4.d0 * pi * rh / 3.d0
      rideal = const * ( rupper**3 - rlower**3)
-     gr = real(ihoh(i)) / (real( nh*nb * nrdf) * rideal)
+     gr = dble(ihoh(i)) / (dble( nh * nb * nrdf) * rideal)
      write(51,*)(rlower + delr / 2.d0)*ToA, gr
 
      ! hydrogen - hydrogen distribution
@@ -70,7 +70,7 @@ subroutine print_rdf(ihoo,ihoh,ihhh,na,boxlxyz,ng,nb,nrdf)
      rh = dble(nh) / vol
      const = 4.d0 * pi * rh / 3.d0
      rideal = const * ( rupper**3 - rlower**3)
-     gr = real(ihhh(i)) / (real( nh*nb * nrdf) * rideal)
+     gr = dble(ihhh(i)) / (dble( nh * nb * nrdf) * rideal)
      write(52,*) (rlower + delr / 2.d0)*ToA, gr
   enddo
   close (unit=50)
@@ -268,9 +268,9 @@ subroutine print_vmd_full(r,nb,na,nm,boxlxyz,nunit)
       dh1z = rc(3,ni+1) - rc(3,ni)
       dh2z = rc(3,ni+2) - rc(3,ni)
       ! Shift Oxygen atoms into box:
-      rc(1,ni) = rc(1,ni) - xbox*(nint(rc(1,ni)*onboxlx)-0.5d0)
-      rc(2,ni) = rc(2,ni) - ybox*(nint(rc(2,ni)*onboxly)-0.5d0)
-      rc(3,ni) = rc(3,ni) - zbox*(nint(rc(3,ni)*onboxlz)-0.5d0)
+      rc(1,ni) = rc(1,ni) - xbox*(dble(nint(rc(1,ni)*onboxlx))-0.5d0)
+      rc(2,ni) = rc(2,ni) - ybox*(dble(nint(rc(2,ni)*onboxly))-0.5d0)
+      rc(3,ni) = rc(3,ni) - zbox*(dble(nint(rc(3,ni)*onboxlz))-0.5d0)
       ! Move Hydrogens relative to Oxygen:
       rc(1,ni+1) = dh1x + rc(1,ni)
       rc(1,ni+2) = dh2x + rc(1,ni)
@@ -426,9 +426,9 @@ subroutine print_vmd_bead(r,nb,ib,na,nm,boxlxyz,nunit)
       dh1z = rb(3,ni+1) - rb(3,ni)
       dh2z = rb(3,ni+2) - rb(3,ni)
       ! Shift Oxygen atoms into box:
-      rb(1,ni) = rb(1,ni) - xbox*(nint(rb(1,ni)*onboxlx)-0.5d0)
-      rb(2,ni) = rb(2,ni) - ybox*(nint(rb(2,ni)*onboxly)-0.5d0)
-      rb(3,ni) = rb(3,ni) - zbox*(nint(rb(3,ni)*onboxlz)-0.5d0)
+      rb(1,ni) = rb(1,ni) - xbox*(dble(nint(rb(1,ni)*onboxlx))-0.5d0)
+      rb(2,ni) = rb(2,ni) - ybox*(dble(nint(rb(2,ni)*onboxly))-0.5d0)
+      rb(3,ni) = rb(3,ni) - zbox*(dble(nint(rb(3,ni)*onboxlz))-0.5d0)
       ! Move Hydrogens relative to Oxygen:
       rb(1,ni+1) = dh1x + rb(1,ni)
       rb(1,ni+2) = dh2x + rb(1,ni)

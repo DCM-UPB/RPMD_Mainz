@@ -69,9 +69,9 @@ subroutine cell_list(r,list,link,ink,mapx,mapy,mapz,nn, &
   cellz = dble(ncellxyz(3))/boxz
 
   do i = 1,n,ijump
-     dx = r(1,i)-boxx*nint(onboxx*r(1,i))
-     dy = r(2,i)-boxy*nint(onboxy*r(2,i))
-     dz = r(3,i)-boxz*nint(onboxz*r(3,i))
+     dx = r(1,i)-boxx*dble(nint(onboxx*r(1,i)))
+     dy = r(2,i)-boxy*dble(nint(onboxy*r(2,i)))
+     dz = r(3,i)-boxz*dble(nint(onboxz*r(3,i)))
      ix = min(ncellxyz(1),1+int((dx+halfx)*cellx))
      iy = min(ncellxyz(2),1+int((dy+halfy)*celly))
      iz = min(ncellxyz(3),1+int((dz+halfz)*cellz))
@@ -105,9 +105,9 @@ subroutine cell_list_unit(r,list,link,ink,map,nn,n,ncell, &
   
   cell = dble(ncell)
   do i = 1,n
-     dx = r(1,i)-nint(r(1,i))
-     dy = r(2,i)-nint(r(2,i))
-     dz = r(3,i)-nint(r(3,i))
+     dx = r(1,i)-dble(nint(r(1,i)))
+     dy = r(2,i)-dble(nint(r(2,i)))
+     dz = r(3,i)-dble(nint(r(3,i)))
      ix = min(ncell,1+int((dx+0.5d0)*cell))
      iy = min(ncell,1+int((dy+0.5d0)*cell))
      iz = min(ncell,1+int((dz+0.5d0)*cell))

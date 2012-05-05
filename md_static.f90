@@ -406,9 +406,9 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
                     dx = r(1,i,k) - r(1,j,k)
                     dy = r(2,i,k) - r(2,j,k)
                     dz = r(3,i,k) - r(3,j,k)
-                    dx = dx-boxlxyz(1)*nint(dx/boxlxyz(1))
-                    dy = dy-boxlxyz(2)*nint(dy/boxlxyz(2))
-                    dz = dz-boxlxyz(3)*nint(dz/boxlxyz(3))
+                    dx = dx-boxlxyz(1)*dble(nint(dx/boxlxyz(1)))
+                    dy = dy-boxlxyz(2)*dble(nint(dy/boxlxyz(2)))
+                    dz = dz-boxlxyz(3)*dble(nint(dz/boxlxyz(3)))
                     dist(i,j) = dsqrt(dx*dx+dy*dy+dz*dz)
                     dist(j,i) = dist(i,j)
                  enddo

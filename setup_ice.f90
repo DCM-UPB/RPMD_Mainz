@@ -79,9 +79,9 @@ subroutine h_place(r,nm,irun,boxlxyz,alat,blat,clat,iunit)
         dx = r(1,i)-r(1,k)
         dy = r(2,i)-r(2,k)
         dz = r(3,i)-r(3,k)
-        dx = dx - boxlx * nint(onboxx*dx)
-        dy = dy - boxly * nint(onboxy*dy)
-        dz = dz - boxlz * nint(onboxz*dz)
+        dx = dx - boxlx * dble(nint(onboxx*dx))
+        dy = dy - boxly * dble(nint(onboxy*dy))
+        dz = dz - boxlz * dble(nint(onboxz*dz))
         dr2 = dx*dx + dy*dy + dz*dz
         if (dr2.lt.rb2) then
            if (i.ne.k) then
@@ -255,9 +255,9 @@ subroutine h_coordinates(neigh,r,nm,boxlxyz)
      dx = r(1,kk)-r(1,jj)
      dy = r(2,kk)-r(2,jj)
      dz = r(3,kk)-r(3,jj)
-     dx = dx - boxlx*nint(onboxx*dx)
-     dy = dy - boxly*nint(onboxy*dy)
-     dz = dz - boxlz*nint(onboxz*dz)
+     dx = dx - boxlx*dble(nint(onboxx*dx))
+     dy = dy - boxly*dble(nint(onboxy*dy))
+     dz = dz - boxlz*dble(nint(onboxz*dz))
      dr = dx*dx + dy*dy + dz*dz
      dr = dsqrt(dr)
      vec(1) = dx/dr

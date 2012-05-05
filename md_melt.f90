@@ -293,7 +293,7 @@ subroutine den_axis(r,boxlxyz,na,nb,id,imax,iaxis,iout)
   delr = (box/dble(imax))
 
   do j = 1,na/3
-     ro(j) = ro(j) - box*(nint(ro(j)*onbox)-0.5d0)
+     ro(j) = ro(j) - box*(dble(nint(ro(j)*onbox))-0.5d0)
      ibin = int(ro(j)/delr)+1
      if (ibin.le.imax) then
         id(ibin) = id(ibin)+1
