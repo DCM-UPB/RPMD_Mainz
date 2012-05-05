@@ -17,9 +17,9 @@ subroutine setup_int_size(rho_ice,rho_wat,box_ice,box_wat, &
   vbox = (nm_ice*emass*wmass)/(rho_ice*1000.d0*(ToA*1d-10)**3)
   vcell = vbox / (nc_ice(1)*nc_ice(2)*nc_ice(3))
   rlat = ((3.d0*dsqrt(3.d0)/64.d0) * vcell)**(1.d0/3.d0)
-  box_ice(1) = dsqrt(8.d0/3.d0) * rlat * nc_ice(1)
-  box_ice(2) = dsqrt(8.d0) * rlat * nc_ice(2)
-  box_ice(3) = (8.d0/3.d0) * rlat * nc_ice(3)
+  box_ice(1) = dsqrt(8.d0/3.d0) * rlat * real(nc_ice(1),8)
+  box_ice(2) = dsqrt(8.d0)      * rlat * real(nc_ice(2),8)
+  box_ice(3) =      (8.d0/3.d0) * rlat * real(nc_ice(3),8)
 
   ! Setup a water lattice to match up (y-z) plane
   ! ----------------------------------------------
