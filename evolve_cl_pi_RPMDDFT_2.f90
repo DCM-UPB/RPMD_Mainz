@@ -18,7 +18,7 @@ subroutine evolve_cl_pi_RPMDDFT_2(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   real(8) dt,v,beta,dtsmall,vew,vlj,vint,sig,ve,vCP2K,vMM
   real(8) tv,tv_itr,tq1,tq2,c1,c2,c3
   real(8) dheat, comx, comy, comz, mm !!GLE
-  character*4 type
+  character(len=4) type
   external gaussian
   common /path_i/ om,type
   common /beaddiabatic/ nbdf1,nbdf2

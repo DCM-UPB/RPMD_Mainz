@@ -20,7 +20,7 @@ subroutine evolve_pi(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   real(8), allocatable :: dvdre(:,:,:),rst(:,:,:),dvdrl(:,:,:)
   real(8), allocatable :: monod(:,:,:),delp(:,:)
   real(8) dheat, comx, comy, comz, mm !!GLE
-  character*4 type
+  character(len=4) type
   external gaussian
   common /path_i/ om,type
   common /beaddiabatic/ nbdf1,nbdf2

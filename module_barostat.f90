@@ -2,7 +2,7 @@ module barostat
   implicit none
   integer nacc,nmove
   real(8) taub,patm,dv
-  character*3 baro
+  character(len=3) baro
 contains
  
   subroutine beren_driver(vir,tv,tvxyz,dt,r,boxlxyz,na,nb)
@@ -35,7 +35,7 @@ contains
     integer na,nm,nb,i,j,k,ii,jj,kk,nacc,nmove,rpmddft
     real(8) r(3,na,nb),boxlxyz(3),scale(3),pres(3),patm,dt
     real(8) vir(3,3),tvxyz(3),compi,bstat,dv,ptail,vol
-    character*3 baro
+    character(len=3) baro
     real(8) oo_eps,oo_sig,oo_gam,rcut
     real(8), allocatable :: rcm(:,:)
     common /oo_param/ oo_eps,oo_sig,oo_gam,rcut

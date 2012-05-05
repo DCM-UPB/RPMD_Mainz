@@ -1,7 +1,7 @@
 module thermostat
     implicit none
     real(8) ttau
-    character*3 therm
+    character(len=3) therm
 contains
   subroutine parinello_therm(p,mass,tau,na,nb,dt,irun,beta)
     implicit none
@@ -119,7 +119,7 @@ contains
     ! ------------------------------------------------------------------
     integer na,nb,irun
     real(8) p(3,na,nb),mass(na),beta,dt,om
-    character*4 type
+    character(len=4) type
     common /path_i/ om,type
     
     if ((type.eq.'RPMD').or.(nb.eq.1)) then

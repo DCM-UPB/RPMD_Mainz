@@ -6,7 +6,7 @@ subroutine md_static_prepare_traj(nb,pt,pb,print)
   integer nb,pt,pb
   integer print(3)
   integer ib
-  character*128 file_name
+  character(len=128) file_name
   if (pt.gt.0) then
     if (print(1).eq.1) then
       open(32,file='vmd_traj.xyz',STATUS='replace')
@@ -94,8 +94,8 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   real(8) v1,v2,v3,v1ave,v2ave,v1eeav,v2eeav,v3ave,v3eeav,denc
   real(8) pres,volav,pav,pvav,xav,yav,zav,denav,wmass
   real(8), allocatable :: dist(:,:), dvdre(:,:,:)
-  character*3 ens
-  character*128 file_name
+  character(len=3) ens
+  character(len=128) file_name
   external ran2
   common /ensemble/ ens
   common /beaddiabatic/ nbdf1,nbdf2

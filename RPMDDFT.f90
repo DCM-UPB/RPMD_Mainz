@@ -9,7 +9,7 @@ subroutine RPMDDFT_force(r,dvdr,na,nb,v,vir,boxlxyz,bead)
   integer na,nb,bead,ierr,k,j,jj,kk
   real(8) r(3,na),dvdr(3,na),vir(3,3),rtest(3,na),boxlxyz(3),cell(3,3)
   real(8) v,dx1,dy1,dz1
-  character*3 ens
+  character(len=3) ens
 
   common /ensemble/ ens
 

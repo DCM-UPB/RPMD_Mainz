@@ -13,10 +13,10 @@ program qmd
 
   ! used for reftrj and RPMD-DFT
   integer reftraj,rpmddft,ierr,rpmddfthelp
-  character*35 CP2K_path
+  character(len=35) CP2K_path
   ! r_traj(xyz,molecules,nb,reftraj)
   real(8), allocatable :: r_traj(:,:,:,:),boxlxyz_traj(:,:)
-  character*240 line
+  character(len=240) line
   common /reftraj/ reftraj,line
   
   integer nc_ice(3),nc_wat(3),nm_ice,nm_wat,nctot,nbond,vacfac
@@ -28,9 +28,9 @@ program qmd
   real(8) box_ice(3),box_wat(3),rcut_old
   real(8), allocatable :: mass(:),z(:),r(:,:,:)
   real(8), allocatable :: p(:,:,:),dvdr(:,:,:),dvdr2(:,:,:)
-  character*25 filename
-  character*4 type
-  character*3 lattice,ens,therm_backup
+  character(len=25) filename
+  character(len=4) type
+  character(len=3) lattice,ens,therm_backup
   logical iamcub,iamrigid
   external gaussian
 

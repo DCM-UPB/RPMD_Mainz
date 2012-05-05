@@ -6,7 +6,7 @@ subroutine setup_pi(nb,beta,nbdf1,nbdf2,sig)
   ! ------------------------------------------------------------------
   integer nb,nbdf1,nbdf2,nbdf3,rpmddft
   real(8) beta,om,sig
-  character*4 type
+  character(len=4) type
   common /path_i/ om,type
   common /RPMDDFT/ rpmddft,nbdf3
   
@@ -197,7 +197,7 @@ subroutine setup_box_size(lattice,rho,nm,boxlxyz,wmass)
   integer ncellxyz(3),nm,nlat,nflag
   real(8) boxlxyz(3),wmass,rho,vbox,rlat,alat,blat,clat
   real(8) boxl,vcell,totcell
-  character*3 lattice
+  character(len=3) lattice
   logical iamcub
   common /lattice/ ncellxyz,nlat
   common /symmetry/ iamcub
