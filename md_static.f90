@@ -101,7 +101,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   common /beaddiabatic/ nbdf1,nbdf2
   integer reftraj,rpmddft
   common /reftraj/ reftraj
-	common /RPMDDFT/ rpmddft
+  common /RPMDDFT/ rpmddft
 
   nbaro = 0
   if (ens.eq.'NPT') then
@@ -113,10 +113,10 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
 
     ! Define some useful local constants and zero-out arrays
 !!!!!!!!!!!!!!!!!!!!!!!!!!!! ich will alles Nullen am Anfang, was nicht reingeht
-	v = 0.d0
+  v = 0.d0
   v1 = 0.d0
-	v2 = 0.d0
-	v3 = 0.d0
+  v2 = 0.d0
+  v3 = 0.d0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   pi = dacos(-1.d0)
   dtps = 1d-3*dt/tofs

@@ -24,19 +24,19 @@ subroutine evolve_cl_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   common /beaddiabatic/ nbdf1,nbdf2
   common /multiple_ts/ mts
   common /correct/ sig
-	common /RPMDDFT/ rpmddft,nbdf3
-	real(8) rnm(3,na,nb),rb(3,na,nbdf3),dvdrCP2K(3,na,nb),dvdrMM(3,na,nb),dvdrb(3,na,nbdf3)
+  common /RPMDDFT/ rpmddft,nbdf3
+  real(8) rnm(3,na,nb),rb(3,na,nbdf3),dvdrCP2K(3,na,nb),dvdrMM(3,na,nb),dvdrb(3,na,nbdf3)
 
 
   ! Zero constants and arrays
-	dvdrl(:,:,:) = 0.d0
+  dvdrl(:,:,:) = 0.d0
   dvdre(:,:,:) = 0.d0
-	dvdrMM(:,:,:) = 0.d0
-	dvdrCP2K(:,:,:) = 0.d0
-	dvdrb(:,:,:) = 0.d0
-	rnm(:,:,:) = 0.d0
-	vCP2K = 0.d0
-	vMM = 0.d0
+  dvdrMM(:,:,:) = 0.d0
+  dvdrCP2K(:,:,:) = 0.d0
+  dvdrb(:,:,:) = 0.d0
+  rnm(:,:,:) = 0.d0
+  vCP2K = 0.d0
+  vMM = 0.d0
   vew = 0.d0
   vlj = 0.d0
   vint = 0.d0
@@ -45,7 +45,7 @@ subroutine evolve_cl_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   vir_ew(:,:) = 0.d0
   vir_hf(:,:) = 0.d0
   virCP2K(:,:) = 0.d0
-	virMM(:,:) = 0.d0
+  virMM(:,:) = 0.d0
   tv = 0.d0
   tvxyz(:) = 0.d0
 
@@ -66,8 +66,8 @@ subroutine evolve_cl_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
 
   p(:,:,:) = p(:,:,:) - halfdt*(dvdr(:,:,:)+dvdr2(:,:,:)) !hier sind alle Kräfte drin!
 
-	!	get new coordinates
-	call freerp_rpmd(p,r,dt,mass,na,nb,beta)
+  !  get new coordinates
+  call freerp_rpmd(p,r,dt,mass,na,nb,beta)
 
   ! Form Bead Positions and evaluate high-frequency forces
   call forces(r,vint,dvdr2,nb,na,boxlxyz,z,vir_hf,4)
@@ -98,8 +98,8 @@ subroutine evolve_cl_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   ! --------------------------------------------------------------
 
   ! Convert the positions to the normal mode representation
-	rnm(:,:,:) = r(:,:,:)
-	call realft (rnm,3*na,nb,+1)
+  rnm(:,:,:) = r(:,:,:)
+  call realft (rnm,3*na,nb,+1)
 
   ! Ewald
 
@@ -171,31 +171,31 @@ subroutine evolve_cl_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
 
 
 
-	! Evaluate CP2K and MM, nb=nbdf3 force:
-	if (nbdf3.eq.0) then 
-		write(6,*) '* nbdf3 has to be nonzero if cl_pi is used'
+  ! Evaluate CP2K and MM, nb=nbdf3 force:
+  if (nbdf3.eq.0) then 
+    write(6,*) '* nbdf3 has to be nonzero if cl_pi is used'
     stop
-	else
-		call rp_contract_nm(rnm,vCP2K,dvdrCP2K,nb,na,boxlxyz,z,virCP2K,nbdf3,9)
-	!	! set rpmddft to 0 for fullforce evaluation using classical treatment
-	!	rpmddft = 0
-		call rp_contract_nm(rnm,vMM,dvdrMM,nb,na,boxlxyz,z,virMM,nbdf3,0)
-	!	rpmddft = 1
-	endif
-	! Convert dvdrCP2K and dvdrMM back to bead representation
+  else
+    call rp_contract_nm(rnm,vCP2K,dvdrCP2K,nb,na,boxlxyz,z,virCP2K,nbdf3,9)
+  !  ! set rpmddft to 0 for fullforce evaluation using classical treatment
+  !  rpmddft = 0
+    call rp_contract_nm(rnm,vMM,dvdrMM,nb,na,boxlxyz,z,virMM,nbdf3,0)
+  !  rpmddft = 1
+  endif
+  ! Convert dvdrCP2K and dvdrMM back to bead representation
   
 
 !alternativ ring_contract(rnm,...) dann forces aufrufen mit 0 und 9 !!!!!
 !dann fällt die Fouriertrafo danach weg!!!!
 
-	call realft(dvdrCP2K,3*na,nb,-1)
-	call realft(dvdrMM,3*na,nb,-1)
+  call realft(dvdrCP2K,3*na,nb,-1)
+  call realft(dvdrMM,3*na,nb,-1)
 
-	write(*,*) "dvdr:", dvdr(:,1,3)
-	write(*,*) "dvdrCP2K:", dvdrCP2K(:,1,3)
-	write(*,*) "dvdrMM:", dvdrMM(:,1,3)
-	write(*,*) "dvdrCP2K-dvdrMM", dvdrCP2K(:,1,3)-dvdrMM(:,1,3)
-	dvdr(:,:,:) = dvdr(:,:,:)+dvdrCP2K(:,:,:)-dvdrMM(:,:,:)
+  write(*,*) "dvdr:", dvdr(:,1,3)
+  write(*,*) "dvdrCP2K:", dvdrCP2K(:,1,3)
+  write(*,*) "dvdrMM:", dvdrMM(:,1,3)
+  write(*,*) "dvdrCP2K-dvdrMM", dvdrCP2K(:,1,3)-dvdrMM(:,1,3)
+  dvdr(:,:,:) = dvdr(:,:,:)+dvdrCP2K(:,:,:)-dvdrMM(:,:,:)
 
   ! Evolve the momenta under the low+CP2K+MM forces
 

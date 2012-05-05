@@ -8,8 +8,8 @@ subroutine setup_pi(nb,beta,nbdf1,nbdf2,sig)
   real(8) beta,om,sig
   character*4 type
   common /path_i/ om,type
-	common /RPMDDFT/ rpmddft,nbdf3
-	
+  common /RPMDDFT/ rpmddft,nbdf3
+  
   write(6,*)
   write(6,62) type,nb,om
 62 format( ' Path Integral Parameters : ' /1x,&
@@ -25,10 +25,10 @@ subroutine setup_pi(nb,beta,nbdf1,nbdf2,sig)
      sig = sig / ToA
      call setup_contraction(nbdf1,nbdf2,nb,sig)
   endif
-	if (nbdf3.gt.0) then
-		 write(6,'(a,i2,a)') &
+  if (nbdf3.gt.0) then
+     write(6,'(a,i2,a)') &
      ' * RP contraction of CP2K-Force with ', nbdf3 , ' modes'
-	endif
+  endif
   return
 end subroutine setup_pi
 

@@ -19,7 +19,7 @@ subroutine evolve_cl_RPMDDFT(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
   common /multiple_ts/ mts
   common /path_i/ om,type
   common /reftraj/ reftraj
-	common /RPMDDFT/ rpmddft
+  common /RPMDDFT/ rpmddft
 
   real(8) boxlxyz_backup(3)
   real(8), allocatable :: r_backup(:,:,:)
@@ -39,16 +39,16 @@ subroutine evolve_cl_RPMDDFT(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
   endif
 
   p(:,:,:) = p(:,:,:) - halfdt*(dvdr(:,:,:)+dvdr2(:,:,:)) !dvdr2 sollte nach erstem step = 0 sein, in erstem aber noch kraft aus äquilibrierung --> dvdr2 !=0
-	
-	!	get new coordinates
-	call freerp_rpmd(p,r,dt,mass,na,nb,beta) ! Was ist mit ACMD???
+  
+  !  get new coordinates
+  call freerp_rpmd(p,r,dt,mass,na,nb,beta) ! Was ist mit ACMD???
 
 
 !  ! Barostat
 !  ! (note:// COMs scaled therefore do not need to recalculate
 !  ! intramolecular forces as they remain the same)
 
-	! Barostat
+  ! Barostat
   if (reftraj.eq.0 .and. nbaro.eq.1) then
 
     if (baro.eq.'BER') then
@@ -63,11 +63,11 @@ subroutine evolve_cl_RPMDDFT(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
 
   endif
 
-	! Evaluation of the t+timestep forces 
-	call forces(r,v,dvdr,nb,na,boxlxyz,z,vir,9)  
+  ! Evaluation of the t+timestep forces 
+  call forces(r,v,dvdr,nb,na,boxlxyz,z,vir,9)  
 
-	! Set dvdr2 = 0 because we don't have a high frequency part
-	dvdr2(:,:,:) = 0.d0
+  ! Set dvdr2 = 0 because we don't have a high frequency part
+  dvdr2(:,:,:) = 0.d0
 
   ! Evolve the momenta to full timestep                        
   p(:,:,:) = p(:,:,:)-halfdt*dvdr(:,:,:)

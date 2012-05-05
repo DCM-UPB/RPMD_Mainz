@@ -13,7 +13,7 @@ subroutine forces(r,v,dvdr,nb,na,boxlxyz,z,virial,iopt)
   integer, allocatable :: point(:),list(:)
   common /oo_param/ oo_eps,oo_sig,oo_gam,rcut
   common /correct/ sig
-	common /RPMDDFT/ rpmddft,nbdf3
+  common /RPMDDFT/ rpmddft,nbdf3
   ! Allocate
 
   allocate (point(na+3),list(maxnab*na))
@@ -59,7 +59,7 @@ subroutine forces(r,v,dvdr,nb,na,boxlxyz,z,virial,iopt)
         call potenl_opt(r(:,:,k),dv,dvdr(:,:,k),vir(:,:), & 
                         na,nb,boxlxyz,z,list,point,iopt,k) ! f_env_id = k
 
-				v = v + dv
+        v = v + dv
         virial(:,:) = virial(:,:) + vir(:,:)
      enddo
   else
@@ -125,7 +125,7 @@ subroutine potenl_opt(r,v,dvdr,vir,na,nb,boxlxyz, &
   ! iopt = 2   - Ewald force evaluation
   ! iopt = 3   - LJ force evaluation
   ! iopt = 4   - Intramolecular force evaluation
-	! iopt = 9   - RPMD-DFT force evaluation
+  ! iopt = 9   - RPMD-DFT force evaluation
   ! ------------------------------------------------------------------
   integer na,nb,mol(na),nm,i,j,imol,ic,iopt,point(na+3),list(maxnab*na),bead
   real(8) z(na),r(3,na),dvdr(3,na),vir(3,3),vir_ew(3,3),vir_oo(3,3)
@@ -247,9 +247,9 @@ subroutine potenl_opt(r,v,dvdr,vir,na,nb,boxlxyz, &
   endif
 
 #ifdef CP2K_BINDING
-	!*** RPMD-DFT Force ***
-	if (iopt.eq.9) then
-				call RPMDDFT_force(r,dvdr,na,nb,v,vir,boxlxyz,bead) !!! übergebe auch boxlxyz, da NPT und bead, da PI
+  !*** RPMD-DFT Force ***
+  if (iopt.eq.9) then
+        call RPMDDFT_force(r,dvdr,na,nb,v,vir,boxlxyz,bead) !!! übergebe auch boxlxyz, da NPT und bead, da PI
 
   endif
 #endif
@@ -273,7 +273,7 @@ subroutine full_forces(r,na,nb,v,vew,voo,vint,vir,z,boxlxyz, &
   real(8), allocatable :: dvdre(:,:,:),dvdrl(:,:,:)
   common /beaddiabatic/ nbdf1,nbdf2
   common /correct/ sig
-	common /RPMDDFT/ rpmddft
+  common /RPMDDFT/ rpmddft
 
   ! Allocate
 
@@ -293,106 +293,106 @@ subroutine full_forces(r,na,nb,v,vew,voo,vint,vir,z,boxlxyz, &
   vir_itr(:,:) = 0.d0
   vir_oo(:,:) = 0.d0
   vir_ew(:,:) = 0.d0
-	
-	if (rpmddft.eq.0) then
+  
+  if (rpmddft.eq.0) then
 
-  	! High Frequency forces
+    ! High Frequency forces
 
-  	call forces(r,vint,dvdr2,nb,na,boxlxyz,z,vir_itr,4) 										!dvdr2 wird in forces = 0 gesetzt
+    call forces(r,vint,dvdr2,nb,na,boxlxyz,z,vir_itr,4)                     !dvdr2 wird in forces = 0 gesetzt
 
-  	! Evaluation of the low frequency forces using RP-contraction
+    ! Evaluation of the low frequency forces using RP-contraction
 
-  	if (nb.gt.1) then
-    	 if ((nbdf1.gt.0).or.(nbdf2.gt.0)) then
+    if (nb.gt.1) then
+       if ((nbdf1.gt.0).or.(nbdf2.gt.0)) then
 
-    	    ! Entering normal mode representation
+          ! Entering normal mode representation
 
-    	    call realft (r,3*na,nb,+1)
+          call realft (r,3*na,nb,+1)
 
-    	    ! Ewald
+          ! Ewald
 
-    	    if (nbdf1.gt.0) then
-    	       call rp_contract_nm(r,vew,dvdr,nb,na,boxlxyz,z,vir_ew, &            !dvdr vorher = 0 gesetzt
+          if (nbdf1.gt.0) then
+             call rp_contract_nm(r,vew,dvdr,nb,na,boxlxyz,z,vir_ew, &            !dvdr vorher = 0 gesetzt
                                 nbdf1,2)
 
-          	 if (sig.gt.0.d0) then
+             if (sig.gt.0.d0) then
 
-    	          ! Short range coulombic correction
-	
-     	         call rp_contract_nm(r,ve,dvdre,nb,na,boxlxyz,z, &
-     	                              vir_ewc,nbdf1,5)
-       	       vew = vew - ve
-       	       vir_ew(:,:) = vir_ew(:,:) - vir_ewc(:,:)
-       	       dvdr(:,:,:) = dvdr(:,:,:) - dvdre(:,:,:)
-      	     endif
-      	  endif
-
-    	    ! Oxygen-Oxgen interaction
-
-    	    if (nbdf2.gt.0) then
-     	      call rp_contract_nm(r,voo,dvdrl,nb,na,boxlxyz,z,vir_oo, &
-     	                           nbdf2,3)
-     	   endif
-
-     	   call realft (r,3*na,nb,-1)
-    	 endif
-
-   	  ! Transform dvdr back to bead representation (if needed)
-
-  	   if ((nbdf1.gt.0).and.(nbdf2.gt.0)) then
-  	      dvdr(:,:,:) = dvdr(:,:,:) + dvdrl(:,:,:)  
-  	      call realft(dvdr,3*na,nb,-1)
-		   else
-		      if (nbdf1.gt.0) then
-    	       call realft(dvdr,3*na,nb,-1)               
-   	 	   else if (nbdf2.gt.0) then
-     	      call realft(dvdrl,3*na,nb,-1)
-     	   endif
-    	 endif
-	  endif
-
-  	! Evaluate non beadd forces
-
-  	if ((nb.eq.1).or.(nbdf1.eq.0)) then
- 	    call forces(r,vew,dvdr,nb,na,boxlxyz,z,vir_ew,2) 
-  	else if (sig.gt.0.d0) then
-     
-  	   ! Short range coulombic correction
-     
-  	   call forces(r,ve,dvdre,nb,na,boxlxyz,z,vir_ewc,5)
-     
-  	   vew = vew + ve
-  	   vir_ew(:,:) = vir_ew(:,:) + vir_ewc(:,:)
-   	  dvdr(:,:,:) = dvdr(:,:,:) + dvdre(:,:,:)							
- 	 endif
+                ! Short range coulombic correction
   
- 	 if ((nb.eq.1).or.(nbdf2.eq.0)) then
- 	    call forces(r,voo,dvdrl,nb,na,boxlxyz,z,vir_oo,3)
- 	 endif
+                call rp_contract_nm(r,ve,dvdre,nb,na,boxlxyz,z, &
+                                     vir_ewc,nbdf1,5)
+                vew = vew - ve
+                vir_ew(:,:) = vir_ew(:,:) - vir_ewc(:,:)
+                dvdr(:,:,:) = dvdr(:,:,:) - dvdre(:,:,:)
+             endif
+          endif
 
-  	! Sum ewald and O-O forces if needed
+          ! Oxygen-Oxgen interaction
+
+          if (nbdf2.gt.0) then
+             call rp_contract_nm(r,voo,dvdrl,nb,na,boxlxyz,z,vir_oo, &
+                                  nbdf2,3)
+          endif
+
+          call realft (r,3*na,nb,-1)
+       endif
+
+       ! Transform dvdr back to bead representation (if needed)
+
+       if ((nbdf1.gt.0).and.(nbdf2.gt.0)) then
+          dvdr(:,:,:) = dvdr(:,:,:) + dvdrl(:,:,:)  
+          call realft(dvdr,3*na,nb,-1)
+       else
+          if (nbdf1.gt.0) then
+             call realft(dvdr,3*na,nb,-1)               
+           else if (nbdf2.gt.0) then
+             call realft(dvdrl,3*na,nb,-1)
+          endif
+       endif
+    endif
+
+    ! Evaluate non beadd forces
+
+    if ((nb.eq.1).or.(nbdf1.eq.0)) then
+       call forces(r,vew,dvdr,nb,na,boxlxyz,z,vir_ew,2) 
+    else if (sig.gt.0.d0) then
+     
+       ! Short range coulombic correction
+     
+       call forces(r,ve,dvdre,nb,na,boxlxyz,z,vir_ewc,5)
+     
+       vew = vew + ve
+       vir_ew(:,:) = vir_ew(:,:) + vir_ewc(:,:)
+       dvdr(:,:,:) = dvdr(:,:,:) + dvdre(:,:,:)              
+    endif
+  
+    if ((nb.eq.1).or.(nbdf2.eq.0)) then
+       call forces(r,voo,dvdrl,nb,na,boxlxyz,z,vir_oo,3)
+    endif
+
+    ! Sum ewald and O-O forces if needed
 
   if ((nb.eq.1).or.(nbdf1.le.0).or.(nbdf2.le.0)) then
      dvdr(:,:,:) = dvdr(:,:,:) + dvdrl(:,:,:)
   endif
 
- 	 ! Potential Energy
+    ! Potential Energy
 
-  	v = vew + voo + vint
+    v = vew + voo + vint
 
-  	! Virial
+    ! Virial
 
-  	vir(:,:) = vir_oo(:,:) + vir_ew(:,:) + vir_itr(:,:)
+    vir(:,:) = vir_oo(:,:) + vir_ew(:,:) + vir_itr(:,:)
 
-  	! Intermolecular PE
+    ! Intermolecular PE
 
-	!!!!!  vint = vew + voo
+  !!!!!  vint = vew + voo
 #ifdef CP2K_BINDING
   else
 
-		! Calculate full force using CP2K
-		call forces(r,v,dvdr,nb,na,boxlxyz,z,vir,9)
-		dvdr2 = 0.d0
+    ! Calculate full force using CP2K
+    call forces(r,v,dvdr,nb,na,boxlxyz,z,vir,9)
+    dvdr2 = 0.d0
 #endif
 endif
 

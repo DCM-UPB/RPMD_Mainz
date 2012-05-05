@@ -24,7 +24,7 @@ subroutine evolve_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   common /beaddiabatic/ nbdf1,nbdf2
   common /multiple_ts/ mts
   common /correct/ sig
-	common /RPMDDFT/ rpmddft
+  common /RPMDDFT/ rpmddft
 
 
   vew = 0.d0
@@ -52,8 +52,8 @@ subroutine evolve_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
 
   p(:,:,:) = p(:,:,:) - halfdt*(dvdr(:,:,:)+dvdr2(:,:,:)) !because dvdr2 is != 0 after equilibration
 
-	!	get new coordinates
-	call freerp_rpmd(p,r,dt,mass,na,nb,beta)
+  !  get new coordinates
+  call freerp_rpmd(p,r,dt,mass,na,nb,beta)
 
   ! Barostat
   ! (note:// COMs scaled therefore do not need to recalculate
@@ -70,11 +70,11 @@ subroutine evolve_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
      endif
   endif
 
-	! Evaluation of the t+timestep forces 
-	call forces(r,v,dvdr,nb,na,boxlxyz,z,vir,9)  
+  ! Evaluation of the t+timestep forces 
+  call forces(r,v,dvdr,nb,na,boxlxyz,z,vir,9)  
 
-	! Set dvdr2 = 0 because we don't have a high frequency part
-	dvdr2(:,:,:) = 0.d0
+  ! Set dvdr2 = 0 because we don't have a high frequency part
+  dvdr2(:,:,:) = 0.d0
 
   ! Evolve the momenta under the low frequency forces
 
