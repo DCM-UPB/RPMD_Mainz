@@ -18,7 +18,7 @@ Subroutine realft (data,m,n,mode)
   integer :: m, n, mode, k, j, nplan, iplan
   integer, parameter :: nmax = 256
   integer, parameter :: max_plan = 10
-  integer*8 :: plana(max_plan),planb(max_plan)
+  integer(8) :: plana(max_plan),planb(max_plan)
   integer :: np(max_plan)
   double precision :: data(m,n)
   double precision :: copy(nmax,max_plan)
