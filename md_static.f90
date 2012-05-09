@@ -80,7 +80,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   ! ------------------------------------------------------------------
   integer na,nb,ng,irun,nrdf,nbdf1,nbdf2,nbaro,pt,pb
   integer no,i,je,k,j,ii,jj,ibin,nm,itst(2),ib,print(3)
-  integer, allocatable :: ihhh(:),ihoo(:),ihoh(:)
+  integer(8), allocatable :: ihhh(:),ihoo(:),ihoh(:)
   real(8) boxlxyz(3),beta,v,dt
   real(8) p(3,na,nb), dvdr(3,na,nb),dvdr2(3,na,nb),ran2,z(na)
   real(8) r(3,na,nb),mass(na),vir(3,3),vir_lf(3,3)
