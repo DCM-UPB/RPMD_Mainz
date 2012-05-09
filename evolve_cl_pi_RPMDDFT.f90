@@ -220,7 +220,7 @@ subroutine evolve_cl_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
 
   ! Virial
 
-  vir_lf(:,:) = vir_lj(:,:) + vir_ew(:,:)+ virCP2K(:,:) + virMM(:,:)    !????
+  vir_lf(:,:) = vir_lj(:,:) + vir_ew(:,:)+ virCP2K(:,:) - virMM(:,:)    !????
   vir(:,:) =  vir_lf(:,:) + vir_hf(:,:)  
 
 

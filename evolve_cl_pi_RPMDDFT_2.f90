@@ -198,6 +198,7 @@ subroutine evolve_cl_pi_RPMDDFT_2(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
 	write(*,*) "dvdrCP2K:", dvdrCP2K(:,1,3)
 	write(*,*) "dvdrMM:", dvdrMM(:,1,3)
 	write(*,*) "dvdrCP2K-dvdrMM", dvdrCP2K(:,1,3)-dvdrMM(:,1,3)
+	write(*,*) "dvdr+dvdrCP2K-dvdrMM", dvdr(:,1,3)+dvdrCP2K(:,1,3)-dvdrMM(:,1,3)
 	dvdr(:,:,:) = dvdr(:,:,:)+dvdrCP2K(:,:,:)-dvdrMM(:,:,:)
 
   ! Evolve the momenta under the low+CP2K+MM forces
@@ -223,7 +224,7 @@ subroutine evolve_cl_pi_RPMDDFT_2(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
 
   ! Virial
 
-  vir_lf(:,:) = vir_lj(:,:) + vir_ew(:,:)+ virCP2K(:,:) + virMM(:,:)    !????
+  vir_lf(:,:) = vir_lj(:,:) + vir_ew(:,:)+ virCP2K(:,:) - virMM(:,:)    !????
   vir(:,:) =  vir_lf(:,:) + vir_hf(:,:)  
 
 
