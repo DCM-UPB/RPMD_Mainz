@@ -18,7 +18,7 @@ subroutine md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   real(8), allocatable :: rst(:,:),rcm(:,:)
   logical iamcub
   external gaussian, ran2
-  character*3 ens
+  character(len=3) ens
   common /ensemble/ ens
   common /symmetry/ iamcub
   common /constraint/ nctot,nbond

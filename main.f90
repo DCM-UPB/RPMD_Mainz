@@ -13,13 +13,13 @@ program qmd
 
   ! used for reftrj and RPMD-DFT
   integer reftraj,rpmddft,ierr,rpmddfthelp
-	character*35 CP2K_path
+  character(len=35) CP2K_path
   ! r_traj(xyz,molecules,nb,reftraj)
   real(8), allocatable :: r_traj(:,:,:,:),boxlxyz_traj(:,:)
-  character*240 line
+  character(len=240) line
   common /reftraj/ reftraj,line
-	
-  integer nc_ice(3),nc_wat(3),nm_ice,nm_wat,nctot,nbond
+  
+  integer nc_ice(3),nc_wat(3),nm_ice,nm_wat,nctot,nbond,vacfac
   real(8) temp,rho,dtfs,ecut,test,beta,dt,dtps,boxmin,pres
   real(8) teqm,tsim,trdf,gaussian,wmass,rcut,om,ttaufs
   real(8) taufs,v,vew,vlj,vint,pi,vir(3,3),cell(3,3)
@@ -28,13 +28,13 @@ program qmd
   real(8) box_ice(3),box_wat(3),rcut_old
   real(8), allocatable :: mass(:),z(:),r(:,:,:)
   real(8), allocatable :: p(:,:,:),dvdr(:,:,:),dvdr2(:,:,:)
-	character*25 filename
-  character*4 type
-  character*3 lattice,ens,therm_backup
+  character(len=25) filename
+  character(len=4) type
+  character(len=3) lattice,ens,therm_backup
   logical iamcub,iamrigid
   external gaussian
 
-  namelist/input/ens,temp,pres,rho,lattice,iamcub,dtfs, &
+  namelist/input/ens,temp,pres,rho,lattice,vacfac,iamcub,dtfs, &
                  ecut,nt,ne,npre_eq,nb,m,ng,print,reftraj,pt,pb, &
                  ncellxyz,irun,itcf,itst,rcut, &
                  type,therm,ttaufs,baro,taufs,mts,om,nbdf1,nbdf2,sig,rpmddft,CP2K_path,nbdf3,rctdk
@@ -55,15 +55,16 @@ program qmd
   common /ensemble/ ens
   common /constraint/ nctot,nbond
   common /inp/ npre_eq
- 	common /RPMDDFT/ rpmddft,nbdf3,rctdk
-	
-	rpmddft = 0
-  reftraj = 0
-  npre_eq = 0
-	cell(:,:) = 0.d0
-  CP2K_path =""
-	nbdf3 = 0
-	rctdk = 0
+  common /RPMDDFT/ rpmddft,nbdf3,rctdk
+  
+  vacfac = 1
+  rpmddft = 0
+    reftraj = 0
+    npre_eq = 0
+  cell(:,:) = 0.d0
+    CP2K_path =""
+  nbdf3 = 0
+  rctdk = 0
 
   write(6,*)  '-------------------------------------------'
   write(6,*)  '            Flexible Water Code            '
@@ -85,11 +86,6 @@ program qmd
   open(60,file=filename)
   read(60,input)
   close (unit=60)
-
-
-
-
-
 
   ! Parameters File
 
@@ -193,7 +189,7 @@ program qmd
      ttau = 41.341373d0*ttaufs
      write(6,56) ttaufs
   else if (therm.eq.'GLE') then                       !!GLE
-     write(6,*) 'therm  =  GENERALIZED LANGEVIN '		!!GLE
+     write(6,*) 'therm  =  GENERALIZED LANGEVIN '    !!GLE
      ttau = 41.341373d0*ttaufs
      write(6,56) ttaufs
   else
@@ -256,7 +252,7 @@ program qmd
       read(61,*) nm,na,nbr
 
       allocate(r(3,na,nb))
-			
+      
       r(:,:,:) = 0.d0
 
       if (nb.eq.nbr) then
@@ -350,6 +346,29 @@ program qmd
         therm=therm_backup
         rcut = rcut_old
         write(6,*)  '-------------------------------------------'
+    !------Vacuum preparation----------
+    else if (lattice.eq.'VAC') then
+        write(6,*)
+        write(6,*) 'Beginning Vacuum preparation'
+        iamcub=.true.
+
+        call setup_box_size('CUB',rho,nm,boxlxyz,wmass)
+        na = 3*nm
+        allocate(r(3,na,nb))
+        r(:,:,:) = 0.d0
+        call setup_positions(r,na,nb,nm,boxlxyz,qo,irun)
+
+        if (vacfac.gt.1) then
+            boxlxyz(3)=vacfac*boxlxyz(3)
+            iamcub=.false.
+            write(6,*)'* Vacuum preparation done'
+        else if (vacfac.eq.1) then
+            write(6,*) 'Vacuum not enabled (vacfac=1)'
+        else
+            write(6,*) 'Invalid vacfac choice (lt 1)'
+            stop
+        endif
+        write(6,*)
      else
 
         ! Use lattice
@@ -500,18 +519,18 @@ program qmd
   dvdr(:,:,:) = 0.d0
   dvdr2(:,:,:) = 0.d0
 
-	! Allocate force enviroment id:
-	! -----------------------
-	if (nbdf3.eq.0) then 
-		allocate(f_env_id(nb))
-	else
-  	allocate(f_env_id(nbdf3))
-	endif
+  ! Allocate force enviroment id:
+  ! -----------------------
+  if (nbdf3.eq.0) then 
+    allocate(f_env_id(nb))
+  else
+    allocate(f_env_id(nbdf3))
+  endif
 
 
-	! set rpmddft = 0 because classical equilibration, set it back to old value later
-	rpmddfthelp = rpmddft
-	rpmddft = 0
+  ! set rpmddft = 0 because classical equilibration, set it back to old value later
+  rpmddfthelp = rpmddft
+  rpmddft = 0
 
 
   if (reftraj.eq.0) then
@@ -546,40 +565,40 @@ program qmd
   endif
 
 
-	! set rpmddft back to old value
-	rpmddft = rpmddfthelp
+  ! set rpmddft back to old value
+  rpmddft = rpmddfthelp
 
 
-!#ifdef CP2K_BINDING
-		!	RPMD-DFT
-		! -----------------------
-	if (rpmddft.eq.1) then
-		call cp_init_cp2k(1,ierr)	
+#ifdef CP2K_BINDING
+    !  RPMD-DFT
+    ! -----------------------
+  if (rpmddft.eq.1) then
+    call cp_init_cp2k(1,ierr)  
 
-		if (nbdf3.eq.0) then
-			do i = 1, nb ! if nbdf3 > 1 set up nbdf3 versions of cp2k f_env_id = i 
-				call cp_create_fenv(f_env_id(i),CP2K_path,"out.out",ierr)
-				! set cell in CP2K
-				cell(1,1) = boxlxyz(1)
-				cell(2,2) = boxlxyz(2)
-				cell(3,3) = boxlxyz(3)
-				call cp_set_cell(f_env_id(i),cell,ierr) 
-				if (ierr.ne.0) STOP "set_cell"
-			enddo
-	  else
-			do i = 1, nbdf3 ! if nbdf3 > 1 set up nbdf3 versions of cp2k f_env_id = i 
-				call cp_create_fenv(f_env_id(i),CP2K_path,"out.out",ierr)
-				write(*,*) "f_env_id:",f_env_id(i)
-				! set cell in CP2K
-				cell(1,1) = boxlxyz(1)
-				cell(2,2) = boxlxyz(2)
-				cell(3,3) = boxlxyz(3)
-				call cp_set_cell(f_env_id(i),cell,ierr) 
-				if (ierr.ne.0) STOP "set_cell"
-			enddo
-		endif
-	endif
-!#endif
+    if (nbdf3.eq.0) then
+      do i = 1, nb ! if nbdf3 > 1 set up nbdf3 versions of cp2k f_env_id = i 
+        call cp_create_fenv(f_env_id(i),CP2K_path,"out.out",ierr)
+        ! set cell in CP2K
+        cell(1,1) = boxlxyz(1)
+        cell(2,2) = boxlxyz(2)
+        cell(3,3) = boxlxyz(3)
+        call cp_set_cell(f_env_id(i),cell,ierr) 
+        if (ierr.ne.0) STOP "set_cell"
+      enddo
+    else
+      do i = 1, nbdf3 ! if nbdf3 > 1 set up nbdf3 versions of cp2k f_env_id = i 
+        call cp_create_fenv(f_env_id(i),CP2K_path,"out.out",ierr)
+        write(*,*) "f_env_id:",f_env_id(i)
+        ! set cell in CP2K
+        cell(1,1) = boxlxyz(1)
+        cell(2,2) = boxlxyz(2)
+        cell(3,3) = boxlxyz(3)
+        call cp_set_cell(f_env_id(i),cell,ierr) 
+        if (ierr.ne.0) STOP "set_cell"
+      enddo
+    endif
+  endif
+#endif
 
     ! Static Properties
     ! ------------------

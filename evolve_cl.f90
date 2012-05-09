@@ -15,7 +15,7 @@ subroutine evolve_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
   real(8) halfdt,om,v_lf,v_hf
   real(8) tv,tq1,tq2
   real(8), allocatable :: monod(:,:,:),delp(:,:)
-  character*4 type
+  character(len=4) type
   common /multiple_ts/ mts
   common /path_i/ om,type
   common /reftraj/ reftraj

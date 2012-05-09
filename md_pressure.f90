@@ -3,34 +3,34 @@ subroutine pressure(pres,vir,tv,na,boxlxyz)
   include 'globals.inc'
   ! ------------------------------------------------------------------
   ! Pressure calculation including tail correction
-	! 01.02.2012 If RPMD-DFT then get pressure from CP2K and convert it 
-	! 					 from Bar to internal units
+  ! 01.02.2012 If RPMD-DFT then get pressure from CP2K and convert it 
+  !            from Bar to internal units
   ! ------------------------------------------------------------------
   integer na, rpmddft
   real(8) vir(3,3),boxlxyz(3),tv,vol,pres,ptail,w
   real(8) oo_eps,oo_sig,oo_gam,rcut
   common /oo_param/ oo_eps,oo_sig,oo_gam,rcut
-	common /RPMDDFT/ rpmddft
+  common /RPMDDFT/ rpmddft
 
-	if(rpmddft.eq.0) then
-  	w = vir(1,1) + vir(2,2) + vir(3,3)
-  	w = -w/3.d0
-  	vol = boxlxyz(1)*boxlxyz(2)*boxlxyz(3)
-  	pres = (2.d0*tv/3.d0 + w) / vol
+  if(rpmddft.eq.0) then
+    w = vir(1,1) + vir(2,2) + vir(3,3)
+    w = -w/3.d0
+    vol = boxlxyz(1)*boxlxyz(2)*boxlxyz(3)
+    pres = (2.d0*tv/3.d0 + w) / vol
   
-  	if (oo_gam.eq.0.d0) then
-     	call pres_lj_tail(ptail,boxlxyz,na)
-  	else
-     	ptail = 0.d0
-  	endif
+    if (oo_gam.eq.0.d0) then
+       call pres_lj_tail(ptail,boxlxyz,na)
+    else
+       ptail = 0.d0
+    endif
   
-  	pres = pres + ptail
+    pres = pres + ptail
   else
-			w = (vir(1,1) + vir(2,2) + vir(3,3)) 
-  		w = -w/3.d0
-  		vol = boxlxyz(1)*boxlxyz(2)*boxlxyz(3)
-  		pres = (2.d0*tv/3.d0 + w) / vol
-	endif
+      w = (vir(1,1) + vir(2,2) + vir(3,3)) 
+      w = -w/3.d0
+      vol = boxlxyz(1)*boxlxyz(2)*boxlxyz(3)
+      pres = (2.d0*tv/3.d0 + w) / vol
+  endif
 
   return
 end subroutine pressure

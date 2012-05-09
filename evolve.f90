@@ -10,13 +10,13 @@ subroutine evolve(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
   real(8) v,v1,v2,v3,dt,beta
   logical iamrigid
   common /structure/ iamrigid
-	common /RPMDDFT/ rpmddft,nbdf3,rctdk
+  common /RPMDDFT/ rpmddft,nbdf3,rctdk
 
   if (nb.eq.1) then
-		if (rpmddft.eq.1) then
-			call evolve_cl_RPMDDFT(p,r,v,v1,v2,dvdr,dvdr2,dt,mass,na,nb, &
+    if (rpmddft.eq.1) then
+      call evolve_cl_RPMDDFT(p,r,v,v1,v2,dvdr,dvdr2,dt,mass,na,nb, &
                             boxlxyz,z,beta,vir,vir_lf,irun,nbaro)
-		else
+    else
       if (iamrigid) then
          call evolve_rig_cl(p,r,v,v1,v2,dvdr,dvdr2,dt,mass,na,nb, &
                             boxlxyz,z,beta,vir,vir_lf,irun,nbaro)
@@ -24,30 +24,30 @@ subroutine evolve(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
          call evolve_cl(p,r,v,v1,v2,dvdr,dvdr2,dt,mass,na,nb, &
                        boxlxyz,z,beta,vir,vir_lf,irun,nbaro)
       endif
-		endif
+    endif
   else
-		if (rpmddft.eq.1) then
-			if (rctdk.eq.1) then
-				call evolve_cl_pi_RPMDDFT_2(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
+    if (rpmddft.eq.1) then
+      if (rctdk.eq.1) then
+        call evolve_cl_pi_RPMDDFT_2(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
                            boxlxyz,z,beta,vir,vir_lf,irun,nbaro)
-			else			
-				if (nbdf3.eq.0) then
-					call evolve_pi_RPMDDFT(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
+      else      
+        if (nbdf3.eq.0) then
+          call evolve_pi_RPMDDFT(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
                            boxlxyz,z,beta,vir,vir_lf,irun,nbaro)
-				else
-					call evolve_pi_rc_RPMDDFT(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
+        else
+          call evolve_pi_rc_RPMDDFT(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
                            boxlxyz,z,beta,vir,vir_lf,irun,nbaro)
-				endif
-			endif
-		else
+        endif
+      endif
+    else
      if (iamrigid) then
         call evolve_rig_pi(p,r,v,v1,v2,dvdr,dvdr2,dt,mass,na,nb, &
                            boxlxyz,z,beta,vir,vir_lf,irun,nbaro)
      else
-				call evolve_pi(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
+        call evolve_pi(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
                        boxlxyz,z,beta,vir,vir_lf,irun,nbaro)
      endif
-		endif
+    endif
   endif  
 
   return

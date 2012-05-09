@@ -1,4 +1,5 @@
 MF=	Makefile
+<<<<<<< HEAD
 FC=	gfortran -cpp 
 #LIBS = -lfftw3
 LIBS = -L/home/cp2k/trunk/cp2k/lib/Linux-x86-64-gfortran/sopt -lcp2k_lib -lcp2k_base_lib -lcp2k_fft_lib -lcp2k_ma_lib -lcp2k_dbcsr_lib \
@@ -6,12 +7,23 @@ LIBS = -L/home/cp2k/trunk/cp2k/lib/Linux-x86-64-gfortran/sopt -lcp2k_lib -lcp2k_
 				/home/grizzly/Programme_fuer_CP2K/libint-1.1.4/lib/libderiv.a \
         /home/grizzly/Programme_fuer_CP2K/libint-1.1.4/lib/libint.a \
 
+=======
+FC=	gfortran -cpp -DCP2K_BINDING
+LIBS =	-L/home/cp2k/trunk/cp2k/lib/Linux-x86-64-gfortran/sopt -lcp2k_lib -lcp2k_base_lib -lcp2k_fft_lib -lcp2k_ma_lib -lcp2k_dbcsr_lib \
+	-L/usr/lib -llapack -lblas -lstdc++ -lfftw3 \
+	/home/grizzly/Programme_fuer_CP2K/libint-1.1.4/lib/libderiv.a \
+        /home/grizzly/Programme_fuer_CP2K/libint-1.1.4/lib/libint.a
+ifeq ($(wildcard /home/cp2k/trunk/cp2k/lib/Linux-x86-64-gfortran/sopt),)
+FC=	gfortran -cpp
+LIBS = -lfftw3
+NOCP2K="WARNING: CP2K_BINDINGS NOT COMPILED"
+endif
+>>>>>>> 8c770eab7b91be4c0130058fa0cae524e3378e07
 
 # warnings that could result in wrong code
 FC+=	-Wall -pedantic -Waliasing -Wcharacter-truncation -Wconversion-extra -Wsurprising -Wintrinsic-shadow
 # speed warnings
 FC+=	-Warray-temporaries
-
 
 FFLAGS=	-O3 
 LFLAGS=	$(FFLAGS)

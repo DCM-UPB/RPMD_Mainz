@@ -184,7 +184,7 @@ subroutine kinetic(p,na,tk,mass,nb,beta)
   ! ------------------------------------------------------------------
   integer na,nb
   real(8) p(3,na,nb),mass(na),tk,beta,om
-  character*4 type
+  character(len=4) type
   common /path_i/ om,type
 
   if ((type.eq.'RPMD').or.(nb.eq.1)) then

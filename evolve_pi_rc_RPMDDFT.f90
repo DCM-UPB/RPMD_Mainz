@@ -18,14 +18,14 @@ subroutine evolve_pi_rc_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   real(8) dt,v,beta,dtsmall,vew,vlj,vint,sig,ve
   real(8) tv,tv_itr,tq1,tq2,c1,c2,c3
   real(8) dheat, comx, comy, comz, mm !!GLE
-  character*4 type
+  character(len=4) type
   external gaussian
   common /path_i/ om,type
   common /beaddiabatic/ nbdf1,nbdf2
   common /multiple_ts/ mts
   common /correct/ sig
-	common /RPMDDFT/ rpmddft,nbdf3
-	real(8) rs(3,na,nb)
+  common /RPMDDFT/ rpmddft,nbdf3
+  real(8) rs(3,na,nb)
 
 
   vew = 0.d0
@@ -35,11 +35,11 @@ subroutine evolve_pi_rc_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   vir_lj(:,:) = 0.d0
   vir_ew(:,:) = 0.d0
   vir_hf(:,:) = 0.d0
-	!rc(:,:,:) = 0.d0
-	!dvdrc(:,:,:) = 0.d0
- 	tv = 0.d0
+  !rc(:,:,:) = 0.d0
+  !dvdrc(:,:,:) = 0.d0
+   tv = 0.d0
   tvxyz(:) = 0.d0
-	
+  
 
   halfdt = 0.5d0*dt
                                    
@@ -56,8 +56,8 @@ subroutine evolve_pi_rc_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
 
   p(:,:,:) = p(:,:,:) - halfdt*(dvdr(:,:,:)+dvdr2(:,:,:)) !because dvdr2 is != 0 after equilibration
 
-	!	get new coordinates
-	call freerp_rpmd(p,r,dt,mass,na,nb,beta)
+  !  get new coordinates
+  call freerp_rpmd(p,r,dt,mass,na,nb,beta)
 
   ! Barostat
   ! (note:// COMs scaled therefore do not need to recalculate
@@ -76,23 +76,23 @@ subroutine evolve_pi_rc_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
 
 
 
-	! Transform to normalmode representation to use Contraction routines
+  ! Transform to normalmode representation to use Contraction routines
 
 
-	! Convert the positions and momenta to the normal mode representation after storing bead represetation
-	rs(:,:,:) = r(:,:,:)
+  ! Convert the positions and momenta to the normal mode representation after storing bead represetation
+  rs(:,:,:) = r(:,:,:)
   call realft (rs,3*na,nb,+1)
 
-	! Evaluation of the t+timestep forces using Ring Contraction in normal mode representation
+  ! Evaluation of the t+timestep forces using Ring Contraction in normal mode representation
 
-	call rp_contract_nm(rs,v,dvdr,nb,na,boxlxyz,z,vir,nbdf3,9)
+  call rp_contract_nm(rs,v,dvdr,nb,na,boxlxyz,z,vir,nbdf3,9)
 
-	! Convert dvdr back to bead representation
+  ! Convert dvdr back to bead representation
   
-	call realft(dvdr,3*na,nb,-1)
+  call realft(dvdr,3*na,nb,-1)
 
-	! Set dvdr2 = 0 because we don't have a high frequency part
-	dvdr2(:,:,:) = 0.d0
+  ! Set dvdr2 = 0 because we don't have a high frequency part
+  dvdr2(:,:,:) = 0.d0
 
   ! Evolve the momenta under the low frequency forces
 
