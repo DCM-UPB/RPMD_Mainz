@@ -185,13 +185,13 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   if (pt.gt.0) then
     if (reftraj.ne.0) then
      if (print(1).eq.1) then
-        open(32,file='vmd_traj.xyz',access= 'APPEND')
+        open(32,file='vmd_traj.xyz',position='APPEND')
      endif
      if (print(2).eq.1) then
-        open(33,file='vmd_traj.frc',access= 'APPEND')
+        open(33,file='vmd_traj.frc',position='APPEND')
      endif
      if (print(3).eq.1) then
-        open(34,file='vmd_traj.vel',access= 'APPEND')
+        open(34,file='vmd_traj.vel',position='APPEND')
      endif
     else
      if (print(1).eq.1) then
@@ -210,19 +210,19 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
      if (print(1).eq.1) then
         do ib = 1,nb
            write(file_name,'(A,I0,A)') 'vmd_bead-',ib,'.xyz'
-           open(127+ib,file=file_name,access= 'APPEND')
+           open(127+ib,file=file_name,position='APPEND')
         enddo
      endif
      if (print(2).eq.1) then
         do ib = 1,nb
            write(file_name,'(A,I0,A)') 'vmd_bead-',ib,'.frc'
-           open(100127+ib,file=file_name,access= 'APPEND')
+           open(100127+ib,file=file_name,position='APPEND')
         enddo
      endif
      if (print(3).eq.1) then
         do ib = 1,nb
            write(file_name,'(A,I0,A)') 'vmd_bead-',ib,'.vel'
-           open(200127+ib,file=file_name,access= 'APPEND')
+           open(200127+ib,file=file_name,position='APPEND')
         enddo
      endif
     else
