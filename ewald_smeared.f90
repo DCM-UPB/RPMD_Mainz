@@ -53,9 +53,9 @@ subroutine rwald_smeared(n,mol,q,r,v,vir,dvdr,rcut,alpha, &
                  dx = r(1,i)-r(1,j)
                  dy = r(2,i)-r(2,j)
                  dz = r(3,i)-r(3,j)
-                 dx = dx-nint(dx)
-                 dy = dy-nint(dy)
-                 dz = dz-nint(dz)
+                 dx = dx-dble(nint(dx))
+                 dy = dy-dble(nint(dy))
+                 dz = dz-dble(nint(dz))
                  drsq = dx*dx+dy*dy+dz*dz
                  if (drsq .lt. rcutsq) then
                     dr = dsqrt(drsq)
@@ -142,9 +142,9 @@ subroutine rwald_smeared(n,mol,q,r,v,vir,dvdr,rcut,alpha, &
                     dx = r(1,i)-r(1,j)
                     dy = r(2,i)-r(2,j)
                     dz = r(3,i)-r(3,j)
-                    dx = dx-nint(dx)
-                    dy = dy-nint(dy)
-                    dz = dz-nint(dz)
+                    dx = dx-dble(nint(dx))
+                    dy = dy-dble(nint(dy))
+                    dz = dz-dble(nint(dz))
                     drsq = dx*dx+dy*dy+dz*dz
                     if (drsq .lt. rcutsq) then
                        dr = dsqrt(drsq)
@@ -289,9 +289,9 @@ subroutine rwald_smeared_nc(n,mol,q,r,v,vir,dvdr,rcut,alpha, &
                  dx = r(1,i)-r(1,j)
                  dy = r(2,i)-r(2,j)
                  dz = r(3,i)-r(3,j)
-                 dx = dx-xbox*nint(dx*onboxx)
-                 dy = dy-ybox*nint(dy*onboxy)
-                 dz = dz-zbox*nint(dz*onboxz)
+                 dx = dx-xbox*dble(nint(dx*onboxx))
+                 dy = dy-ybox*dble(nint(dy*onboxy))
+                 dz = dz-zbox*dble(nint(dz*onboxz))
                  drsq = dx*dx+dy*dy+dz*dz
                  if (drsq .lt. rcutsq) then
                     dr = dsqrt(drsq)
@@ -378,9 +378,9 @@ subroutine rwald_smeared_nc(n,mol,q,r,v,vir,dvdr,rcut,alpha, &
                     dx = r(1,i)-r(1,j)
                     dy = r(2,i)-r(2,j)
                     dz = r(3,i)-r(3,j)
-                    dx = dx-xbox*nint(dx*onboxx)
-                    dy = dy-ybox*nint(dy*onboxy)
-                    dz = dz-zbox*nint(dz*onboxz)
+                    dx = dx-xbox*dble(nint(dx*onboxx))
+                    dy = dy-ybox*dble(nint(dy*onboxy))
+                    dz = dz-zbox*dble(nint(dz*onboxz))
                     drsq = dx*dx+dy*dy+dz*dz
                     if (drsq .lt. rcutsq) then
                        dr = dsqrt(drsq)

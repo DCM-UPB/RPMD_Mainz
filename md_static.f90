@@ -84,8 +84,8 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   real(8) boxlxyz(3),beta,v,dt
   real(8) p(3,na,nb), dvdr(3,na,nb),dvdr2(3,na,nb),ran2,z(na)
   real(8) r(3,na,nb),mass(na),vir(3,3),vir_lf(3,3)
-  real(8) delr,dx,dy,dz,rij,dmu,rmu,thresh,dconv,dconv2,pi,fac,vol
-  real(8) avang,avoh,avdip,avdip2,tavang,tavoh
+  real(8) delr,dx,dy,dz,rij,thresh,dconv,dconv2,pi,fac,vol
+  real(8) avang,avoh,tavang,tavoh
   real(8) vave,tave,tq1ave,tq2ave,tv,tvxyz(3),tavee,tq1aee,tq2aee
   real(8) tavdip,tavdipx,tavdipy,tavdipz,tavdip2,tavdipsq,eps
   real(8) dipx,dipy,dipz,dip2,dipm,dtps
@@ -120,7 +120,6 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   pi = dacos(-1.d0)
   dtps = 1d-3*dt/tofs
-  dmu = 4.d0 / imaxbin
   dconv = (ToA * 1d-10 * echarge) / ToDebye
   dconv2 = dconv*dconv
   thresh = 1.d0/dsqrt(dble(ng))
@@ -406,9 +405,9 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
                     dx = r(1,i,k) - r(1,j,k)
                     dy = r(2,i,k) - r(2,j,k)
                     dz = r(3,i,k) - r(3,j,k)
-                    dx = dx-boxlxyz(1)*nint(dx/boxlxyz(1))
-                    dy = dy-boxlxyz(2)*nint(dy/boxlxyz(2))
-                    dz = dz-boxlxyz(3)*nint(dz/boxlxyz(3))
+                    dx = dx-boxlxyz(1)*dble(nint(dx/boxlxyz(1)))
+                    dy = dy-boxlxyz(2)*dble(nint(dy/boxlxyz(2)))
+                    dz = dz-boxlxyz(3)*dble(nint(dz/boxlxyz(3)))
                     dist(i,j) = dsqrt(dx*dx+dy*dy+dz*dz)
                     dist(j,i) = dist(i,j)
                  enddo

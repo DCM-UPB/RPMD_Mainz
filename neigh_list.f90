@@ -54,9 +54,9 @@ subroutine nei_list(r,na,list,point,njump,rcut,boxlxyz)
         dx = r(1,i) - rxj
         dy = r(2,i) - ryj
         dz = r(3,i) - rzj
-        dx = dx - boxx*nint(onboxx*dx)
-        dy = dy - boxy*nint(onboxy*dy)
-        dz = dz - boxz*nint(onboxz*dz)
+        dx = dx - boxx*dble(nint(onboxx*dx))
+        dy = dy - boxy*dble(nint(onboxy*dy))
+        dz = dz - boxz*dble(nint(onboxz*dz))
         drsq = dx*dx + dy*dy + dz*dz
         if (drsq .lt. rcutsq) then
            nlist = nlist + 1
@@ -139,9 +139,9 @@ subroutine nei_cell(r,na,list,point,njump,rcut,boxlxyz)
 
      ! Find cell particle is in:
 
-     dx = r(1,j)-boxx*nint(onboxx*r(1,j))
-     dy = r(2,j)-boxy*nint(onboxy*r(2,j))
-     dz = r(3,j)-boxz*nint(onboxz*r(3,j))
+     dx = r(1,j)-boxx*dble(nint(onboxx*r(1,j)))
+     dy = r(2,j)-boxy*dble(nint(onboxy*r(2,j)))
+     dz = r(3,j)-boxz*dble(nint(onboxz*r(3,j)))
      jx = min(ncellxyz(1),1+int((dx+halfx)*cellx))
      jy = min(ncellxyz(2),1+int((dy+halfy)*celly))
      jz = min(ncellxyz(3),1+int((dz+halfz)*cellz))
@@ -163,9 +163,9 @@ subroutine nei_cell(r,na,list,point,njump,rcut,boxlxyz)
         dx = r(1,i) - rxj
         dy = r(2,i) - ryj
         dz = r(3,i) - rzj
-        dx = dx - boxx*nint(onboxx*dx)
-        dy = dy - boxy*nint(onboxy*dy)
-        dz = dz - boxz*nint(onboxz*dz)
+        dx = dx - boxx*dble(nint(onboxx*dx))
+        dy = dy - boxy*dble(nint(onboxy*dy))
+        dz = dz - boxz*dble(nint(onboxz*dz))
         drsq = dx*dx + dy*dy + dz*dz
         if (drsq .lt. rcutsq) then
            nlist = nlist + 1
@@ -195,9 +195,9 @@ subroutine nei_cell(r,na,list,point,njump,rcut,boxlxyz)
            dx = r(1,i) - rxj
            dy = r(2,i) - ryj
            dz = r(3,i) - rzj
-           dx = dx-boxx*nint(onboxx*dx)
-           dy = dy-boxy*nint(onboxy*dy)
-           dz = dz-boxz*nint(onboxz*dz)
+           dx = dx-boxx*dble(nint(onboxx*dx))
+           dy = dy-boxy*dble(nint(onboxy*dy))
+           dz = dz-boxz*dble(nint(onboxz*dz))
            drsq = dx*dx+dy*dy+dz*dz
            if (drsq .lt. rcutsq) then
               nlist = nlist + 1

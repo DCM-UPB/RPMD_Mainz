@@ -62,9 +62,9 @@ subroutine buck_basic(r,dvdr,v,vir,na,boxlxyz,njump)
         dx = r(1,i)-r(1,j)
         dy = r(2,i)-r(2,j)
         dz = r(3,i)-r(3,j)
-        dx = dx - boxx*nint(onboxx*dx)
-        dy = dy - boxy*nint(onboxy*dy)
-        dz = dz - boxz*nint(onboxz*dz)
+        dx = dx - boxx*dble(nint(onboxx*dx))
+        dy = dy - boxy*dble(nint(onboxy*dy))
+        dz = dz - boxz*dble(nint(onboxz*dz))
         drsq = dx*dx + dy*dy + dz*dz
         if (drsq .lt. rcutsq) then
            br6 = b/(drsq*drsq*drsq)
@@ -151,9 +151,9 @@ subroutine buck_list(r,dvdr,v,vir,na,boxlxyz,list,point,njump)
            dx = r(1,i) - rxj
            dy = r(2,i) - ryj
            dz = r(3,i) - rzj
-           dx = dx - boxx*nint(onboxx*dx)
-           dy = dy - boxy*nint(onboxy*dy)
-           dz = dz - boxz*nint(onboxz*dz)
+           dx = dx - boxx*dble(nint(onboxx*dx))
+           dy = dy - boxy*dble(nint(onboxy*dy))
+           dz = dz - boxz*dble(nint(onboxz*dz))
            drsq = dx*dx + dy*dy + dz*dz
            if (drsq .lt. rcutsq) then
               br6 = b/(drsq*drsq*drsq)
@@ -255,9 +255,9 @@ subroutine buck_cell(r,v,vir,dvdr,na,boxlxyz,njump)
                  dx = r(1,i)-r(1,j)
                  dy = r(2,i)-r(2,j)
                  dz = r(3,i)-r(3,j)
-                 dx = dx-boxx*nint(onboxx*dx)
-                 dy = dy-boxy*nint(onboxy*dy)
-                 dz = dz-boxz*nint(onboxz*dz)
+                 dx = dx-boxx*dble(nint(onboxx*dx))
+                 dy = dy-boxy*dble(nint(onboxy*dy))
+                 dz = dz-boxz*dble(nint(onboxz*dz))
                  drsq = dx*dx + dy*dy + dz*dz
                  if (drsq .lt. rcutsq) then
                     br6 = b/(drsq*drsq*drsq)
@@ -308,9 +308,9 @@ subroutine buck_cell(r,v,vir,dvdr,na,boxlxyz,njump)
                     dx = r(1,i)-r(1,j)
                     dy = r(2,i)-r(2,j)
                     dz = r(3,i)-r(3,j)
-                    dx = dx-boxx*nint(onboxx*dx)
-                    dy = dy-boxy*nint(onboxy*dy)
-                    dz = dz-boxz*nint(onboxz*dz)
+                    dx = dx-boxx*dble(nint(onboxx*dx))
+                    dy = dy-boxy*dble(nint(onboxy*dy))
+                    dz = dz-boxz*dble(nint(onboxz*dz))
                     drsq = dx*dx+dy*dy+dz*dz
                     if (drsq .lt. rcutsq) then
                        br6 = b/(drsq*drsq*drsq)
