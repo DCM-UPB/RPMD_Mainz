@@ -6,12 +6,16 @@ subroutine RPMDDFT_force(r,dvdr,na,nb,v,vir,boxlxyz,bead)
   ! ------------------------------------------------------------------
   ! RPMD-DFT force modul
   ! ------------------------------------------------------------------
-  integer na,nb,bead,ierr,k,j,jj,kk
+
+  integer na,nb,bead,ierr,k,j,jj,kk,rctdk,rpmddft,nbdf3 
+
   real(8) r(3,na),dvdr(3,na),vir(3,3),rtest(3,na),boxlxyz(3),cell(3,3)
   real(8) v,dx1,dy1,dz1
   character(len=3) ens
 
   common /ensemble/ ens
+
+  common /RPMDDFT/ rpmddft,nbdf3,rctdk
 
   v = 0.d0
   vir(:,:) = 0.d0
@@ -28,6 +32,16 @@ subroutine RPMDDFT_force(r,dvdr,na,nb,v,vir,boxlxyz,bead)
     call cp_set_cell(f_env_id(bead),cell,ierr) !funktioniert und wurde getestet
     if (ierr.ne.0) STOP "set_cell"
   endif
+  ! If rctdk ....
+  !if(rctdk.eq.1) then
+  !  cell(1,1) = boxlxyz(1)
+  !  cell(2,2) = boxlxyz(2)
+  !  cell(3,3) = boxlxyz(3)
+  !  call cp_set_cell(f_env_id(bead),cell,ierr) !funktioniert und wurde getestet
+  !  if (ierr.ne.0) STOP "set_cell"
+  !endif
+
+
 
   ! Set Positions in CP2K
   call cp_set_pos(f_env_id(bead),r,SIZE(r),ierr)
