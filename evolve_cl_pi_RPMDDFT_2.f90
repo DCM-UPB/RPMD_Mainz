@@ -13,9 +13,9 @@ subroutine evolve_cl_pi_RPMDDFT_2(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   real(8) p(3,na,nb),r(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb),dvdre(3,na,nb),dvdrl(3,na,nb)
   real(8) mass(na),z(na),boxlxyz(3)
   real(8) vir(3,3),vir_lj(3,3),vir_ew(3,3),tvxyz(3),tvxyz_itr(3)
-  real(8) vir_itr(3,3),vir_ewc(3,3),vir_lf(3,3),vir_hf(3,3),virMM(3,3),virCP2K(3,3)
+  real(8) vir_itr(3,3),vir_ewc(3,3),vir_lf(3,3),vir_hf(3,3),virMM(3,3),virCP2K(3,3),virMMh(3,3),virMMl(3,3)
   real(8) pprime,halfdtsmall,halfdt,om,gaussian
-  real(8) dt,v,beta,dtsmall,vew,vlj,vint,sig,ve,vCP2K,vMM
+  real(8) dt,v,beta,dtsmall,vew,vlj,vint,sig,ve,vCP2K,vMM,vMMh,vMMl
   real(8) tv,tv_itr,tq1,tq2,c1,c2,c3
   real(8) dheat, comx, comy, comz, mm !!GLE
   character(len=4) type
@@ -25,19 +25,23 @@ subroutine evolve_cl_pi_RPMDDFT_2(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   common /multiple_ts/ mts
   common /correct/ sig
   common /RPMDDFT/ rpmddft,nbdf3
-  real(8) rnm(3,na,nb),rb(3,na,nbdf3),dvdrCP2K(3,na,nb),dvdrMM(3,na,nb),dvdrb(3,na,nbdf3)
+  real(8) rnm(3,na,nb),rb(3,na,nbdf3),dvdrCP2K(3,na,nb),dvdrMM(3,na,nb),dvdrb(3,na,nbdf3),dvdrMMl(3,na,nb),dvdrMMh(3,na,nb)
 
 
   ! Zero constants and arrays
   dvdrl(:,:,:) = 0.d0
   dvdre(:,:,:) = 0.d0
   dvdrMM(:,:,:) = 0.d0
+  dvdrMMh(:,:,:) = 0.d0
+  dvdrMMl(:,:,:) = 0.d0
   dvdrCP2K(:,:,:) = 0.d0
   dvdrb(:,:,:) = 0.d0
   rnm(:,:,:) = 0.d0
   rb(:,:,:) = 0.d0
   vCP2K = 0.d0
   vMM = 0.d0
+  vMMh = 0.d0
+  vMMl = 0.d0
   vew = 0.d0
   vlj = 0.d0
   vint = 0.d0
@@ -47,6 +51,8 @@ subroutine evolve_cl_pi_RPMDDFT_2(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   vir_hf(:,:) = 0.d0
   virCP2K(:,:) = 0.d0
   virMM(:,:) = 0.d0
+	virMMh(:,:) = 0.d0
+	virMMl(:,:) = 0.d0
   tv = 0.d0
   tvxyz(:) = 0.d0
 
@@ -184,10 +190,18 @@ subroutine evolve_cl_pi_RPMDDFT_2(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
 
     call forces(rb,vCP2K,dvdrb,nbdf3,na,boxlxyz,z,virCP2K,9)
     call force_contract(dvdrCP2K,dvdrb,na,nb,nbdf3)
-    dvdrb = 0.d0
-    call forces(rb,vMM,dvdrb,nbdf3,na,boxlxyz,z,virMM,0)
-    call force_contract(dvdrMM,dvdrb,na,nb,nbdf3)
+    dvdrb(:,:,:) = 0.d0
 
+
+    !call forces(rb,vMM,dvdrb,nbdf3,na,boxlxyz,z,virMM,0) !PRoblem, das bei full forces hier RPMDDFT_forece aufgerufen wird, da rpmddft =1
+		call forces(rb,vMMl,dvdrb,nbdf3,na,boxlxyz,z,virMMl,1)
+		call force_contract(dvdrMMl,dvdrb,na,nb,nbdf3)
+    dvdrb(:,:,:) = 0.d0
+		call forces(rb,vMMh,dvdrb,nbdf3,na,boxlxyz,z,virMMh,4)
+		call force_contract(dvdrMMh,dvdrb,na,nb,nbdf3)
+		dvdrMM(:,:,:) = dvdrMMl(:,:,:)+dvdrMMh(:,:,:)
+		virMM(:,:) = virMMl(:,:) + virMMh(:,:)
+		vMM = vMMl + vMMh
   endif
 
   ! Convert dvdrCP2K and dvdrMM back to bead representation
@@ -195,11 +209,11 @@ subroutine evolve_cl_pi_RPMDDFT_2(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   call realft(dvdrMM,3*na,nb,-1)
 
 
-	write(*,*) "dvdr:", dvdr(:,1,3)
-	write(*,*) "dvdrCP2K:", dvdrCP2K(:,1,3)
-	write(*,*) "dvdrMM:", dvdrMM(:,1,3)
-	write(*,*) "dvdrCP2K-dvdrMM", dvdrCP2K(:,1,3)-dvdrMM(:,1,3)
-	write(*,*) "dvdr+dvdrCP2K-dvdrMM", dvdr(:,1,3)+dvdrCP2K(:,1,3)-dvdrMM(:,1,3)
+	!write(*,*) "dvdr:", dvdr(:,1,3)
+	!write(*,*) "dvdrCP2K:", dvdrCP2K(:,1,3)
+	!write(*,*) "dvdrMM:", dvdrMM(:,1,3)
+	!write(*,*) "dvdrCP2K-dvdrMM", dvdrCP2K(:,1,3)-dvdrMM(:,1,3)
+	!write(*,*) "dvdr+dvdrCP2K-dvdrMM", dvdr(:,1,3)+dvdrCP2K(:,1,3)-dvdrMM(:,1,3)
 	dvdr(:,:,:) = dvdr(:,:,:)+dvdrCP2K(:,:,:)-dvdrMM(:,:,:)
 
   ! Evolve the momenta under the low+CP2K+MM forces

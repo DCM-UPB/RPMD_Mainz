@@ -303,6 +303,7 @@ subroutine trajectory(p,r,v,dvdr,dvdr2,ct,dtv,dmtr,dmtv,dqq, &
   if (3*nm .ne. na) stop 'trajectory : na is NOT 3*nm !'
 
   ! Calculate initial forces....
+
   call full_forces(r,na,nb,v,vew,vlj,vint,vir,z,boxlxyz,dvdr,dvdr2)
   dcvinter(0) = vew + vlj ! inter
   dcvintra(0) = vint      ! intra

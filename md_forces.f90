@@ -5,7 +5,7 @@ subroutine forces(r,v,dvdr,nb,na,boxlxyz,z,virial,iopt)
   ! Calculate the potential energy v and forces dvdr of the
   ! system.
   ! ------------------------------------------------------------------
-  integer nb,na,k,j,iopt,rpmddft,nbdf3
+  integer nb,na,k,j,iopt,rpmddft,nbdf3,rctdk
   real(8) r(3,na,nb),dvdr(3,na,nb),z(na),boxlxyz(3)
   real(8) v,dv,oo_eps,oo_sig,oo_gam,rcut,sig,cut,boxmin
   real(8) rgmax,vir(3,3),virial(3,3)
@@ -13,7 +13,7 @@ subroutine forces(r,v,dvdr,nb,na,boxlxyz,z,virial,iopt)
   integer, allocatable :: point(:),list(:)
   common /oo_param/ oo_eps,oo_sig,oo_gam,rcut
   common /correct/ sig
-  common /RPMDDFT/ rpmddft,nbdf3
+  common /RPMDDFT/ rpmddft,nbdf3,rctdk
   ! Allocate
 
   allocate (point(na+3),list(maxnab*na))
@@ -265,15 +265,15 @@ subroutine full_forces(r,na,nb,v,vew,voo,vint,vir,z,boxlxyz, &
   ! ------------------------------------------------------------------
   ! Calculates the full system energy, force and virial
   ! ------------------------------------------------------------------
-  integer na,nb,nbdf1,nbdf2,rpmddft
-  real(8) r(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb),z(na),boxlxyz(3)
+  integer na,nb,nbdf1,nbdf2,rpmddft,nbdf3,rctdk
+  real(8) r(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb),z(na),boxlxyz(3),rnm(3,na,nb),dvdrb(3,na,nbdf3),rb(3,na,nbdf3)
   real(8) vir(3,3),vir_oo(3,3),vir_ew(3,3)
   real(8) vir_itr(3,3),vir_ewc(3,3)
   real(8) v,vew,voo,vint,sig,ve
   real(8), allocatable :: dvdre(:,:,:),dvdrl(:,:,:)
   common /beaddiabatic/ nbdf1,nbdf2
   common /correct/ sig
-  common /RPMDDFT/ rpmddft
+  common /RPMDDFT/ rpmddft,nbdf3,rctdk
 
   ! Allocate
 
@@ -389,9 +389,20 @@ subroutine full_forces(r,na,nb,v,vew,voo,vint,vir,z,boxlxyz, &
   !!!!!  vint = vew + voo
 #ifdef CP2K_BINDING
   else
+	if(nbdf3.ne.0) then		!when ring contracted you need to put nbdf3
+		rnm(:,:,:) = r(:,:,:)
+    call realft (rnm,3*na,nb,+1)
 
+		call ring_contract(rnm,rb,na,nb,nbdf3)
+
+  ! Evaluate forces on the bead coordinates rb
+
+    call forces(rb,v,dvdrb,nbdf3,na,boxlxyz,z,vir,9)
+    call force_contract(dvdr,dvdrb,na,nb,nbdf3)
+  else
     ! Calculate full force using CP2K
     call forces(r,v,dvdr,nb,na,boxlxyz,z,vir,9)
+  endif
     dvdr2 = 0.d0
 #endif
 endif
