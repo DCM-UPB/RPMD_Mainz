@@ -13,7 +13,7 @@ NOCP2K="WARNING: CP2K_BINDINGS NOT COMPILED"
 endif
 
 # warnings that could result in wrong code
-FC+=	-Wall -pedantic -Waliasing -Wcharacter-truncation -Wconversion-extra -Wsurprising -Wintrinsic-shadow
+FC+=	-Wall -pedantic -Waliasing -Wcharacter-truncation -Wconversion -Wsurprising -Wintrinsic-shadow
 # speed warnings
 FC+=	-Warray-temporaries
 
@@ -54,6 +54,7 @@ SRC= \
 	random.f90 \
 	kinetic.f90 \
 	fourier.f90 \
+	instvacint.f90 \
 	io.f90 \
 	ljones.f90 \
 	buckingham.f90 \

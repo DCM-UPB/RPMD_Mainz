@@ -218,7 +218,7 @@ subroutine rad_gyr(rgo,rgh,rgcm,r,na,nb,mass)
   return
 end subroutine rad_gyr
 
-subroutine orientation (r,ax1,ay1,az1,ax2,ay2,az2,it,na,nb,nm,nt,z)
+subroutine orientation (r,ax1,ay1,az1,ax2,ay2,az2,it,na,nb,nm,nt,z,iskip)
   implicit none
   include 'globals.inc'
   ! ------------------------------------------------------------------
@@ -230,7 +230,7 @@ subroutine orientation (r,ax1,ay1,az1,ax2,ay2,az2,it,na,nb,nm,nt,z)
   ! 2 ) The inter-hydrogen vector,
   ! 3 ) The the vector perpendicular to the two above.
   ! ------------------------------------------------------------------
-  integer na,nm,nb,k,ic,i,it,nt
+  integer na,nm,nb,k,ic,i,it,nt,iskip
   real(8) r(3*na,nb),dxx(3),dyy(3),dzz(3)
   real(8) ax1(3,nm,0:(2*nt/iskip))
   real(8) ay1(3,nm,0:(2*nt/iskip))
