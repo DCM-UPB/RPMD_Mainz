@@ -35,8 +35,8 @@ dt,mass,irun,itcf,pt,pb,print,intcstep,iskip,ntherm,vacfac)
     allocate (ct(0:nt),dct(0:nt))
     allocate (rmtr(0:nt),rmtv(0:nt))
     allocate (dmtr(0:nt),dmtv(0:nt))
-    allocate (irmtr(0:nt,3,2),irmtv(0:nt,3,2))
-    allocate (idmtr(0:nt,3,2),idmtv(0:nt,3,2))
+    allocate (irmtr(0:nt,5,2),irmtv(0:nt,5,2))
+    allocate (idmtr(0:nt,5,2),idmtv(0:nt,5,2))
     allocate (dmo1(6,0:nt),dmot1(6,0:nt))
     allocate (cvinter(0:2*nt), dcvinter(0:2*nt))
     allocate (cvintra(0:2*nt), dcvintra(0:2*nt))
@@ -99,13 +99,11 @@ dt,mass,irun,itcf,pt,pb,print,intcstep,iskip,ntherm,vacfac)
         ! Find a new configuration
      
         if (therm.eq.'AND') then
-        
             ! Resample momenta
-
             call sample(p,na,nb,mass,beta,irun,dt)
         endif
 
-        if (k.gt.1) then
+        if (k.gt.1) then        !thermalize for ntherm steps if AND or PRA thermostat
             do i = 1,ntherm
                 call evolve(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
                 boxlxyz,z,beta,vir,vir_lf,irun,0)
@@ -261,7 +259,7 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
     real(8) p(3,na,nb),r(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb)
     real(8) boxlxyz(3),z(na),mass(na)
     real(8) ct(0:nt),dmot1(6,0:nt)
-    real(8) dmtr(0:nt),dmtv(0:nt),idmtr(0:nt,3,2),idmtv(0:nt,3,2)
+    real(8) dmtr(0:nt),dmtv(0:nt),idmtr(0:nt,5,2),idmtv(0:nt,5,2)
     real(8) dcvinter(0:2*nt), dcvintra(0:2*nt),dke(0:2*nt)
 
     ! Cvv, OCF and Dipole Working Arrays
@@ -285,9 +283,9 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
     allocate (pc(3,nm,0:2*nt),pca(3,na),rca(3,na))
     allocate (dmxr(0:2*nt),dmyr(0:2*nt),dmzr(0:2*nt))
     allocate (dmxv(0:2*nt),dmyv(0:2*nt),dmzv(0:2*nt))
-    allocate (idmxr(0:2*nt,3,2),idmyr(0:2*nt,3,2),idmzr(0:2*nt,3,2))
-    allocate (idmxv(0:2*nt,3,2),idmyv(0:2*nt,3,2),idmzv(0:2*nt,3,2))
-    allocate (inint(na/3,3,2))
+    allocate (idmxr(0:2*nt,5,2),idmyr(0:2*nt,5,2),idmzr(0:2*nt,5,2))
+    allocate (idmxv(0:2*nt,5,2),idmyv(0:2*nt,5,2),idmzv(0:2*nt,5,2))
+    allocate (inint(na/3,5,2))
     ! Define some useful constants and zero-out arrays
 
     alpha2 = 0.5d0 * (1.d0 - alpha)
@@ -473,7 +471,7 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
                     call instvacint(rca,inint,na,boxlxyz)
                 end if
                 do ib=1,2
-                    do i=1,3
+                    do i=1,5
         	
                         do j = 1, na,3
                             if (inint(j/3+1,i,ib)) then
@@ -562,7 +560,7 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
         enddo
         if (vacfac.ne.1) then
             do ib=1,2
-                do i=1,3
+                do i=1,5
                     do jt = 0,nt,iskip
                         do it = 0,nt,iskip
                             idmtr(jt,i,ib) = idmtr(jt,i,ib) + (idmxr(it,i,ib)*idmxr(it+jt,i,ib)+ &
@@ -626,7 +624,7 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
   
     deallocate(ax1,ay1,az1,ax2,ay2,az2,pc,pca,rca)
     deallocate(dmxr,dmyr,dmzr,dmxv,dmyv,dmzv)
-    deallocate(idmxr,idmyr,idmzr,idmxv,idmyv,idmzv)
+    deallocate(idmxr,idmyr,idmzr,idmxv,idmyv,idmzv,inint)
   
     return
 end subroutine trajectory

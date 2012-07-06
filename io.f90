@@ -119,10 +119,10 @@ subroutine print_dipole_int(dtfs,nt,irmtr,irmtv,iskip)
   include 'globals.inc'
     ! ------------------------------------------------------------------
     ! Outputs the dipole and dipole derivative
-    ! autocorrelation functions of the selected interface layer.
+    ! autocorrelation functions of the selected interface layers.
     ! ------------------------------------------------------------------
     integer nt,it,iskip
-    real(8) irmtr(0:nt,3,2),irmtv(0:nt,3,2)
+    real(8) irmtr(0:nt,5,2),irmtv(0:nt,5,2)
     real(8) tps,dtfs,dtps
 
     open (unit=11,file='I1Dmmr.out')
@@ -130,14 +130,25 @@ subroutine print_dipole_int(dtfs,nt,irmtr,irmtv,iskip)
     dtps = dtfs*1.d-3
     do it = 0,nt,iskip
         tps = it*dtps
-        write (11,*)tps, irmtr(it,3,1)
-        write (13,*)tps, irmtv(it,3,1)
+        write (11,*)tps, irmtr(it,4,1)
+        write (13,*)tps, irmtv(it,4,1)
     enddo
     close (unit=11)
     close (unit=13)
 
-    open (unit=11,file='I1Dmmr_L1.out')
-    open (unit=13,file='I1Dmmv_L1.out')
+    open (unit=11,file='I0Dmmr.out')
+    open (unit=13,file='I0Dmmv.out')
+    dtps = dtfs*1.d-3
+    do it = 0,nt,iskip
+        tps = it*dtps
+        write (11,*)tps, irmtr(it,5,1)
+        write (13,*)tps, irmtv(it,5,1)
+    enddo
+    close (unit=11)
+    close (unit=13)
+
+    open (unit=11,file='I1Dmmr_L0.out')
+    open (unit=13,file='I1Dmmv_L0.out')
     dtps = dtfs*1.d-3
     do it = 0,nt,iskip
         tps = it*dtps
@@ -147,8 +158,8 @@ subroutine print_dipole_int(dtfs,nt,irmtr,irmtv,iskip)
     close (unit=11)
     close (unit=13)
   
-    open (unit=11,file='I1Dmmr_L2.out')
-    open (unit=13,file='I1Dmmv_L2.out')
+    open (unit=11,file='I1Dmmr_L1.out')
+    open (unit=13,file='I1Dmmv_L1.out')
     dtps = dtfs*1.d-3
     do it = 0,nt,iskip
         tps = it*dtps
@@ -158,19 +169,30 @@ subroutine print_dipole_int(dtfs,nt,irmtr,irmtv,iskip)
     close (unit=11)
     close (unit=13)
 
+    open (unit=11,file='I1Dmmr_L2.out')
+    open (unit=13,file='I1Dmmv_L2.out')
+    dtps = dtfs*1.d-3
+    do it = 0,nt,iskip
+        tps = it*dtps
+        write (11,*)tps, irmtr(it,3,1)
+        write (13,*)tps, irmtv(it,3,1)
+    enddo
+    close (unit=11)
+    close (unit=13)
+
     open (unit=11,file='I2Dmmr.out')
     open (unit=13,file='I2Dmmv.out')
     dtps = dtfs*1.d-3
     do it = 0,nt,iskip
         tps = it*dtps
-        write (11,*)tps, irmtr(it,3,2)
-        write (13,*)tps, irmtv(it,3,2)
+        write (11,*)tps, irmtr(it,4,2)
+        write (13,*)tps, irmtv(it,4,2)
     enddo
     close (unit=11)
     close (unit=13)
 
-    open (unit=11,file='I2Dmmr_L1.out')
-    open (unit=13,file='I2Dmmv_L1.out')
+    open (unit=11,file='I2Dmmr_L0.out')
+    open (unit=13,file='I2Dmmv_L0.out')
     dtps = dtfs*1.d-3
     do it = 0,nt,iskip
         tps = it*dtps
@@ -180,13 +202,24 @@ subroutine print_dipole_int(dtfs,nt,irmtr,irmtv,iskip)
     close (unit=11)
     close (unit=13)
   
-    open (unit=11,file='I2Dmmr_L2.out')
-    open (unit=13,file='I2Dmmv_L2.out')
+    open (unit=11,file='I2Dmmr_L1.out')
+    open (unit=13,file='I2Dmmv_L1.out')
     dtps = dtfs*1.d-3
     do it = 0,nt,iskip
         tps = it*dtps
         write (11,*)tps, irmtr(it,2,2)
         write (13,*)tps, irmtv(it,2,2)
+    enddo
+    close (unit=11)
+    close (unit=13)
+
+    open (unit=11,file='I2Dmmr_L2.out')
+    open (unit=13,file='I2Dmmv_L2.out')
+    dtps = dtfs*1.d-3
+    do it = 0,nt,iskip
+        tps = it*dtps
+        write (11,*)tps, irmtr(it,3,2)
+        write (13,*)tps, irmtv(it,3,2)
     enddo
     close (unit=11)
     close (unit=13)

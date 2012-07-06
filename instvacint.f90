@@ -6,14 +6,14 @@ subroutine instvacint(ra_bohr,inint,na,boxlxyz_bohr)
     integer na
     real(8) boxlxyz_bohr(3)
     real(8) ra_bohr(3,na)
-    logical inint(na/3,3,2)
+    logical inint(na/3,5,2)
 
     !--- Angström working arrays---
     real(8) boxlxyz(3),ra(3,na)
 
     !---    hard coded parameters   ---
     real(8) cgxi,gridspac,zspac,au,pi,hbulk
-    real(8) lprox1,uprox1,lprox2,uprox2
+    real(8) lprox1,uprox1,lprox2,uprox2,lprox3,uprox3
 
     !---    general variables   ---
     integer ia,im,densx,densy,densz,densi,densi2,inti,iter,int12    !iterators
@@ -41,10 +41,12 @@ subroutine instvacint(ra_bohr,inint,na,boxlxyz_bohr)
     pi=3.14159d0
     hbulk=0.5d0*0.997d0
 
-    lprox1=-2.0d0
+    lprox1=-2.5d0
     uprox1=0.5d0
     lprox2=0.5d0
-    uprox2=3.0d0
+    uprox2=3.5d0
+    lprox3=3.5d0
+    uprox3=6.5d0
 
     cgxisq=cgxi**2                      !for faster evaluation in critical loop later
     exparg=-0.5d0/cgxisq
@@ -145,7 +147,6 @@ subroutine instvacint(ra_bohr,inint,na,boxlxyz_bohr)
                     else
                         boxsh2=grid(3,densi2)
                     end if
-                    !if you replace gridspac with z2-z1 you get the interpolation formula from above
 
                     interface(inti,1)=boxsh+(boxsh2-boxsh)*(hbulk-instdfield(densi)) / &
                     (instdfield(densi2)-instdfield(densi))
@@ -250,9 +251,18 @@ subroutine instvacint(ra_bohr,inint,na,boxlxyz_bohr)
                     inint(im,2,int12)=.false.
                 end if
                 
-                inint(im,3,int12)=inint(im,1,int12).or.inint(im,2,int12)
+                if (proximity(im).gt.lprox3 .and. proximity(im).lt.uprox3) then
+                    inint(im,3,int12)=.true.
+                else
+                    inint(im,3,int12)=.false.
+                end if
+
+                inint(im,4,int12) = inint(im,1,int12).or.inint(im,2,int12).or.inint(im,3,int12)
+
             enddo
         enddo
+        inint(:,5,1) = .not.inint(:,4,1) .and. .not.inint(:,4,2)
+        inint(:,5,2) = inint(:,5,1)
     end if
 	
     deallocate (rct,grid,intnvec,bondvec1,bondvec2,proximity,hprox,instdfield,interface)
