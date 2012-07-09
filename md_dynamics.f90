@@ -272,45 +272,59 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
     real(8), allocatable :: idmxr(:,:,:),idmyr(:,:,:),idmzr(:,:,:)
     real(8), allocatable :: idmxv(:,:,:),idmyv(:,:,:),idmzv(:,:,:)
     logical, allocatable :: inint(:,:,:)
+
     ! Allocate arrays
 
-    allocate (ax1(3,nm,0:(2*nt/iskip)))
-    allocate (ay1(3,nm,0:(2*nt/iskip)))
-    allocate (az1(3,nm,0:(2*nt/iskip)))
-    allocate (ax2(6,nm,0:(2*nt/iskip)))
-    allocate (ay2(6,nm,0:(2*nt/iskip)))
-    allocate (az2(6,nm,0:(2*nt/iskip)))
+    if (itcf(2).eq.1) then
+        allocate (dmxr(0:2*nt),dmyr(0:2*nt),dmzr(0:2*nt))
+        allocate (dmxv(0:2*nt),dmyv(0:2*nt),dmzv(0:2*nt))
+        allocate (idmxr(0:2*nt,5,2),idmyr(0:2*nt,5,2),idmzr(0:2*nt,5,2))
+        allocate (idmxv(0:2*nt,5,2),idmyv(0:2*nt,5,2),idmzv(0:2*nt,5,2))
+        allocate (inint(na/3,5,2))
+    end if
+
+    if (itcf(3).eq.1) then
+        allocate (ax1(3,nm,0:(2*nt/iskip)))
+        allocate (ay1(3,nm,0:(2*nt/iskip)))
+        allocate (az1(3,nm,0:(2*nt/iskip)))
+        allocate (ax2(6,nm,0:(2*nt/iskip)))
+        allocate (ay2(6,nm,0:(2*nt/iskip)))
+        allocate (az2(6,nm,0:(2*nt/iskip)))
+    end if
+
     allocate (pc(3,nm,0:2*nt),pca(3,na),rca(3,na))
-    allocate (dmxr(0:2*nt),dmyr(0:2*nt),dmzr(0:2*nt))
-    allocate (dmxv(0:2*nt),dmyv(0:2*nt),dmzv(0:2*nt))
-    allocate (idmxr(0:2*nt,5,2),idmyr(0:2*nt,5,2),idmzr(0:2*nt,5,2))
-    allocate (idmxv(0:2*nt,5,2),idmyv(0:2*nt,5,2),idmzv(0:2*nt,5,2))
-    allocate (inint(na/3,5,2))
+
     ! Define some useful constants and zero-out arrays
 
     alpha2 = 0.5d0 * (1.d0 - alpha)
     nm = na / 3
     em = mass(1) + mass(2) + mass(3)
-    dmxr(:) = 0.d0
-    dmyr(:) = 0.d0
-    dmzr(:) = 0.d0
-    dmxv(:) = 0.d0
-    dmyv(:) = 0.d0
-    dmzv(:) = 0.d0
-  
-    idmxr(:,:,:) = 0.d0
-    idmyr(:,:,:) = 0.d0
-    idmzr(:,:,:) = 0.d0
-    idmxv(:,:,:) = 0.d0
-    idmyv(:,:,:) = 0.d0
-    idmzv(:,:,:) = 0.d0
 
-    ax1(:,:,:) = 0.d0
-    ay1(:,:,:) = 0.d0
-    az1(:,:,:) = 0.d0
-    ax2(:,:,:) = 0.d0
-    ay2(:,:,:) = 0.d0
-    az2(:,:,:) = 0.d0
+    if (itcf(2).eq.1) then
+
+        dmxr(:) = 0.d0
+        dmyr(:) = 0.d0
+        dmzr(:) = 0.d0
+        dmxv(:) = 0.d0
+        dmyv(:) = 0.d0
+        dmzv(:) = 0.d0
+  
+        idmxr(:,:,:) = 0.d0
+        idmyr(:,:,:) = 0.d0
+        idmzr(:,:,:) = 0.d0
+        idmxv(:,:,:) = 0.d0
+        idmyv(:,:,:) = 0.d0
+        idmzv(:,:,:) = 0.d0
+    end if
+
+    if (itcf(3).eq.1) then
+        ax1(:,:,:) = 0.d0
+        ay1(:,:,:) = 0.d0
+        az1(:,:,:) = 0.d0
+        ax2(:,:,:) = 0.d0
+        ay2(:,:,:) = 0.d0
+        az2(:,:,:) = 0.d0
+    end if
 
     vir(:,:) = 0.d0
     vir_lf(:,:) = 0.d0
@@ -621,10 +635,15 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
     endif
   
     ! Deallocate arrays
-  
-    deallocate(ax1,ay1,az1,ax2,ay2,az2,pc,pca,rca)
-    deallocate(dmxr,dmyr,dmzr,dmxv,dmyv,dmzv)
-    deallocate(idmxr,idmyr,idmzr,idmxv,idmyv,idmzv,inint)
-  
+
+    deallocate(pc,pca,rca)
+
+    if (itcf(2).eq.1) then
+        deallocate(dmxr,dmyr,dmzr,dmxv,dmyv,dmzv)
+        deallocate(idmxr,idmyr,idmzr,idmxv,idmyv,idmzv,inint)
+    end if
+    if (itcf(3).eq.1) then
+        deallocate(ax1,ay1,az1,ax2,ay2,az2)
+    end if
     return
 end subroutine trajectory
