@@ -65,6 +65,7 @@ subroutine evolve_pi_rc_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
 
   if (nbaro.eq.1) then
      if (baro.eq.'BER') then
+				call virial_ke(r,dvdr,dvdr2,tv,tvxyz,tq1,tq2,beta,na,nb,mass)!neu, noch nicht getestet
         call beren_driver(vir,tv,tvxyz,dt,r,boxlxyz,na,nb)
      else if (baro.eq.'MCI') then
         call mc_baro(r,dvdr,dvdr2,vir,v,z,beta,boxlxyz,na,nb,irun)

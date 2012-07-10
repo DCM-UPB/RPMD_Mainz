@@ -34,7 +34,7 @@ subroutine evolve_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   vir_lj(:,:) = 0.d0
   vir_ew(:,:) = 0.d0
   vir_hf(:,:) = 0.d0
-  tv = 0.d0
+  tv = 0.d0 ! im ersten schritt falsch!!!!
   tvxyz(:) = 0.d0
 
   halfdt = 0.5d0*dt
@@ -59,9 +59,13 @@ subroutine evolve_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   ! (note:// COMs scaled therefore do not need to recalculate
   !  intramolecular forces as they remain the same)
 
+  !get kinetic energy
+  
+
   if (nbaro.eq.1) then
      if (baro.eq.'BER') then
-        call beren_driver(vir,tv,tvxyz,dt,r,boxlxyz,na,nb)
+				call virial_ke(r,dvdr,dvdr2,tv,tvxyz,tq1,tq2,beta,na,nb,mass)
+        call beren_driver(vir,tv,tvxyz,dt,r,boxlxyz,na,nb) !tv != 0 sein, daher vorher berechnen
      else if (baro.eq.'MCI') then
         call mc_baro(r,dvdr,dvdr2,vir,v,z,beta,boxlxyz,na,nb,irun)
      else 
