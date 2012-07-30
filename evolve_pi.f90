@@ -118,7 +118,7 @@ subroutine evolve_pi(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
            p(3,j,k) = pprime
         enddo
      enddo
-     
+ !!!!!!!!!!!!!!!!!!!!!!!!Den thermostat würde ich nach den dtsmall step machen bei +++++++++
      if (type.eq.'ACMD') then
         if (therm.eq.'PRA') then
            ! Thermostat the non-centroid modes in ACMD
@@ -152,6 +152,7 @@ subroutine evolve_pi(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
         call realft(dvdr2,3*na,nb,+1)
         p(:,:,:) = p(:,:,:) - dtsmall*dvdr2(:,:,:)
      endif
+!++++++++++++++++++++hier würde ich den thermostaten hinmachen, da immer thermostat halfstep ---> Velocity verlet ----> thermostat halfstep 
   enddo
 
   ! Average intramolecular-virial over multiple time steps
@@ -162,6 +163,7 @@ subroutine evolve_pi(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   vir_hf(:,:) = vir_hf(:,:)/dble(mts)
   vir(:,:) = vir_lf(:,:) + vir_hf(:,:)
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! dieser Barostat müsste eigentlich wetier unten bei ******************** Stehen
   ! Barostat
   ! (note:// COMs scaled therefore do not need to recalculate
   !  intramolecular forces as they remain the same)
@@ -219,6 +221,12 @@ subroutine evolve_pi(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
 
   r(:,:,:) = rst(:,:,:)
   p(:,:,:) = p(:,:,:) - halfdtsmall*dvdr2(:,:,:)
+
+
+
+!*************************!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Ich würe den Barostat hier hin machen, da hier der Velocity verlet high frequnecy step fertig ist 
+
+
 
   ! Transform dvdr back to bead representation (if needed)
 

@@ -28,7 +28,7 @@ subroutine evolve(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
   else
     if (rpmddft.eq.1) then
       if (rctdk.eq.1) then
-        call evolve_cl_pi_RPMDDFT_2(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
+        call evolve_cl_pi_RPMDDFT_3(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
                            boxlxyz,z,beta,vir,vir_lf,irun,nbaro)
       else      
         if (nbdf3.eq.0) then
