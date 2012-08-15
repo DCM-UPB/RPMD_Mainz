@@ -27,7 +27,7 @@ subroutine evolve_pi_rc_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   common /RPMDDFT/ rpmddft,nbdf3
   real(8) rs(3,na,nb)
 
-
+	dtsmall = dt/mts
   vew = 0.d0
   vlj = 0.d0
   vint = 0.d0
@@ -56,8 +56,38 @@ subroutine evolve_pi_rc_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
 
   p(:,:,:) = p(:,:,:) - halfdt*(dvdr(:,:,:)+dvdr2(:,:,:)) !because dvdr2 is != 0 after equilibration
 
-  !  get new coordinates
-  call freerp_rpmd(p,r,dt,mass,na,nb,beta)
+
+	if(mts .eq. 1) then
+		call freerp_rpmd(p,r,dtsmall,mass,na,nb,beta)
+	else
+ 	 !! Multiple timestep for freerpmd propagation
+  	do i = 1,mts
+			if (type.eq.'RPMD') then
+    		 if (therm.eq.'PRG') then
+    		    call parinello_therm(p,mass,ttau,na,nb,halfdt,irun,beta)
+   		  else if (therm.eq.'PRL') then
+    		    call parinello_therm_loc(p,mass,ttau,na,nb, &
+    		                             dt,irun,beta)
+    		 else if (therm.eq.'GLE') then     !! GLE
+    		     call therm_gle(p,dheat,mass,na,nb,irun)
+    		 endif
+  		endif
+
+  	!  get new coordinates
+	  	call freerp_rpmd(p,r,dtsmall,mass,na,nb,beta)
+
+				if (type.eq.'RPMD') then
+	  	  	 if (therm.eq.'PRG') then
+	  	  	    call parinello_therm(p,mass,ttau,na,nb,halfdt,irun,beta)
+	  	 	  else if (therm.eq.'PRL') then
+	  	  	    call parinello_therm_loc(p,mass,ttau,na,nb, &
+	  	  	                             dt,irun,beta)
+	  	  	 else if (therm.eq.'GLE') then     !! GLE
+	  	  	     call therm_gle(p,dheat,mass,na,nb,irun)
+	  	  	 endif
+	  		endif
+		enddo
+	endif	
 
   ! Barostat
   ! (note:// COMs scaled therefore do not need to recalculate

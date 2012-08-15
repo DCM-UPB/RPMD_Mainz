@@ -64,7 +64,7 @@ subroutine start_rpmd()
     !Classical/RPMD/PACMD Simulation Program for Flexible water
     !--------------------------------------------------------------------
     integer nt,ne,nb,m,ng,npre_eq,pt,pb,irun,nm,na,narg,iargc,nbdf1,nbdf2,nbdf3,rctdk,i,j,k
-    integer nbr,mts,nlat,itcf(3),itst(2),ncellxyz(3),print(3),intcstep,ntherm,iskip
+    integer nbr,mts,nlat,itcf(3),itst(3),ncellxyz(3),print(3),intcstep,ntherm,iskip
 
     ! used for reftrj and RPMD-DFT
     integer reftraj,rpmddft,ierr,rpmddfthelp
@@ -123,6 +123,7 @@ subroutine start_rpmd()
     CP2K_path =""
     nbdf3 = 0
     rctdk = 0
+		itst(3) = 0 ! itst 3 argument is for RMS calculation
 
     write(6,*)  '-------------------------------------------'
     write(6,*)  '            Flexible Water Code            '
@@ -637,7 +638,7 @@ subroutine start_rpmd()
         call cp_init_cp2k(1,ierr)
 
         if (nbdf3.eq.0) then
-            do i = 1, nb ! if nbdf3 > 1 set up nbdf3 versions of cp2k f_env_id = i
+            do i = 1, nb 
                 call cp_create_fenv(f_env_id(i),CP2K_path,"out.out",ierr)
                 ! set cell in CP2K
                 cell(1,1) = boxlxyz(1)
@@ -647,7 +648,7 @@ subroutine start_rpmd()
                 if (ierr.ne.0) STOP "set_cell"
             enddo
         else
-            do i = 1, nbdf3 ! if nbdf3 > 1 set up nbdf3 versions of cp2k f_env_id = i
+            do i = 1, nbdf3 ! if nbdf3 >= 1 set up nbdf3 versions of cp2k f_env_id = i
                 call cp_create_fenv(f_env_id(i),CP2K_path,"out.out",ierr)
                 write(*,*) "f_env_id:",f_env_id(i)
                 ! set cell in CP2K
@@ -702,6 +703,5 @@ subroutine start_rpmd()
     if (reftraj.ne.0) then
         deallocate(r_traj)
     endif
-    write(6,*) "asdfasdfasdfdd"
     return
 end subroutine start_rpmd

@@ -368,6 +368,8 @@ subroutine center_water (p,pc,nm,nb)
 
   pc(:,:) = 0.d0
   wt = 1.d0/dble(nb)
+	write(*,*) "in center_water"
+	write(*,*) p(:,1,1)
 
   do j = 1,nm
      do k = 1,nb
@@ -379,7 +381,7 @@ subroutine center_water (p,pc,nm,nb)
      pc(2,j) = pc(2,j) * wt
      pc(3,j) = pc(3,j) * wt
   enddo
-  
+
   return
 end subroutine center_water
 

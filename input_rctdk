@@ -20,7 +20,7 @@ reftraj = 0
 ncellxyz = 8 8 8
 irun = 4711
 itcf = 0 0 0
-itst = 1 0
+itst = 1 0 1
 rcut = 9.d0
 type = 'RPMD'
 therm = 'AND'
@@ -35,5 +35,8 @@ sig = 4.5d0
 rpmddft = 1
 CP2K_path = "./H2O.inp"
 rctdk = 1
+nbdf3 = 0
+iskip = 1
+ntherm = 0
 &end
 

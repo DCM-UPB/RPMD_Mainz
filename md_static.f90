@@ -79,16 +79,16 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   ! Routine to calculate the static properties
   ! ------------------------------------------------------------------
   integer na,nb,ng,irun,nrdf,nbdf1,nbdf2,nbaro,pt,pb
-  integer no,i,je,k,j,ii,jj,ibin,nm,itst(2),ib,print(3)
+  integer no,i,je,k,j,ii,jj,ibin,nm,itst(3),ib,print(3)
   integer(8), allocatable :: ihhh(:),ihoo(:),ihoh(:)
   real(8) boxlxyz(3),beta,v,dt
   real(8) p(3,na,nb), dvdr(3,na,nb),dvdr2(3,na,nb),ran2,z(na)
-  real(8) r(3,na,nb),mass(na),vir(3,3),vir_lf(3,3)
+  real(8) r(3,na,nb),mass(na),vir(3,3),vir_lf(3,3),rcm(3,na/3),rst(3,na/3),r0(3,na,nb)
   real(8) delr,dx,dy,dz,rij,thresh,dconv,dconv2,pi,fac,vol
-  real(8) avang,avoh,tavang,tavoh
+  real(8) avang,avoh,tavang,tavoh,msd,msdO
   real(8) vave,tave,tq1ave,tq2ave,tv,tvxyz(3),tavee,tq1aee,tq2aee
   real(8) tavdip,tavdipx,tavdipy,tavdipz,tavdip2,tavdipsq,eps
-  real(8) dipx,dipy,dipz,dip2,dipm,dtps
+  real(8) dipx,dipy,dipz,dip2,dipm,dtps,dr
   real(8) boxmax
   real(8) rgh,rgo,rgcm,rghav,rgoav,rgcmav,tq1,tq2,tqe
   real(8) v1,v2,v3,v1ave,v2ave,v1eeav,v2eeav,v3ave,v3eeav,denc
@@ -171,6 +171,17 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   pvav = 0.d0
   nrdf = 0
 
+	!zero time COM and Coordinates
+	 ! Calculate COM for each molecule
+			  do i = 0,nm-1
+			     do j = 1,3
+			           rst(j,i+1) = mass(1)*r(j,3*i+1,1)+ &
+			                       mass(2)*r(j,3*i+2,1)+ mass(3)*r(j,3*i+3,1)
+			           rst(j,i+1) = rst(j,i+1)/wmass
+			     enddo
+			  enddo
+	r0(:,:,:) = r(:,:,:)
+
   ! Open a file to print out the potential energy and
   ! virial kinetic energy.
 
@@ -182,6 +193,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
      open(25,file='density_st.out')
   endif
   open (24,file='pressure_st.out')
+  open (333,file='MSD_st.out')
   if (pt.gt.0) then
     if (reftraj.ne.0) then
      if (print(1).eq.1) then
@@ -485,6 +497,39 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
      endif
 
     endif
+
+    ! Output MSD moved by centroid COM and O molecules
+		if(itst(3).eq.1 .and. nb.eq.1) then
+	   if (mod(je,10).eq.0) then
+				msd = 0.d0
+	  ! Calculate COM for each molecule
+			  do i = 0,nm-1
+			     do j = 1,3
+			           rcm(j,i+1) = mass(1)*r(j,3*i+1,1)+ &
+			                       mass(2)*r(j,3*i+2,1)+ mass(3)*r(j,3*i+3,1)
+			           rcm(j,i+1) = rcm(j,i+1)/wmass
+			     enddo
+			  enddo
+        do i = 1,nm
+           do k = 1,3
+              dr = rcm(k,i)-rst(k,i)
+              msd = msd + dr*dr
+           enddo
+        enddo
+        msd = msd / dble(nm)
+		! O MSD
+				msdO = 0.d0
+        do i = 1,nm
+					 ii = 3*(i-1) + 1
+           do k = 1,3
+              dr = r(k,ii,1)-r0(k,ii,1)
+              msdO = msdO + dr*dr
+           enddo
+        enddo
+        msdO = msdO / dble(nm)
+        write (333,'(3f12.6)') je*dtps, msd, msdO
+     endif
+		endif
   enddo
   close(unit=20)
   close(unit=21)
