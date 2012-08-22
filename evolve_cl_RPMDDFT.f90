@@ -4,10 +4,13 @@ subroutine evolve_cl_RPMDDFT(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
   use barostat
   implicit none
   include 'globals.inc'
+#ifdef PARALLEL_BINDING
+  include 'mpif.h' !parallel
+#endif
   ! ------------------------------------------------------------------
   ! Classical evolution using RPMD-DFT-Method
   ! ------------------------------------------------------------------
-  integer na,nb,irun,i,mts,nbaro,reftraj,ierr,rpmddft,iii1,jjj1
+  integer na,nb,irun,i,mts,nbaro,reftraj,ierr,rpmddft,iii1,jjj1,myid
   real(8) p(3,na,nb), r(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb)
   real(8) vir(3,3), vir_lf(3,3),vir_hf(3,3),vir_tmp(3,3)
   real(8) halfdtsmall,dt,boxlxyz(3),tvxyz(3),v,beta,dtsmall
@@ -28,9 +31,15 @@ subroutine evolve_cl_RPMDDFT(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
 
   vir_hf(:,:) = 0.d0  !vir_lf und vir gehen eh als 0.d0 rein, vir = volles virial
 
+#ifdef PARALLEL_BINDING
+	call MPI_COMM_RANK( MPI_COMM_WORLD, myid, ierr)
+write(*,*) "myid iin evolve_cl:",myid
+#endif
 
   halfdt = 0.5d0*dt
-
+#ifdef PARALLEL_BINDING
+if(myid.eq.0) then     
+#endif 
   ! Evolve the momenta to half time step
   if (therm.eq.'PRG') then                               ! hier wird themostat propagiert
      call parinello_therm(p,mass,ttau,na,nb,halfdt,irun,beta)
@@ -63,8 +72,21 @@ subroutine evolve_cl_RPMDDFT(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
 
   endif
 
+#ifdef PARALLEL_BINDING
+endif
+	call MPI_bcast(r,SIZE(r),MPI_real8,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(p,SIZE(p),MPI_real8,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(dvdr,SIZE(dvdr),MPI_real8,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(dvdr2,SIZE(dvdr2),MPI_real8,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(vir,SIZE(vir),MPI_real8,0,MPI_COMM_WORLD,ierr)
+#endif
+
   ! Evaluation of the t+timestep forces 
-  call forces(r,v,dvdr,nb,na,boxlxyz,z,vir,9)  
+  call forces(r,v,dvdr,nb,na,boxlxyz,z,vir,9)
+  
+#ifdef PARALLEL_BINDING
+if(myid.eq.0) then
+#endif
 
   ! Set dvdr2 = 0 because we don't have a high frequency part
   dvdr2(:,:,:) = 0.d0
@@ -77,6 +99,10 @@ subroutine evolve_cl_RPMDDFT(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
   else if (therm.eq.'PRL') then
      call parinello_therm_loc(p,mass,ttau,na,nb,halfdt,irun,beta)
   endif
+
+#ifdef PARALLEL_BINDING
+endif
+#endif
 
   return
 end subroutine evolve_cl_RPMDDFT

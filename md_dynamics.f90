@@ -3,11 +3,14 @@ dt,mass,irun,itcf,pt,pb,print,intcstep,iskip,ntherm,vacfac)
     use thermostat
     implicit none
   include 'globals.inc'
+#ifdef PARALLEL_BINDING
+  include 'mpif.h' !parallel
+#endif
     ! ------------------------------------------------------------------
     ! Routine to calculate dynamical properties
     ! ------------------------------------------------------------------
     integer nt,m,na,nm,nb,irun,itcf(3),pt,pb
-    integer k,i,ib,print(3),intcstep,iskip,ntherm,vacfac
+    integer k,i,ib,print(3),intcstep,iskip,ntherm,vacfac,ierr,myid
     real(8) r(3,na,nb),p(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb)
     real(8) boxlxyz(3),z(na),mass(na),vir(3,3),vir_lf(3,3)
     real(8) beta,dt,dtfs,dtps,cscale,wt,tv,pe,dqq,dqx,dqy,dqz,ran2,thresh
@@ -22,7 +25,10 @@ dt,mass,irun,itcf,pt,pb,print,intcstep,iskip,ntherm,vacfac)
     external ran2
 
     ! Define some local variable values
-
+#ifdef PARALLEL_BINDING
+	call MPI_COMM_RANK( MPI_COMM_WORLD, myid, ierr)
+	write(*,*) "dynamics:",myid
+#endif
     dtfs = dt/tofs
     dtps = dtfs*1.d-3
     cscale = (toA/(dtps/dt))**2
@@ -57,7 +63,9 @@ dt,mass,irun,itcf,pt,pb,print,intcstep,iskip,ntherm,vacfac)
     cvinter(:) = 0.d0
     cvintra(:) = 0.d0
     cke(:) = 0.d0
-
+#ifdef PARALLEL_BINDING
+if(myid.eq.0) then
+#endif
     if (itcf(1).eq.1) then
         open(71,file='diff.out')
     endif
@@ -93,9 +101,13 @@ dt,mass,irun,itcf,pt,pb,print,intcstep,iskip,ntherm,vacfac)
             enddo
         endif
     endif
-
+#ifdef PARALLEL_BINDING
+endif
+#endif
     do k = 1,m !Anzahl paralleler Trajektorien für Dynamik
-
+#ifdef PARALLEL_BINDING
+			if(myid.eq.0) then
+#endif
         ! Find a new configuration
      
         if (therm.eq.'AND') then
@@ -103,26 +115,49 @@ dt,mass,irun,itcf,pt,pb,print,intcstep,iskip,ntherm,vacfac)
             call sample(p,na,nb,mass,beta,irun,dt)
         endif
 
+#ifdef PARALLEL_BINDING
+endif
+  	 call MPI_bcast(r,SIZE(r),MPI_real8,0,MPI_COMM_WORLD,ierr)
+		 call MPI_bcast(p,SIZE(p),MPI_real8,0,MPI_COMM_WORLD,ierr)
+		 call MPI_bcast(dvdr,SIZE(dvdr),MPI_real8,0,MPI_COMM_WORLD,ierr)
+		 call MPI_bcast(dvdr2,SIZE(dvdr2),MPI_real8,0,MPI_COMM_WORLD,ierr)  
+		 call MPI_bcast(v,1,MPI_real8,0,MPI_COMM_WORLD,ierr)   
+		 call MPI_bcast(v1,1,MPI_real8,0,MPI_COMM_WORLD,ierr)   
+		 call MPI_bcast(v2,1,MPI_real8,0,MPI_COMM_WORLD,ierr)   
+		 call MPI_bcast(v3,1,MPI_real8,0,MPI_COMM_WORLD,ierr)   
+		 call MPI_bcast(vir,SIZE(vir),MPI_real8,0,MPI_COMM_WORLD,ierr)   
+		 call MPI_bcast(vir_lf,SIZE(vir_lf),MPI_real8,0,MPI_COMM_WORLD,ierr)   
+write(*,*) "myid in evolve:", myid
+#endif
+
         if (k.gt.1) then        !thermalize for ntherm steps if AND or PRA thermostat
             do i = 1,ntherm
                 call evolve(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
                 boxlxyz,z,beta,vir,vir_lf,irun,0)
+#ifdef PARALLEL_BINDING
+								if(myid.eq.0) then
+#endif			
                 if ((therm.eq.'AND').or.(therm.eq.'PRA')) then
                     if (ran2(irun,0.d0,1.d0) .lt. thresh) then
                         call sample(p,na,nb,mass,beta,irun,dt)
                     endif
                 endif
+#ifdef PARALLEL_BINDING
+								endif
+		 						call MPI_bcast(p,SIZE(p),MPI_real8,0,MPI_COMM_WORLD,ierr)
+#endif			
             enddo
         end if
      
 
         ! Run an NVT (NVE if therm == AND) trajectory of 2*nt time steps
-
         call trajectory(p,r,v,dvdr,dvdr2,dct,dtv,dmtr,dmtv,idmtr,idmtv, &
         dqqt,davx,davy,davz,dmot1,nt,na,nb,boxlxyz,z, &
         beta,dt,mass,itcf,nm,dpe,irun,dcvinter,dcvintra,&
         dke,pt,pb,print,intcstep,iskip,vacfac)
-
+#ifdef PARALLEL_BINDING
+				if(myid.eq.0) then
+#endif			
         write(6,*)'* Completed sampling: ',k,' of ', m
         call flush(6)
         tv = tv + wt*dtv
@@ -151,8 +186,15 @@ dt,mass,irun,itcf,pt,pb,print,intcstep,iskip,ntherm,vacfac)
             write(71,*)k,cscale*sum/(3.d0*dble(k))
             call flush(71)
         endif
+#ifdef PARALLEL_BINDING
+		endif
+#endif	
+
     enddo
 
+#ifdef PARALLEL_BINDING
+				if(myid.eq.0) then
+#endif	
     if (pt.gt.0) then
         if (print(1).eq.1) then
             close(unit=36)
@@ -232,7 +274,9 @@ dt,mass,irun,itcf,pt,pb,print,intcstep,iskip,ntherm,vacfac)
 66  format(1x,'<PE> = ',f10.4,' Kj/mol')
 
     deallocate (ct,dct,rmtr,irmtr,rmtv,irmtv,dmtr,idmtr,dmtv,idmtv,dmo1,dmot1)
-
+#ifdef PARALLEL_BINDING
+endif
+#endif
     return
 end subroutine dynamics
 
@@ -242,10 +286,13 @@ beta,dt,mass,itcf,nm,pe,irun,dcvinter, &
 dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
     implicit none
   include 'globals.inc'
+#ifdef PARALLEL_BINDING
+	include 'mpif.h'
+#endif
     ! -----------------------------------------------------------------
     ! Sample dynamic properties over NVE trajectory.
     ! -----------------------------------------------------------------
-    integer na,nb,nt,itcf(3),nm,irun
+    integer na,nb,nt,itcf(3),nm,irun,myid,ierr
     integer i,ib,j,jt,it,it10,jt10,k,pt,pb,print(3),intcstep,iskip,vacfac
     real(8) dt,beta,alpha,alpha2,wm,wh,v,v1,v2,v3,w1,w2,w3
     real(8) em,tv,dipx,dipy,dipz,tbar,wt,wt1,vir(3,3),vir_lf(3,3)
@@ -347,7 +394,10 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
     pe = 0.d0
     nm = na/3
     if (3*nm .ne. na) stop 'trajectory : na is NOT 3*nm !'
-
+#ifdef PARALLEL_BINDING
+	call MPI_COMM_RANK( MPI_COMM_WORLD, myid, ierr)
+  call MPI_bcast(r,SIZE(r),MPI_real8,0,MPI_COMM_WORLD,ierr)
+#endif
     ! Calculate initial forces....
 
     call full_forces(r,na,nb,v,vew,vlj,vint,vir,z,boxlxyz,dvdr,dvdr2)
@@ -361,10 +411,24 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
         if (jt .gt. 0) then
         
             ! Evolve the system by dt
-
-            call evolve(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
+#ifdef PARALLEL_BINDING
+  	 call MPI_bcast(r,SIZE(r),MPI_real8,0,MPI_COMM_WORLD,ierr)
+		 call MPI_bcast(p,SIZE(p),MPI_real8,0,MPI_COMM_WORLD,ierr)
+		 call MPI_bcast(dvdr,SIZE(dvdr),MPI_real8,0,MPI_COMM_WORLD,ierr)
+		 call MPI_bcast(dvdr2,SIZE(dvdr2),MPI_real8,0,MPI_COMM_WORLD,ierr)  
+		 call MPI_bcast(v,1,MPI_real8,0,MPI_COMM_WORLD,ierr)   
+		 call MPI_bcast(v1,1,MPI_real8,0,MPI_COMM_WORLD,ierr)   
+		 call MPI_bcast(v2,1,MPI_real8,0,MPI_COMM_WORLD,ierr)   
+		 call MPI_bcast(v3,1,MPI_real8,0,MPI_COMM_WORLD,ierr)   
+		 call MPI_bcast(vir,SIZE(vir),MPI_real8,0,MPI_COMM_WORLD,ierr)   
+		 call MPI_bcast(vir_lf,SIZE(vir_lf),MPI_real8,0,MPI_COMM_WORLD,ierr)   
+		 write(*,*) "myid in trajectory:", myid
+#endif
+           call evolve(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
             boxlxyz,z,beta,vir,vir_lf,irun,0)
-
+#ifdef PARALLEL_BINDING
+					if(myid.eq.0) then
+#endif
             if ((pt.gt.0).and.(mod(jt,pt).eq.0)) then
                 if (print(1).eq.1) then
                     call print_vmd_full(r,nb,na,nm,boxlxyz,36)
@@ -411,9 +475,14 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
                 dcvinter(jt) = v1 ! LF pot
                 dcvintra(jt) = v2 ! HF pot
             endif
+#ifdef PARALLEL_BINDING
+					endif
+#endif
 
         endif
-
+#ifdef PARALLEL_BINDING
+						if(myid.eq.0) then
+#endif
         ! KE
         rke = 0.d0
         do k = 1, nb
@@ -519,8 +588,13 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
                 enddo
             endif
         end if
+#ifdef PARALLEL_BINDING
+	endif
+#endif
     enddo
-
+#ifdef PARALLEL_BINDING
+						if(myid.eq.0) then
+#endif
     ! Average accumulators
 
     wt = 1.d0/dble(2*nt)
@@ -633,7 +707,9 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
             enddo
         enddo
     endif
-  
+#ifdef PARALLEL_BINDING
+	endif
+#endif
     ! Deallocate arrays
 
     deallocate(pc,pca,rca)
@@ -645,5 +721,6 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
     if (itcf(3).eq.1) then
         deallocate(ax1,ay1,az1,ax2,ay2,az2)
     end if
+
     return
 end subroutine trajectory

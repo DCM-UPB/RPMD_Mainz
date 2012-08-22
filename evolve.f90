@@ -60,14 +60,17 @@ subroutine start_rpmd()
     use f_env
     implicit none
     include 'globals.inc'
+#ifdef PARALLEL_BINDING
+    include 'mpif.h' !parallel
+#endif
     !--------------------------------------------------------------------
     !Classical/RPMD/PACMD Simulation Program for Flexible water
     !--------------------------------------------------------------------
     integer nt,ne,nb,m,ng,npre_eq,pt,pb,irun,nm,na,narg,iargc,nbdf1,nbdf2,nbdf3,rctdk,i,j,k
-    integer nbr,mts,nlat,itcf(3),itst(3),ncellxyz(3),print(3),intcstep,ntherm,iskip
+    integer nbr,mts,nlat,itcf(3),itst(3),ncellxyz(3),print(3),intcstep,ntherm,iskip!,sizeMPI(9)
 
     ! used for reftrj and RPMD-DFT
-    integer reftraj,rpmddft,ierr,rpmddfthelp
+    integer reftraj,rpmddft,ierr,rpmddfthelp,myid,numid
     character(len=35) CP2K_path
     ! r_traj(xyz,molecules,nb,reftraj)
     real(8), allocatable :: r_traj(:,:,:,:),boxlxyz_traj(:,:)
@@ -87,6 +90,9 @@ subroutine start_rpmd()
     character(len=4) type
     character(len=3) lattice,ens,therm_backup
     logical iamcub,iamrigid
+
+
+
     external gaussian
 
     namelist/input/ens,temp,pres,rho,lattice,vacfac,iamcub,dtfs, &
@@ -125,6 +131,30 @@ subroutine start_rpmd()
     rctdk = 0
 		itst(3) = 0 ! itst 3 argument is for RMS calculation
 
+		! Using CP2K parallel?
+#ifdef PARALLEL_BINDING
+#ifdef CP2K_BINDING
+	call cp_init_cp2k(1,ierr)
+	!call MPI_init(ierr) 
+	!call cp_init_cp2k(0,ierr)
+#endif
+#ifndef CP2K_BINDING
+	write(*,*) "Parallel Binding using CP2K seriell"
+	call MPI_init(ierr) 		
+#endif
+		call MPI_COMM_RANK( MPI_COMM_WORLD, myid, ierr)
+ 		call MPI_COMM_SIZE( MPI_COMM_WORLD, numid, ierr)
+#endif
+
+#ifndef PARALLEL_BINDING
+#ifdef CP2K_BINDING
+		call cp_init_cp2k(0,ierr)
+#endif
+#endif
+
+#ifdef PARALLEL_BINDING
+if(myid.eq.0) then
+#endif
     write(6,*)  '-------------------------------------------'
     write(6,*)  '            Flexible Water Code            '
     write(6,*)  '-------------------------------------------'
@@ -306,6 +336,7 @@ subroutine start_rpmd()
 
         call getarg(3,filename)
         open (61, file = filename)
+
         if (reftraj.eq.0) then
             ! Third argument is equilibrium file
             read(61,*) nm,na,nbr
@@ -313,7 +344,6 @@ subroutine start_rpmd()
             allocate(r(3,na,nb))
 
             r(:,:,:) = 0.d0
-
             if (nb.eq.nbr) then
                 read(61,*) boxlxyz(1),boxlxyz(2),boxlxyz(3)
                 read(61,*) r(:,:,:)
@@ -380,6 +410,7 @@ subroutine start_rpmd()
             boxlxyz(:) = boxlxyz_traj(:,1)
             r(:,:,:)   = r_traj(:,:,:,1)
         endif
+
     else
         if (lattice.eq.'INT') then
 
@@ -440,10 +471,49 @@ subroutine start_rpmd()
             call setup_positions(r,na,nb,nm,boxlxyz,qo,irun)
         endif
     endif
-    if (lattice.ne.'VAC' .and. vacfac.ne.1) then
+#ifdef PARALLEL_BINDING
+endif
+
+
+	call MPI_bcast(na,1,MPI_integer,0,MPI_COMM_WORLD,ierr) 
+	call MPI_bcast(nb,1,MPI_integer,0,MPI_COMM_WORLD,ierr) 
+	call MPI_bcast(nbdf1,1,MPI_integer,0,MPI_COMM_WORLD,ierr) 
+	call MPI_bcast(nbdf2,1,MPI_integer,0,MPI_COMM_WORLD,ierr) 
+	call MPI_bcast(nbdf3,1,MPI_integer,0,MPI_COMM_WORLD,ierr) 
+	call MPI_bcast(rpmddft,1,MPI_integer,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(rctdk,1,MPI_integer,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(CP2K_path,34,MPI_character,0,MPI_COMM_WORLD,ierr) 
+	call MPI_bcast(ng,1,MPI_integer,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(pt,1,MPI_integer,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(pb,1,MPI_integer,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(nt,1,MPI_integer,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(m,1,MPI_integer,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(print,3,MPI_integer,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(irun,1,MPI_integer,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(itst,3,MPI_integer,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(itcf,3,MPI_integer,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(intcstep,1,MPI_integer,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(ntherm,1,MPI_integer,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(vacfac,1,MPI_integer,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(iskip,1,MPI_integer,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(beta,1,MPI_real8,0,MPI_COMM_WORLD,ierr)	
+	call MPI_bcast(dt,1,MPI_real8,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(mts,1,MPI_integer,0,MPI_COMM_WORLD,ierr) 
+	call MPI_bcast(ens,3,MPI_character,0,MPI_COMM_WORLD,ierr) 
+	call MPI_bcast(type,4,MPI_character,0,MPI_COMM_WORLD,ierr) 
+#endif
+
+#ifdef PARALLEL_BINDING
+if(myid.gt.0) then
+	allocate(r(3,na,nb))
+endif
+	call MPI_bcast(r,SIZE(r),MPI_real8,0,MPI_COMM_WORLD,ierr)
+
+if(myid.eq.0) then
+#endif
+		if (lattice.ne.'VAC' .and. vacfac.ne.1) then
         vacfac = 1
     end if
-
     ! Rigid body setup
     ! -----------------
 
@@ -453,7 +523,6 @@ subroutine start_rpmd()
         nctot = 0
         nbond = 0
     endif
-
     ! Assign masses and charges :
     ! -----------------------------
 
@@ -473,9 +542,20 @@ subroutine start_rpmd()
         z(i+1) = qh
         z(i+2) = qh
     enddo
+#ifdef PARALLEL_BINDING
+endif
 
+if(myid.gt.0) then
+    allocate (mass(na),z(na))
+endif
+	call MPI_bcast(mass,na,MPI_real8,0,MPI_COMM_WORLD,ierr)	
+	call MPI_bcast(z,na,MPI_real8,0,MPI_COMM_WORLD,ierr)
+#endif
+
+#ifdef PARALLEL_BINDING
+if(myid.eq.0) then
+#endif
     ! Write a vmd output of starting structure
-
     if (reftraj.eq.0) then
         open (unit=12,file='vmd_start.xyz')
         call print_vmd_full(r,nb,na,nm,boxlxyz,12)
@@ -572,6 +652,9 @@ subroutine start_rpmd()
     write(10,*) ' Gaussian Width M-site   = ', wm
     write(10,*) ' Gaussian Width Hydrogen = ', wh
     close (unit=10)
+#ifdef PARALLEL_BINDING
+endif
+#endif
 
     ! Allocate the evolution arrays
     ! ------------------------------
@@ -581,6 +664,7 @@ subroutine start_rpmd()
     dvdr(:,:,:) = 0.d0
     dvdr2(:,:,:) = 0.d0
 
+
     ! Allocate force enviroment id:
     ! -----------------------
     if (nbdf3.eq.0) then
@@ -589,7 +673,9 @@ subroutine start_rpmd()
         allocate(f_env_id(nbdf3))
     endif
 
-
+#ifdef PARALLEL_BINDING
+if(myid.eq.0) then
+#endif
     ! set rpmddft = 0 because classical equilibration, set it back to old value later
     rpmddfthelp = rpmddft
     rpmddft = 0
@@ -629,15 +715,16 @@ subroutine start_rpmd()
 
     ! set rpmddft back to old value
     rpmddft = rpmddfthelp
-
-
+#ifdef PARALLEL_BINDING
+endif
+		
+		call MPI_bcast(boxlxyz,3,MPI_real8,0,MPI_COMM_WORLD,ierr)
+#endif
 #ifdef CP2K_BINDING
       !  RPMD-DFT
       ! -----------------------
-    if (rpmddft.eq.1) then
-        call cp_init_cp2k(1,ierr)
-
-        if (nbdf3.eq.0) then
+			if (rpmddft.eq.1) then
+			  if (nbdf3.eq.0) then
             do i = 1, nb 
                 call cp_create_fenv(f_env_id(i),CP2K_path,"out.out",ierr)
                 ! set cell in CP2K
@@ -646,12 +733,13 @@ subroutine start_rpmd()
                 cell(3,3) = boxlxyz(3)
                 call cp_set_cell(f_env_id(i),cell,ierr)
                 if (ierr.ne.0) STOP "set_cell"
+								!write(*,*) "f_env_id:",f_env_id(i)
             enddo
         else
             do i = 1, nbdf3 ! if nbdf3 >= 1 set up nbdf3 versions of cp2k f_env_id = i
                 call cp_create_fenv(f_env_id(i),CP2K_path,"out.out",ierr)
-                write(*,*) "f_env_id:",f_env_id(i)
-                ! set cell in CP2K
+                !write(*,*) "f_env_id:",f_env_id(i)
+                !set cell in CP2K
                 cell(1,1) = boxlxyz(1)
                 cell(2,2) = boxlxyz(2)
                 cell(3,3) = boxlxyz(3)
@@ -659,8 +747,11 @@ subroutine start_rpmd()
                 if (ierr.ne.0) STOP "set_cell"
             enddo
         endif
-    endif
+			endif
 #endif
+
+
+
 
       ! Static Properties
       ! ------------------
@@ -669,16 +760,27 @@ subroutine start_rpmd()
 
         if (ng .gt. 0) then
             write(6,*) '* Sampling Static Properties '
-            call sample(p,na,nb,mass,beta,irun,dt)
-            call md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta,&
+#ifdef PARALLEL_BINDING
+						if(myid.eq.0) then
+#endif
+
+	            call sample(p,na,nb,mass,beta,irun,dt)
+
+#ifdef PARALLEL_BINDING
+						endif
+						call MPI_bcast(r,SIZE(r),MPI_real,0,MPI_COMM_WORLD,ierr)
+						call MPI_bcast(p,SIZE(p),MPI_real,0,MPI_COMM_WORLD,ierr)
+						call MPI_bcast(dvdr,SIZE(p),MPI_real,0,MPI_COMM_WORLD,ierr)
+						call MPI_bcast(dvdr2,SIZE(p),MPI_real,0,MPI_COMM_WORLD,ierr)
+#endif
+
+						call md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta,&
             dt,mass,irun,itst,pt,pb,print)
         endif
     else
-        call md_static_prepare_traj(nb,pt,pb,print)
-        do i = 1, reftraj
+				do i = 1, reftraj
             boxlxyz(:) = boxlxyz_traj(:,i)
             r(:,:,:) = r_traj(:,:,:,i)
-
             call md_static(1,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta,&
             dt,mass,irun,itst,pt,pb,print)
         enddo
@@ -692,16 +794,61 @@ subroutine start_rpmd()
 
         if (nt.gt.0.and.m.gt.0) then
             write(6,*) '* Sampling Dynamical Properties'
-            call sample(p,na,nb,mass,beta,irun,dt)
+#ifdef PARALLEL_BINDING
+						if(myid.eq.0) then
+#endif
+
+	            call sample(p,na,nb,mass,beta,irun,dt)
+#ifdef PARALLEL_BINDING
+						endif
+						call MPI_bcast(r,SIZE(r),MPI_real,0,MPI_COMM_WORLD,ierr)
+						call MPI_bcast(p,SIZE(p),MPI_real,0,MPI_COMM_WORLD,ierr)
+						call MPI_bcast(dvdr,SIZE(p),MPI_real,0,MPI_COMM_WORLD,ierr)
+						call MPI_bcast(dvdr2,SIZE(p),MPI_real,0,MPI_COMM_WORLD,ierr)
+
+
+
+
+#endif
+						
             call dynamics(nt,m,p,r,dvdr,dvdr2,na,nm,nb,boxlxyz,z,beta, &
             dt,mass,irun,itcf,pt,pb,print,intcstep,iskip,ntherm,vacfac)
         endif
     endif
 
+#ifdef PARALLEL_BINDING
+if(myid.eq.0) then
+#endif
     close (unit=61)
     deallocate(r,mass,z,p,dvdr,dvdr2)
+#ifdef PARALLEL_BINDING
+endif
+if(myid.gt.0) then
+    deallocate(r,p,dvdr,dvdr2)
+endif
+#endif
     if (reftraj.ne.0) then
         deallocate(r_traj)
     endif
+
+#ifdef CP2K_BINDING
+#ifdef PARALLEL_BINDING
+		call cp_finalize_cp2k(1,ierr)
+		!call cp_finalize_cp2k(0,ierr)		
+		!call MPI_finalize(ierr) 
+#endif
+#ifndef PARALLEL_BINDING
+		call cp_finalize_cp2k(0,ierr)
+#endif
+#endif
+
+#ifdef PARALLEL_BINDING
+#ifndef CP2K_BINDING
+		call MPI_finalize(ierr) 		
+#endif
+#endif
+
+
+
     return
 end subroutine start_rpmd

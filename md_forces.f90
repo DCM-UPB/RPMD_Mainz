@@ -253,7 +253,6 @@ subroutine potenl_opt(r,v,dvdr,vir,na,nb,boxlxyz, &
 
   endif
 #endif
-
   return
 end subroutine potenl_opt
 
