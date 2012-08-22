@@ -285,7 +285,7 @@ endif
 		 call MPI_bcast(v3,1,MPI_real8,0,MPI_COMM_WORLD,ierr)   
 		 call MPI_bcast(vir,SIZE(vir),MPI_real8,0,MPI_COMM_WORLD,ierr)   
 		 call MPI_bcast(vir_lf,SIZE(vir_lf),MPI_real8,0,MPI_COMM_WORLD,ierr)   
-write(*,*) "myid in md_static:", myid
+!write(*,*) "myid in md_static:", myid
 #endif
      call evolve(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
                     boxlxyz,z,beta,vir,vir_lf,irun,nbaro)

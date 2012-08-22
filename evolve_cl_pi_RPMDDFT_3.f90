@@ -65,7 +65,7 @@ subroutine evolve_cl_pi_RPMDDFT_3(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
 
 #ifdef PARALLEL_BINDING
 	call MPI_COMM_RANK( MPI_COMM_WORLD, myid, ierr)
-write(*,*) "myid iin evolve_cl_pi:",myid
+!write(*,*) "myid iin evolve_cl_pi:",myid
 #endif
 
 #ifdef PARALLEL_BINDING

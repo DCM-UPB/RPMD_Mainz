@@ -27,7 +27,7 @@ dt,mass,irun,itcf,pt,pb,print,intcstep,iskip,ntherm,vacfac)
     ! Define some local variable values
 #ifdef PARALLEL_BINDING
 	call MPI_COMM_RANK( MPI_COMM_WORLD, myid, ierr)
-	write(*,*) "dynamics:",myid
+!	write(*,*) "dynamics:",myid
 #endif
     dtfs = dt/tofs
     dtps = dtfs*1.d-3

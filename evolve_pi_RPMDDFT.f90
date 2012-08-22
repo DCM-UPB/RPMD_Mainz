@@ -42,7 +42,7 @@ subroutine evolve_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
 
 #ifdef PARALLEL_BINDING
 	call MPI_COMM_RANK( MPI_COMM_WORLD, myid, ierr)
-write(*,*) "myid iin evolve:",myid
+!write(*,*) "myid iin evolve:",myid
 #endif
 
   halfdt = 0.5d0*dt

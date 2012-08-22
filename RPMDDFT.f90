@@ -26,7 +26,7 @@ subroutine RPMDDFT_force(r,dvdr,na,nb,v,vir,boxlxyz,bead)
   cell(:,:) = 0.d0
 #ifdef PARALLEL_BINDING
 	call MPI_COMM_RANK( MPI_COMM_WORLD, myid, ierr)
-write(*,*) "myid in RPMDDFTFORCE:", myid
+!write(*,*) "myid in RPMDDFTFORCE:", myid
 	call MPI_bcast(r,SIZE(r),MPI_real8,0,MPI_COMM_WORLD,ierr)
 	call MPI_bcast(boxlxyz,SIZE(boxlxyz),MPI_real8,0,MPI_COMM_WORLD,ierr)
 #endif
