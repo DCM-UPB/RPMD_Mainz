@@ -5,11 +5,14 @@ subroutine evolve_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   use gle
   implicit none
   include 'globals.inc'
+#ifdef PARALLEL_BINDING
+  include 'mpif.h' !parallel
+#endif
   ! ------------------------------------------------------------------
   ! RPMD/ACMD evolution using RPMDDFT method
   ! 
   ! ------------------------------------------------------------------
-  integer na,nb,irun,k,j,i,nbdf1,nbdf2,im,ic,mts,nbaro,rpmddft
+  integer na,nb,irun,k,j,i,nbdf1,nbdf2,im,ic,mts,nbaro,rpmddft,myid,ierr
   real(8) p(3,na,nb),r(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb)
   real(8) mass(na),z(na),boxlxyz(3)
   real(8) vir(3,3),vir_lj(3,3),vir_ew(3,3),tvxyz(3),tvxyz_itr(3)
@@ -26,7 +29,7 @@ subroutine evolve_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   common /correct/ sig
   common /RPMDDFT/ rpmddft
 
-
+	dtsmall = dt/mts
   vew = 0.d0
   vlj = 0.d0
   vint = 0.d0
@@ -37,8 +40,16 @@ subroutine evolve_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   tv = 0.d0 ! im ersten schritt falsch!!!!
   tvxyz(:) = 0.d0
 
+#ifdef PARALLEL_BINDING
+	call MPI_COMM_RANK( MPI_COMM_WORLD, myid, ierr)
+write(*,*) "myid iin evolve:",myid
+#endif
+
   halfdt = 0.5d0*dt
-                                   
+
+#ifdef PARALLEL_BINDING
+if(myid.eq.0) then     
+#endif                              
   if (type.eq.'RPMD') then
      if (therm.eq.'PRG') then
         call parinello_therm(p,mass,ttau,na,nb,halfdt,irun,beta)
@@ -53,7 +64,37 @@ subroutine evolve_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   p(:,:,:) = p(:,:,:) - halfdt*(dvdr(:,:,:)+dvdr2(:,:,:)) !because dvdr2 is != 0 after equilibration
 
   !  get new coordinates
-  call freerp_rpmd(p,r,dt,mass,na,nb,beta)
+  if(mts .eq. 1) then
+		call freerp_rpmd(p,r,dtsmall,mass,na,nb,beta)
+	else
+ 	 !! Multiple timestep for freerpmd propagation
+  	do i = 1,mts
+			if (type.eq.'RPMD') then
+    		 if (therm.eq.'PRG') then
+    		    call parinello_therm(p,mass,ttau,na,nb,halfdt,irun,beta)
+   		  else if (therm.eq.'PRL') then
+    		    call parinello_therm_loc(p,mass,ttau,na,nb, &
+    		                             dt,irun,beta)
+    		 else if (therm.eq.'GLE') then     !! GLE
+    		     call therm_gle(p,dheat,mass,na,nb,irun)
+    		 endif
+  		endif
+
+  	!  get new coordinates
+	  	call freerp_rpmd(p,r,dtsmall,mass,na,nb,beta)
+
+				if (type.eq.'RPMD') then
+	  	  	 if (therm.eq.'PRG') then
+	  	  	    call parinello_therm(p,mass,ttau,na,nb,halfdt,irun,beta)
+	  	 	  else if (therm.eq.'PRL') then
+	  	  	    call parinello_therm_loc(p,mass,ttau,na,nb, &
+	  	  	                             dt,irun,beta)
+	  	  	 else if (therm.eq.'GLE') then     !! GLE
+	  	  	     call therm_gle(p,dheat,mass,na,nb,irun)
+	  	  	 endif
+	  		endif
+		enddo
+	endif	
 
   ! Barostat
   ! (note:// COMs scaled therefore do not need to recalculate
@@ -74,9 +115,20 @@ subroutine evolve_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
      endif
   endif
 
+#ifdef PARALLEL_BINDING
+endif
+	call MPI_bcast(r,SIZE(r),MPI_real8,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(p,SIZE(p),MPI_real8,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(dvdr,SIZE(dvdr),MPI_real8,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(dvdr2,SIZE(dvdr2),MPI_real8,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(vir,SIZE(vir),MPI_real8,0,MPI_COMM_WORLD,ierr)
+#endif
   ! Evaluation of the t+timestep forces 
   call forces(r,v,dvdr,nb,na,boxlxyz,z,vir,9)  
 
+#ifdef PARALLEL_BINDING
+if(myid.eq.0) then
+#endif
   ! Set dvdr2 = 0 because we don't have a high frequency part
   dvdr2(:,:,:) = 0.d0
 
@@ -111,5 +163,9 @@ subroutine evolve_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   comx=comx/mm
   comy=comy/mm
   comz=comz/mm
+#ifdef PARALLEL_BINDING
+endif
+#endif
   return
+
 end subroutine evolve_pi_RPMDDFT

@@ -7,6 +7,7 @@ subroutine md_static_prepare_traj(nb,pt,pb,print)
   integer print(3)
   integer ib
   character(len=128) file_name
+
   if (pt.gt.0) then
     if (print(1).eq.1) then
       open(32,file='vmd_traj.xyz',STATUS='replace')
@@ -75,10 +76,13 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   use barostat
   implicit none
   include 'globals.inc'
+#ifdef PARALLEL_BINDING
+  include 'mpif.h' !parallel
+#endif
   ! ------------------------------------------------------------------
   ! Routine to calculate the static properties
   ! ------------------------------------------------------------------
-  integer na,nb,ng,irun,nrdf,nbdf1,nbdf2,nbaro,pt,pb
+  integer na,nb,ng,irun,nrdf,nbdf1,nbdf2,nbaro,pt,pb,myid,ierr
   integer no,i,je,k,j,ii,jj,ibin,nm,itst(3),ib,print(3)
   integer(8), allocatable :: ihhh(:),ihoo(:),ihoh(:)
   real(8) boxlxyz(3),beta,v,dt
@@ -107,7 +111,9 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   if (ens.eq.'NPT') then
      nbaro = 1
   endif
-
+#ifdef PARALLEL_BINDING
+	call MPI_COMM_RANK( MPI_COMM_WORLD, myid, ierr)
+#endif
   allocate (dist(na,na),dvdre(3,na,nb))
   allocate (ihhh(imaxbin),ihoo(imaxbin),ihoh(imaxbin))
 
@@ -171,6 +177,9 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   pvav = 0.d0
   nrdf = 0
 
+#ifdef PARALLEL_BINDING
+if(myid.eq.0) then
+#endif
 	!zero time COM and Coordinates
 	 ! Calculate COM for each molecule
 			  do i = 0,nm-1
@@ -258,16 +267,33 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
      endif
     endif
   endif
-
+#ifdef PARALLEL_BINDING
+endif
+#endif
   ! Evolve for ng steps, calculating properties
 
   do je = 1,ng
-     
+	
+#ifdef PARALLEL_BINDING
+  	 call MPI_bcast(r,SIZE(r),MPI_real8,0,MPI_COMM_WORLD,ierr)
+		 call MPI_bcast(p,SIZE(p),MPI_real8,0,MPI_COMM_WORLD,ierr)
+		 call MPI_bcast(dvdr,SIZE(dvdr),MPI_real8,0,MPI_COMM_WORLD,ierr)
+		 call MPI_bcast(dvdr2,SIZE(dvdr2),MPI_real8,0,MPI_COMM_WORLD,ierr)  
+		 call MPI_bcast(v,1,MPI_real8,0,MPI_COMM_WORLD,ierr)   
+		 call MPI_bcast(v1,1,MPI_real8,0,MPI_COMM_WORLD,ierr)   
+		 call MPI_bcast(v2,1,MPI_real8,0,MPI_COMM_WORLD,ierr)   
+		 call MPI_bcast(v3,1,MPI_real8,0,MPI_COMM_WORLD,ierr)   
+		 call MPI_bcast(vir,SIZE(vir),MPI_real8,0,MPI_COMM_WORLD,ierr)   
+		 call MPI_bcast(vir_lf,SIZE(vir_lf),MPI_real8,0,MPI_COMM_WORLD,ierr)   
+write(*,*) "myid in md_static:", myid
+#endif
      call evolve(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
                     boxlxyz,z,beta,vir,vir_lf,irun,nbaro)
 
      ! Potential Energy
-
+#ifdef PARALLEL_BINDING
+if (myid.eq.0) then
+#endif
      vave = vave + v
      v1ave = v1ave + v1
      v2ave = v2ave + v2
@@ -530,7 +556,13 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
         write (333,'(3f12.6)') je*dtps, msd, msdO
      endif
 		endif
+#ifdef PARALLEL_BINDING
+endif
+#endif
   enddo
+#ifdef PARALLEL_BINDING
+if (myid.eq.0) then
+#endif
   close(unit=20)
   close(unit=21)
   close(unit=22)
@@ -716,7 +748,9 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
     endif
 
   endif
-
+#ifdef PARALLEL_BINDING
+endif
+#endif
   deallocate (dist,ihhh,ihoo,ihoh)
 
   return
