@@ -607,6 +607,11 @@ if(myid.eq.0) then
                 write(6,*)'* Exact Estimators WILL NOT be calculated... '
             endif
         endif
+        if (itst(3).eq.1) then
+            write(6,*)'* MSD WILL be calculated... '
+        else
+            write(6,*)'* MSD WILL NOT be calculated... '
+        endif
 
         ! Dynamics properties to be calculated
         ! --------------------------------------
