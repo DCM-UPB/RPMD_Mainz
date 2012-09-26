@@ -129,7 +129,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   dconv2 = dconv*dconv
 
   if (ttaufs.gt.0.d0 .and. (therm.eq.'AND' .or. therm.eq.'PRA')) then
-      thresh = dt/ttaufs
+      thresh = 1d-3*dtps/ttaufs !dtfs is not used in md_static
   else
       thresh = 1.d0/dsqrt(dble(ng))
       thresh = max(0.005d0,thresh)

@@ -53,7 +53,7 @@ subroutine md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
 
   if (ens.eq.'NVT') then
     if (ttaufs.gt.0.d0 .and. (therm.eq.'AND' .or. therm.eq.'PRA')) then
-        thresh = dt/ttaufs
+        thresh = dtfs/ttaufs
     else
         thresh = 1.d0/dsqrt(dble(ne))
         thresh = max(0.01d0,thresh)

@@ -37,7 +37,7 @@ dt,mass,irun,itcf,pt,pb,print,intcstep,iskip,ntherm,vacfac)
     wt = 1.d0 / dble(m)
 
     if (ttaufs.gt.0.d0 .and. (therm.eq.'AND' .or. therm.eq.'PRA')) then
-        thresh = dt/ttaufs
+        thresh = dtfs/ttaufs
     else
         thresh = 1.d0/dsqrt(dble(ntherm))   !for AND thermostat between trajectories
         thresh = max(thresh,0.01d0)         !same definition as in md_eq.f90
