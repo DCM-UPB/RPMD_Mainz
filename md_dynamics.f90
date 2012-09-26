@@ -13,7 +13,7 @@ dt,mass,irun,itcf,pt,pb,print,intcstep,iskip,ntherm,vacfac)
     integer k,i,ib,print(3),intcstep,iskip,ntherm,vacfac,ierr,myid
     real(8) r(3,na,nb),p(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb)
     real(8) boxlxyz(3),z(na),mass(na),vir(3,3),vir_lf(3,3)
-    real(8) beta,dt,dtfs,dtps,cscale,wt,tv,pe,dqq,dqx,dqy,dqz,ran2,thresh
+    real(8) beta,dt,dtfs,dtps,cscale,wt,tv,pe,dqq,dqx,dqy,dqz,ran2,thresh,ttaufs
     real(8) v,v1,v2,v3,dtv,dqqt,davx,davy,davz,dpe,sum
     real(8), allocatable :: ct(:),dct(:)
     real(8), allocatable :: dmo1(:,:),dmot1(:,:)
@@ -23,6 +23,8 @@ dt,mass,irun,itcf,pt,pb,print,intcstep,iskip,ntherm,vacfac)
     real(8), allocatable :: cvinter(:), cvintra(:),cke(:)
     character(128) file_name
     external ran2
+    common /thinp/ ttaufs
+
 
     ! Define some local variable values
 #ifdef PARALLEL_BINDING
@@ -33,8 +35,13 @@ dt,mass,irun,itcf,pt,pb,print,intcstep,iskip,ntherm,vacfac)
     dtps = dtfs*1.d-3
     cscale = (toA/(dtps/dt))**2
     wt = 1.d0 / dble(m)
-    thresh = 1.d0/dsqrt(dble(ntherm))   !for AND thermostat between trajectories
-    thresh = max(thresh,0.01d0)         !same definition as in md_eq.f90
+
+    if (ttaufs.gt.0.d0 .and. (therm.eq.'AND' .or. therm.eq.'PRA')) then
+        thresh = dt/ttaufs
+    else
+        thresh = 1.d0/dsqrt(dble(ntherm))   !for AND thermostat between trajectories
+        thresh = max(thresh,0.01d0)         !same definition as in md_eq.f90
+    end if
 
     ! Allocate relevant arrays
 
@@ -130,18 +137,19 @@ endif
 write(*,*) "myid in evolve:", myid
 #endif
 
-        if (k.gt.1) then        !thermalize for ntherm steps if AND or PRA thermostat
+        !thermalize for ntherm steps if AND or PRA thermostat
+        if ((therm.eq.'AND').or.(therm.eq.'PRA')) then
             do i = 1,ntherm
                 call evolve(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
                 boxlxyz,z,beta,vir,vir_lf,irun,0)
 #ifdef PARALLEL_BINDING
 								if(myid.eq.0) then
 #endif			
-                if ((therm.eq.'AND').or.(therm.eq.'PRA')) then
-                    if (ran2(irun,0.d0,1.d0) .lt. thresh) then
-                        call sample(p,na,nb,mass,beta,irun,dt)
-                    endif
-                endif
+                !if ((therm.eq.'AND').or.(therm.eq.'PRA')) then
+                !    if (ran2(irun,0.d0,1.d0) .lt. thresh) then
+                !        call sample(p,na,nb,mass,beta,irun,dt)
+                !    endif
+                !endif
 #ifdef PARALLEL_BINDING
 								endif
 		 						call MPI_bcast(p,SIZE(p),MPI_real8,0,MPI_COMM_WORLD,ierr)

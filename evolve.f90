@@ -81,7 +81,7 @@ subroutine start_rpmd()
     real(8), allocatable :: r_traj(:,:,:,:),boxlxyz_traj(:,:)
     character(len=240) line
     common /reftraj/ reftraj,line
-
+  
     integer nc_ice(3),nc_wat(3),nm_ice,nm_wat,nctot,nbond,vacfac
     real(8) temp,rho,dtfs,ecut,test,beta,dt,dtps,boxmin,pres
     real(8) teqm,tsim,trdf,gaussian,wmass,rcut,om,ttaufs
@@ -95,9 +95,6 @@ subroutine start_rpmd()
     character(len=4) type
     character(len=3) lattice,ens,therm_backup
     logical iamcub,iamrigid
-
-
-
     external gaussian
 
     namelist/input/ens,temp,pres,rho,lattice,vacfac,iamcub,dtfs, &
@@ -121,11 +118,13 @@ subroutine start_rpmd()
     common /ensemble/ ens
     common /constraint/ nctot,nbond
     common /inp/ npre_eq
+    common /thinp/ ttaufs
     common /RPMDDFT/ rpmddft,nbdf3,rctdk
-
+  
     vacfac = 1
     intcstep = 1
     ntherm = 0
+    ttaufs = 0.d0
     iskip = 1
     rpmddft = 0
     reftraj = 0
@@ -134,7 +133,7 @@ subroutine start_rpmd()
     CP2K_path =""
     nbdf3 = 0
     rctdk = 0
-		itst(3) = 0 ! itst 3 argument is for RMS calculation
+    itst(3) = 0 ! itst 3 argument is for RMS calculation
 
 		! Using CP2K parallel?
 #ifdef PARALLEL_BINDING

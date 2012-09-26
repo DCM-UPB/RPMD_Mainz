@@ -106,6 +106,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   integer reftraj,rpmddft
   common /reftraj/ reftraj
   common /RPMDDFT/ rpmddft
+  common /thinp/ ttaufs
 
   nbaro = 0
   if (ens.eq.'NPT') then
@@ -126,8 +127,14 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   dtps = 1d-3*dt/tofs
   dconv = (ToA * 1d-10 * echarge) / ToDebye
   dconv2 = dconv*dconv
-  thresh = 1.d0/dsqrt(dble(ng))
-  thresh = max(thresh,0.005d0)
+
+  if (ttaufs.gt.0.d0 .and. (therm.eq.'AND' .or. therm.eq.'PRA')) then
+      thresh = dt/ttaufs
+  else
+      thresh = 1.d0/dsqrt(dble(ng))
+      thresh = max(0.005d0,thresh)
+  end if
+
   nm = na/3
   no = na/3
   wmass = mass(1)+mass(2)+mass(3)

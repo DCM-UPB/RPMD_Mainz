@@ -14,7 +14,7 @@ subroutine md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   real(8) r(3,na,nb),vir(3,3),vir_lf(3,3),tvxyz(3)
   real(8) omegan,dx,dy,dz,dist,denav
   real(8) vrp,vol,tps,tk,thresh,den,wmass,tq1,tq2
-  real(8) dtfs,dtqt,tv,pres,ran2,gaussian,dr,rmsq,temp
+  real(8) dtfs,dtqt,tv,pres,ran2,gaussian,dr,rmsq,temp,ttaufs
   real(8), allocatable :: rst(:,:),rcm(:,:)
   logical iamcub
   external gaussian, ran2
@@ -23,6 +23,7 @@ subroutine md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   common /symmetry/ iamcub
   common /constraint/ nctot,nbond
   common /inp/ npre_eq
+  common /thinp/ ttaufs
 
   nbaro = 0
   if (ens.eq.'NPT') then
@@ -51,8 +52,12 @@ subroutine md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   ! Need to thermostat NPT calculations more strongly
 
   if (ens.eq.'NVT') then
-     thresh = 1.d0/dsqrt(dble(ne))
-     thresh = max(0.01d0,thresh)
+    if (ttaufs.gt.0.d0 .and. (therm.eq.'AND' .or. therm.eq.'PRA')) then
+        thresh = dt/ttaufs
+    else
+        thresh = 1.d0/dsqrt(dble(ne))
+        thresh = max(0.01d0,thresh)
+    end if
   else
      thresh = 0.01d0
   endif
