@@ -50,9 +50,6 @@ SRC= \
 	evolve_pi_RPMDDFT.f90 \
 	evolve_pi_rc_RPMDDFT.f90 \
 	evolve_cl_pi_RPMDDFT.f90 \
-	evolve_cl_pi_RPMDDFT_2.f90 \
-	evolve_cl_pi_RPMDDFT_3.f90 \
-	evolve_cl_pi_RPMDDFT_4.f90 \
 	random.f90 \
 	kinetic.f90 \
 	fourier.f90 \

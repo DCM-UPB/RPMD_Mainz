@@ -5,17 +5,20 @@ subroutine evolve_cl_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   use gle
   implicit none
   include 'globals.inc'
+#ifdef PARALLEL_BINDING
+  include 'mpif.h' !parallel
+#endif
   ! ------------------------------------------------------------------
   ! RPMD / RPMDFT evolution
   ! 
   ! ------------------------------------------------------------------
-  integer na,nb,irun,k,j,i,nbdf1,nbdf2,im,ic,mts,nbaro,rpmddft,nbdf3
+  integer na,nb,irun,k,j,i,nbdf1,nbdf2,im,ic,mts,nbaro,rpmddft,nbdf3,ierr,myid
   real(8) p(3,na,nb),r(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb),dvdre(3,na,nb),dvdrl(3,na,nb)
   real(8) mass(na),z(na),boxlxyz(3)
   real(8) vir(3,3),vir_lj(3,3),vir_ew(3,3),tvxyz(3),tvxyz_itr(3)
-  real(8) vir_itr(3,3),vir_ewc(3,3),vir_lf(3,3),vir_hf(3,3),virMM(3,3),virCP2K(3,3)
+  real(8) vir_itr(3,3),vir_ewc(3,3),vir_lf(3,3),vir_hf(3,3),virMM(3,3),virCP2K(3,3),virMMh(3,3),virMMl(3,3)
   real(8) pprime,halfdtsmall,halfdt,om,gaussian
-  real(8) dt,v,beta,dtsmall,vew,vlj,vint,sig,ve,vCP2K,vMM
+  real(8) dt,v,beta,dtsmall,vew,vlj,vint,sig,ve,vCP2K,vMM,vMMh,vMMl
   real(8) tv,tv_itr,tq1,tq2,c1,c2,c3
   real(8) dheat, comx, comy, comz, mm !!GLE
   character(len=4) type
@@ -25,18 +28,25 @@ subroutine evolve_cl_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   common /multiple_ts/ mts
   common /correct/ sig
   common /RPMDDFT/ rpmddft,nbdf3
-  real(8) rnm(3,na,nb),rb(3,na,nbdf3),dvdrCP2K(3,na,nb),dvdrMM(3,na,nb),dvdrb(3,na,nbdf3)
+  real(8) rnm(3,na,nb),rb(3,na,nbdf3),dvdrCP2K(3,na,nbdf3),dvdrMM(3,na,nbdf3)
+  real(8) dvdrb(3,na,nbdf3),dvdrMMl(3,na,nbdf3),dvdrMMh(3,na,nbdf3),dvdrdelta(3,na,nb),dvdrdelta2(3,na,nbdf3)
 
 
   ! Zero constants and arrays
   dvdrl(:,:,:) = 0.d0
   dvdre(:,:,:) = 0.d0
   dvdrMM(:,:,:) = 0.d0
+  dvdrMMh(:,:,:) = 0.d0
+  dvdrMMl(:,:,:) = 0.d0
   dvdrCP2K(:,:,:) = 0.d0
   dvdrb(:,:,:) = 0.d0
+  dvdrdelta(:,:,:) = 0.d0
   rnm(:,:,:) = 0.d0
+  rb(:,:,:) = 0.d0
   vCP2K = 0.d0
   vMM = 0.d0
+  vMMh = 0.d0
+  vMMl = 0.d0
   vew = 0.d0
   vlj = 0.d0
   vint = 0.d0
@@ -46,13 +56,21 @@ subroutine evolve_cl_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   vir_hf(:,:) = 0.d0
   virCP2K(:,:) = 0.d0
   virMM(:,:) = 0.d0
+	virMMh(:,:) = 0.d0
+	virMMl(:,:) = 0.d0
   tv = 0.d0
   tvxyz(:) = 0.d0
 
-  dtsmall = dt/dble(mts)
-  halfdtsmall = 0.5d0*dtsmall
   halfdt = 0.5d0*dt
 
+#ifdef PARALLEL_BINDING
+	call MPI_COMM_RANK( MPI_COMM_WORLD, myid, ierr)
+!write(*,*) "myid iin evolve_cl_pi:",myid
+#endif
+
+#ifdef PARALLEL_BINDING
+if(myid.eq.0) then     
+#endif         
   if (type.eq.'RPMD') then
      if (therm.eq.'PRG') then
         call parinello_therm(p,mass,ttau,na,nb,halfdt,irun,beta)
@@ -71,8 +89,6 @@ subroutine evolve_cl_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
 
   ! Form Bead Positions and evaluate high-frequency forces
   call forces(r,vint,dvdr2,nb,na,boxlxyz,z,vir_hf,4)
-  call virial_ke(r,dvdr,dvdr2,tv,tvxyz, &
-                  tq1,tq2,beta,na,nb,mass)
 
   p(:,:,:) = p(:,:,:) - halfdt*dvdr2(:,:,:)
      
@@ -85,6 +101,7 @@ subroutine evolve_cl_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
 
   if (nbaro.eq.1) then
      if (baro.eq.'BER') then
+				call virial_ke(r,dvdr,dvdr2,tv,tvxyz,tq1,tq2,beta,na,nb,mass)
         call beren_driver(vir,tv,tvxyz,dt,r,boxlxyz,na,nb)
      else if (baro.eq.'MCI') then
         call mc_baro(r,dvdr,dvdr2,vir,v,z,beta,boxlxyz,na,nb,irun)
@@ -93,6 +110,10 @@ subroutine evolve_cl_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
         stop
      endif
   endif
+
+
+
+
 
   ! Evaluation of the low frequency forces using RP-contraction
   ! --------------------------------------------------------------
@@ -169,34 +190,61 @@ subroutine evolve_cl_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   endif
 
 
-
+#ifdef PARALLEL_BINDING
+endif
+	call MPI_bcast(dvdr,SIZE(dvdr),MPI_real8,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(dvdr2,SIZE(dvdr2),MPI_real8,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(vir,SIZE(vir),MPI_real8,0,MPI_COMM_WORLD,ierr)
+#endif
 
   ! Evaluate CP2K and MM, nb=nbdf3 force:
   if (nbdf3.eq.0) then 
     write(6,*) '* nbdf3 has to be nonzero if cl_pi is used'
     stop
   else
-    call rp_contract_nm(rnm,vCP2K,dvdrCP2K,nb,na,boxlxyz,z,virCP2K,nbdf3,9)
-  !  ! set rpmddft to 0 for fullforce evaluation using classical treatment
-  !  rpmddft = 0
-    call rp_contract_nm(rnm,vMM,dvdrMM,nb,na,boxlxyz,z,virMM,nbdf3,0)
-  !  rpmddft = 1
+
+  ! Form contracted RP coordinates
+#ifdef PARALLEL_BINDING
+		if(myid.eq.0) then
+#endif
+    call ring_contract(rnm,rb,na,nb,nbdf3)
+#ifdef PARALLEL_BINDING
+		endif
+		call MPI_bcast(rb,SIZE(rb),MPI_real8,0,MPI_COMM_WORLD,ierr)
+#endif
+  ! Evaluate forces on the bead coordinates rb
+	
+    call forces(rb,vCP2K,dvdrCP2K,nbdf3,na,boxlxyz,z,virCP2K,9)
+#ifdef PARALLEL_BINDING
+		if(myid.eq.0) then
+#endif    
+    !call forces(rb,vMM,dvdrb,nbdf3,na,boxlxyz,z,virMM,0) !PRoblem, das bei full forces hier RPMDDFT_forece aufgerufen wird, da rpmddft =1
+		call forces(rb,vMMl,dvdrMMl,nbdf3,na,boxlxyz,z,virMMl,1)
+		call forces(rb,vMMh,dvdrMMh,nbdf3,na,boxlxyz,z,virMMh,4)
+		dvdrMM(:,:,:) = dvdrMMl(:,:,:)+dvdrMMh(:,:,:)
+		virMM(:,:) = virMMl(:,:) + virMMh(:,:)
+		vMM = vMMl + vMMh
+		dvdrdelta2(:,:,:) = dvdrCP2K(:,:,:)-dvdrMM(:,:,:)
+
+	call force_contract(dvdrdelta,dvdrdelta2,na,nb,nbdf3)
+#ifdef PARALLEL_BINDING
+		endif
+#endif    
   endif
-  ! Convert dvdrCP2K and dvdrMM back to bead representation
+#ifdef PARALLEL_BINDING
+		if(myid.eq.0) then
+#endif
+  ! Convert dvdrdelta back to bead representation
+  call realft(dvdrdelta,3*na,nb,-1)
   
 
-!alternativ ring_contract(rnm,...) dann forces aufrufen mit 0 und 9 !!!!!
-!dann fällt die Fouriertrafo danach weg!!!!
 
-  call realft(dvdrCP2K,3*na,nb,-1)
-  call realft(dvdrMM,3*na,nb,-1)
-
-  write(*,*) "dvdr:", dvdr(:,1,3)
-  write(*,*) "dvdrCP2K:", dvdrCP2K(:,1,3)
-  write(*,*) "dvdrMM:", dvdrMM(:,1,3)
-  write(*,*) "dvdrCP2K-dvdrMM", dvdrCP2K(:,1,3)-dvdrMM(:,1,3)
-  dvdr(:,:,:) = dvdr(:,:,:)+dvdrCP2K(:,:,:)-dvdrMM(:,:,:)
-
+	!write(*,*) "dvdr:", dvdr(:,1,3)
+	!write(*,*) "dvdrCP2K:", dvdrCP2K(:,1,3)
+	!write(*,*) "dvdrMM:", dvdrMM(:,1,3)
+	!write(*,*) "dvdrCP2K-dvdrMM", dvdrCP2K(:,1,3)-dvdrMM(:,1,3)
+	!write(*,*) "dvdr+dvdrCP2K-dvdrMM", dvdr(:,1,3)+dvdrCP2K(:,1,3)-dvdrMM(:,1,3)
+	dvdr(:,:,:) = dvdr(:,:,:)+dvdrdelta(:,:,:)
   ! Evolve the momenta under the low+CP2K+MM forces
 
   p(:,:,:) = p(:,:,:) - halfdt*dvdr(:,:,:)
@@ -241,5 +289,8 @@ subroutine evolve_cl_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   comy=comy/mm
   comz=comz/mm
 !  write(*,*) "COM: ",comx,comy,comz
+#ifdef PARALLEL_BINDING
+endif
+#endif
   return
 end subroutine evolve_cl_pi_RPMDDFT

@@ -28,12 +28,17 @@ subroutine evolve(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
   else
     if (rpmddft.eq.1) then
       if (rctdk.eq.1) then
-        call evolve_cl_pi_RPMDDFT_3(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
+        call evolve_cl_pi_RPMDDFT(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
                            boxlxyz,z,beta,vir,vir_lf,irun,nbaro)
       else      
         if (nbdf3.eq.0) then
+					if (iamrigid) then
+          call evolve_rigid_pi_RPMDDFT(p,r,v,v1,v2,dvdr,dvdr2,dt,mass,na,nb, &
+                           boxlxyz,z,beta,vir,vir_lf,irun,nbaro)					
+					else
           call evolve_pi_RPMDDFT(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
                            boxlxyz,z,beta,vir,vir_lf,irun,nbaro)
+					endif
         else
           call evolve_pi_rc_RPMDDFT(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
                            boxlxyz,z,beta,vir,vir_lf,irun,nbaro)
@@ -202,7 +207,7 @@ if(myid.eq.0) then
     pi = dacos(-1.d0)
     patm = pres/tobar
     theta = thetad*(pi/180.d0)
-    beta = 1.d0/(3.166829d-6*temp)
+    beta = 1.d0/(3.166829d-6*temp)   ! (1/k_b (Hartree) *temp)
     dt = tofs*dtfs
     dtps = 1.d-3*dtfs
     teqm = ne*dtps
@@ -695,6 +700,11 @@ if(myid.eq.0) then
         write(6,*)
         call sample(p,na,nb,mass,beta,irun,dt)
 
+		if (iamrigid) then
+				write(*,*) "Rigid Simulation"
+				write(*,*) ""
+		endif
+
         ! Equilibration or Interface Melting
         ! -----------------------------------
 
@@ -762,12 +772,12 @@ endif
       ! ------------------
 
     if (reftraj.eq.0) then
-
-        if (ng .gt. 0) then
-            write(6,*) '* Sampling Static Properties '
 #ifdef PARALLEL_BINDING
 						if(myid.eq.0) then
 #endif
+        if (ng .gt. 0) then
+            write(6,*) '* Sampling Static Properties '
+
 
 	            call sample(p,na,nb,mass,beta,irun,dt)
 
@@ -798,10 +808,11 @@ endif
         ! ----------------------
 
         if (nt.gt.0.and.m.gt.0) then
-            write(6,*) '* Sampling Dynamical Properties'
 #ifdef PARALLEL_BINDING
 						if(myid.eq.0) then
 #endif
+            write(6,*) '* Sampling Dynamical Properties'
+
 
 	            call sample(p,na,nb,mass,beta,irun,dt)
 #ifdef PARALLEL_BINDING

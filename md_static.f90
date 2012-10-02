@@ -118,12 +118,10 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   allocate (ihhh(imaxbin),ihoo(imaxbin),ihoh(imaxbin))
 
     ! Define some useful local constants and zero-out arrays
-!!!!!!!!!!!!!!!!!!!!!!!!!!!! ich will alles Nullen am Anfang, was nicht reingeht
   v = 0.d0
   v1 = 0.d0
   v2 = 0.d0
   v3 = 0.d0
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   pi = dacos(-1.d0)
   dtps = 1d-3*dt/tofs
   dconv = (ToA * 1d-10 * echarge) / ToDebye
@@ -189,7 +187,8 @@ if(myid.eq.0) then
 			           rst(j,i+1) = rst(j,i+1)/wmass
 			     enddo
 			  enddo
-	r0(:,:,:) = r(:,:,:)
+	
+		r0(:,:,:) = r(:,:,:)
 
   ! Open a file to print out the potential energy and
   ! virial kinetic energy.
@@ -202,7 +201,9 @@ if(myid.eq.0) then
      open(25,file='density_st.out')
   endif
   open (24,file='pressure_st.out')
+	if(itst(3).eq.1 .and. nb.eq.1) then
   open (333,file='MSD_st.out')
+	endif
   if (pt.gt.0) then
     if (reftraj.ne.0) then
      if (print(1).eq.1) then
@@ -287,6 +288,8 @@ endif
 		 call MPI_bcast(vir_lf,SIZE(vir_lf),MPI_real8,0,MPI_COMM_WORLD,ierr)   
 !write(*,*) "myid in md_static:", myid
 #endif
+
+
      call evolve(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
                     boxlxyz,z,beta,vir,vir_lf,irun,nbaro)
 
@@ -366,7 +369,7 @@ if (myid.eq.0) then
            endif
         endif
 
-         if ((itst(2).eq.1).and.(rpmddft.eq.0)) then   ! hier müsste ich was ändern für RPMD-DFT
+         if ((itst(2).eq.1).and.(rpmddft.eq.0)) then   ! not usable for AI-RPMD use
            if ((nbdf1.gt.0).or.(nbdf2.gt.0)) then
               
               ! Exact Estimators for Beadiabatic
@@ -524,7 +527,7 @@ if (myid.eq.0) then
 
     endif
 
-    ! Output MSD moved by centroid COM and O molecules
+    ! Output MSD moved by centroid COM and O molecules in Angstrom^2/ps !hier stimmt noch was nicht
 		if(itst(3).eq.1 .and. nb.eq.1) then
 	   if (mod(je,10).eq.0) then
 				msd = 0.d0
@@ -543,7 +546,7 @@ if (myid.eq.0) then
            enddo
         enddo
         msd = msd / dble(nm)
-		! O MSD
+		! O MSD in Angstrom^2/ps
 				msdO = 0.d0
         do i = 1,nm
 					 ii = 3*(i-1) + 1
@@ -553,7 +556,7 @@ if (myid.eq.0) then
            enddo
         enddo
         msdO = msdO / dble(nm)
-        write (333,'(3f12.6)') je*dtps, msd, msdO
+        write (333,'(3f12.6)') je*dtps, msd*toA*toA, msdO*toA*toA
      endif
 		endif
 #ifdef PARALLEL_BINDING

@@ -35,17 +35,9 @@ subroutine RPMDDFT_force(r,dvdr,na,nb,v,vir,boxlxyz,bead)
     cell(1,1) = boxlxyz(1)
     cell(2,2) = boxlxyz(2)
     cell(3,3) = boxlxyz(3)
-    call cp_set_cell(f_env_id(bead),cell,ierr) !funktioniert und wurde getestet
+    call cp_set_cell(f_env_id(bead),cell,ierr) !uses CP2K interface to set the cell
     if (ierr.ne.0) STOP "set_cell"
   endif
-  ! If rctdk ....
-  !if(rctdk.eq.1) then
-  !  cell(1,1) = boxlxyz(1)
-  !  cell(2,2) = boxlxyz(2)
-  !  cell(3,3) = boxlxyz(3)
-  !  call cp_set_cell(f_env_id(bead),cell,ierr) !funktioniert und wurde getestet
-  !  if (ierr.ne.0) STOP "set_cell"
-  !endif
 
   ! Set Positions in CP2K
   call cp_set_pos(f_env_id(bead),r,SIZE(r),ierr)
@@ -64,7 +56,7 @@ if(myid.eq.0) then
   call cp_get_energy(f_env_id(bead),v,ierr)
   if (ierr.ne.0) STOP "get_energy"
   ! Get virial
-  call cp_get_virial(f_env_id(bead),vir,SIZE(vir)*na,ierr)  ! gibt vir !!!!!!![vorher] in Bar zurück
+  call cp_get_virial(f_env_id(bead),vir,SIZE(vir)*na,ierr)  ! gets the virial from CP2K in right units
   if (ierr.ne.0) STOP "get_virial"
 
   ! transform vir, because force has to be transformed to dvdr
@@ -72,6 +64,7 @@ if(myid.eq.0) then
   
   ! transform force to dvdr
   dvdr(:,:) = -dvdr(:,:)
+
 #ifdef PARALLEL_BINDING
 endif
 	call MPI_bcast(dvdr,SIZE(dvdr),MPI_real8,0,MPI_COMM_WORLD,ierr)
