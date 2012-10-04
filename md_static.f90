@@ -90,6 +90,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   real(8) r(3,na,nb),mass(na),vir(3,3),vir_lf(3,3),rcm(3,na/3),rst(3,na/3),r0(3,na,nb)
   real(8) delr,dx,dy,dz,rij,thresh,dconv,dconv2,pi,fac,vol
   real(8) avang,avoh,tavang,tavoh,msd,msdO
+  real(8) ttaufs
   real(8) vave,tave,tq1ave,tq2ave,tv,tvxyz(3),tavee,tq1aee,tq2aee
   real(8) tavdip,tavdipx,tavdipy,tavdipz,tavdip2,tavdipsq,eps
   real(8) dipx,dipy,dipz,dip2,dipm,dtps,dr
