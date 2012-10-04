@@ -72,7 +72,7 @@ subroutine start_rpmd()
     !Classical/RPMD/PACMD Simulation Program for Flexible water
     !--------------------------------------------------------------------
     integer nt,ne,nb,m,ng,npre_eq,pt,pb,irun,nm,na,narg,iargc,nbdf1,nbdf2,nbdf3,rctdk,i,j,k
-    integer nbr,mts,nlat,itcf(3),itst(3),ncellxyz(3),print(3),intcstep,ntherm,iskip!,sizeMPI(9)
+    integer nbr,mts,nlat,itcf(3),itst(3),ncellxyz(3),print(3),ntherm,iskip!,sizeMPI(9)
 
     ! used for reftrj and RPMD-DFT
     integer reftraj,rpmddft,ierr,rpmddfthelp,myid,numid
@@ -99,7 +99,7 @@ subroutine start_rpmd()
 
     namelist/input/ens,temp,pres,rho,lattice,vacfac,iamcub,dtfs, &
     ecut,nt,ne,npre_eq,ntherm,nb,m,ng,print,reftraj,iskip,pt,pb, &
-    ncellxyz,irun,itcf,itst,intcstep,rcut, &
+    ncellxyz,irun,itcf,itst,rcut, &
     type,therm,ttaufs,baro,taufs,mts,om,nbdf1,nbdf2,sig,rpmddft,CP2K_path,nbdf3,rctdk
     namelist/param/ wmass,omass,hmass,qo,alpha,oo_sig,oo_eps,oo_gam, &
     thetad,reoh,apot,bpot,alp,alpb,wm,wh
@@ -122,7 +122,6 @@ subroutine start_rpmd()
     common /RPMDDFT/ rpmddft,nbdf3,rctdk
   
     vacfac = 1
-    intcstep = 1
     ntherm = 0
     ttaufs = 0.d0
     iskip = 1
@@ -454,10 +453,12 @@ if(myid.eq.0) then
 
             if (vacfac.gt.1) then
                 boxlxyz(3)=vacfac*boxlxyz(3)
+                r(3,:,:)=r(3,:,:)+0.5d0*vacfac*boxlxyz(3)
                 iamcub=.false.
                 write(6,*)'* Vacuum preparation done'
             else if (vacfac.eq.1) then
                 write(6,*) 'Vacuum not enabled (vacfac=1)'
+                lattice='CUB'
             else
                 write(6,*) 'Invalid vacfac choice (lt 1)'
                 stop
@@ -496,7 +497,6 @@ endif
 	call MPI_bcast(irun,1,MPI_integer,0,MPI_COMM_WORLD,ierr)
 	call MPI_bcast(itst,3,MPI_integer,0,MPI_COMM_WORLD,ierr)
 	call MPI_bcast(itcf,3,MPI_integer,0,MPI_COMM_WORLD,ierr)
-	call MPI_bcast(intcstep,1,MPI_integer,0,MPI_COMM_WORLD,ierr)
 	call MPI_bcast(ntherm,1,MPI_integer,0,MPI_COMM_WORLD,ierr)
 	call MPI_bcast(vacfac,1,MPI_integer,0,MPI_COMM_WORLD,ierr)
 	call MPI_bcast(iskip,1,MPI_integer,0,MPI_COMM_WORLD,ierr)
@@ -827,7 +827,7 @@ endif
 #endif
 						
             call dynamics(nt,m,p,r,dvdr,dvdr2,na,nm,nb,boxlxyz,z,beta, &
-            dt,mass,irun,itcf,pt,pb,print,intcstep,iskip,ntherm,vacfac)
+            dt,mass,irun,itcf,pt,pb,print,iskip,ntherm,vacfac)
         endif
     endif
 

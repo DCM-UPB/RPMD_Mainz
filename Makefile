@@ -17,7 +17,7 @@ FC+=	-Wall -pedantic -Waliasing -Wcharacter-truncation -Wconversion -Wsurprising
 # speed warnings
 FC+=	-Warray-temporaries
 
-FFLAGS=	-O3 
+FFLAGS= -O2 
 LFLAGS=	$(FFLAGS)
 
 EXE= qmd.x
@@ -53,7 +53,8 @@ SRC= \
 	random.f90 \
 	kinetic.f90 \
 	fourier.f90 \
-	instvacint.f90 \
+	intmod.f90 \
+	trajavmod.f90 \
 	io.f90 \
 	ljones.f90 \
 	buckingham.f90 \

@@ -1,6 +1,8 @@
 subroutine dynamics(nt,m,p,r,dvdr,dvdr2,na,nm,nb,boxlxyz,z,beta, &
-dt,mass,irun,itcf,pt,pb,print,intcstep,iskip,ntherm,vacfac)
+dt,mass,irun,itcf,pt,pb,print,iskip,ntherm,vacfac)
     use thermostat
+    use intmod
+    use avmod
     implicit none
   include 'globals.inc'
 #ifdef PARALLEL_BINDING
@@ -10,7 +12,7 @@ dt,mass,irun,itcf,pt,pb,print,intcstep,iskip,ntherm,vacfac)
     ! Routine to calculate dynamical properties
     ! ------------------------------------------------------------------
     integer nt,m,na,nm,nb,irun,itcf(3),pt,pb
-    integer k,i,ib,print(3),intcstep,iskip,ntherm,vacfac,ierr,myid
+    integer k,i,ib,print(3),iskip,ntherm,vacfac,ierr,myid
     real(8) r(3,na,nb),p(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb)
     real(8) boxlxyz(3),z(na),mass(na),vir(3,3),vir_lf(3,3)
     real(8) beta,dt,dtfs,dtps,cscale,wt,tv,pe,dqq,dqx,dqy,dqz,ran2,thresh,ttaufs
@@ -48,8 +50,8 @@ dt,mass,irun,itcf,pt,pb,print,intcstep,iskip,ntherm,vacfac)
     allocate (ct(0:nt),dct(0:nt))
     allocate (rmtr(0:nt),rmtv(0:nt))
     allocate (dmtr(0:nt),dmtv(0:nt))
-    allocate (irmtr(0:nt,5,2),irmtv(0:nt,5,2))
-    allocate (idmtr(0:nt,5,2),idmtv(0:nt,5,2))
+    allocate (irmtr(0:nt,4,2),irmtv(0:nt,4,2))
+    allocate (idmtr(0:nt,4,2),idmtv(0:nt,4,2))
     allocate (dmo1(6,0:nt),dmot1(6,0:nt))
     allocate (cvinter(0:2*nt), dcvinter(0:2*nt))
     allocate (cvintra(0:2*nt), dcvintra(0:2*nt))
@@ -111,6 +113,12 @@ if(myid.eq.0) then
 #ifdef PARALLEL_BINDING
 endif
 #endif
+
+    if (vacfac.ne.1) then
+        call intinit(na,toA*boxlxyz,dtfs,(2*nt)/iskip+1)
+        call avinit(m)
+    end if
+
     do k = 1,m !Anzahl paralleler Trajektorien für Dynamik
 #ifdef PARALLEL_BINDING
 			if(myid.eq.0) then
@@ -156,13 +164,12 @@ write(*,*) "myid in evolve:", myid
 #endif			
             enddo
         end if
-     
 
         ! Run an NVT (NVE if therm == AND) trajectory of 2*nt time steps
         call trajectory(p,r,v,dvdr,dvdr2,dct,dtv,dmtr,dmtv,idmtr,idmtv, &
         dqqt,davx,davy,davz,dmot1,nt,na,nb,boxlxyz,z, &
         beta,dt,mass,itcf,nm,dpe,irun,dcvinter,dcvintra,&
-        dke,pt,pb,print,intcstep,iskip,vacfac)
+        dke,pt,pb,print,iskip,vacfac)
 #ifdef PARALLEL_BINDING
 				if(myid.eq.0) then
 #endif			
@@ -187,6 +194,16 @@ write(*,*) "myid in evolve:", myid
         cvintra(:) = cvintra(:) + wt*dcvintra(:)
         cke(:) = cke(:) + wt*dke(:)
 
+        if (vacfac.ne.1) then
+            write(6,*) 'Mean/Corr calculation and module reset...'
+            call meancalc()
+            write(6,*) 'Calculation done.'
+            call avupdate()
+            write(6,*) 'Average arrays updated.'
+            call intreset()
+            write(6,*) 'Module resetted.'
+        end if
+
         ! Check convergence of the diffusion constant:
 
         if (itcf(1).eq.1) then
@@ -200,6 +217,10 @@ write(*,*) "myid in evolve:", myid
 
     enddo
 
+    if (vacfac.ne.1) then
+        call avcalcm()
+        call avintprint()
+    end if
 #ifdef PARALLEL_BINDING
 				if(myid.eq.0) then
 #endif	
@@ -291,7 +312,8 @@ end subroutine dynamics
 subroutine trajectory(p,r,v,dvdr,dvdr2,ct,dtv,dmtr,dmtv,idmtr,idmtv, &
 dqq,davx,davy,davz,dmot1,nt,na,nb,boxlxyz,z, &
 beta,dt,mass,itcf,nm,pe,irun,dcvinter, &
-dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
+dcvintra,dke,pt,pb,print,iskip,vacfac)
+    use intmod
     implicit none
   include 'globals.inc'
 #ifdef PARALLEL_BINDING
@@ -301,7 +323,7 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
     ! Sample dynamic properties over NVE trajectory.
     ! -----------------------------------------------------------------
     integer na,nb,nt,itcf(3),nm,irun,myid,ierr
-    integer i,ib,j,jt,it,it10,jt10,k,pt,pb,print(3),intcstep,iskip,vacfac
+    integer i,ib,j,jt,it,it10,jt10,k,pt,pb,print(3),iskip,vacfac
     real(8) dt,beta,alpha,alpha2,wm,wh,v,v1,v2,v3,w1,w2,w3
     real(8) em,tv,dipx,dipy,dipz,tbar,wt,wt1,vir(3,3),vir_lf(3,3)
     real(8) fac1,fac2,pe,dtq1,dtq2,ecut,tvxyz(3)
@@ -314,7 +336,7 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
     real(8) p(3,na,nb),r(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb)
     real(8) boxlxyz(3),z(na),mass(na)
     real(8) ct(0:nt),dmot1(6,0:nt)
-    real(8) dmtr(0:nt),dmtv(0:nt),idmtr(0:nt,5,2),idmtv(0:nt,5,2)
+    real(8) dmtr(0:nt),dmtv(0:nt),idmtr(0:nt,4,2),idmtv(0:nt,4,2)
     real(8) dcvinter(0:2*nt), dcvintra(0:2*nt),dke(0:2*nt)
 
     ! Cvv, OCF and Dipole Working Arrays
@@ -326,16 +348,14 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
     real(8), allocatable :: dmxv(:),dmyv(:),dmzv(:)
     real(8), allocatable :: idmxr(:,:,:),idmyr(:,:,:),idmzr(:,:,:)
     real(8), allocatable :: idmxv(:,:,:),idmyv(:,:,:),idmzv(:,:,:)
-    logical, allocatable :: inint(:,:,:)
 
     ! Allocate arrays
 
     if (itcf(2).eq.1) then
         allocate (dmxr(0:2*nt),dmyr(0:2*nt),dmzr(0:2*nt))
         allocate (dmxv(0:2*nt),dmyv(0:2*nt),dmzv(0:2*nt))
-        allocate (idmxr(0:2*nt,5,2),idmyr(0:2*nt,5,2),idmzr(0:2*nt,5,2))
-        allocate (idmxv(0:2*nt,5,2),idmyv(0:2*nt,5,2),idmzv(0:2*nt,5,2))
-        allocate (inint(na/3,5,2))
+        allocate (idmxr(0:2*nt,4,2),idmyr(0:2*nt,4,2),idmzr(0:2*nt,4,2))
+        allocate (idmxv(0:2*nt,4,2),idmyv(0:2*nt,4,2),idmzv(0:2*nt,4,2))
     end if
 
     if (itcf(3).eq.1) then
@@ -488,6 +508,14 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
 #endif
 
         endif
+
+        if (vacfac.ne.1) then
+                if (mod(jt,iskip).eq.0) then
+                    call center_atoms(r,rca,na,nb)
+                    call intupdate(toA*rca)
+                end if
+        end if
+
 #ifdef PARALLEL_BINDING
 						if(myid.eq.0) then
 #endif
@@ -558,14 +586,12 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
             enddo
         
             if (vacfac.ne.1) then
-                if (mod(jt/iskip,intcstep).eq.0) then
-                    call instvacint(rca,inint,na,boxlxyz)
-                end if
                 do ib=1,2
-                    do i=1,5
-        	
+                    do i=1,4
                         do j = 1, na,3
-                            if (inint(j/3+1,i,ib)) then
+
+                            if (inint(j/3+1,i,ib,wntc)) then
+
                                 fac1 = (z(j+1)+alpha2*z(j))
                                 fac2 = (z(j+2)+alpha2*z(j))
                                 w1 = 1.d0 / mass(j)
@@ -656,7 +682,7 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
         enddo
         if (vacfac.ne.1) then
             do ib=1,2
-                do i=1,5
+                do i=1,4
                     do jt = 0,nt,iskip
                         do it = 0,nt,iskip
                             idmtr(jt,i,ib) = idmtr(jt,i,ib) + (idmxr(it,i,ib)*idmxr(it+jt,i,ib)+ &
@@ -724,7 +750,7 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
 
     if (itcf(2).eq.1) then
         deallocate(dmxr,dmyr,dmzr,dmxv,dmyv,dmzv)
-        deallocate(idmxr,idmyr,idmzr,idmxv,idmyv,idmzv,inint)
+        deallocate(idmxr,idmyr,idmzr,idmxv,idmyv,idmzv)
     end if
     if (itcf(3).eq.1) then
         deallocate(ax1,ay1,az1,ax2,ay2,az2)

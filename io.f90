@@ -122,27 +122,16 @@ subroutine print_dipole_int(dtfs,nt,irmtr,irmtv,iskip)
     ! autocorrelation functions of the selected interface layers.
     ! ------------------------------------------------------------------
     integer nt,it,iskip
-    real(8) irmtr(0:nt,5,2),irmtv(0:nt,5,2)
+    real(8) irmtr(0:nt,4,2),irmtv(0:nt,4,2)
     real(8) tps,dtfs,dtps
-
-    open (unit=11,file='I1Dmmr.out')
-    open (unit=13,file='I1Dmmv.out')
-    dtps = dtfs*1.d-3
-    do it = 0,nt,iskip
-        tps = it*dtps
-        write (11,*)tps, irmtr(it,4,1)
-        write (13,*)tps, irmtv(it,4,1)
-    enddo
-    close (unit=11)
-    close (unit=13)
 
     open (unit=11,file='I0Dmmr.out')
     open (unit=13,file='I0Dmmv.out')
     dtps = dtfs*1.d-3
     do it = 0,nt,iskip
         tps = it*dtps
-        write (11,*)tps, irmtr(it,5,1)
-        write (13,*)tps, irmtv(it,5,1)
+        write (11,*)tps, irmtr(it,4,1)
+        write (13,*)tps, irmtv(it,4,1)
     enddo
     close (unit=11)
     close (unit=13)
@@ -176,17 +165,6 @@ subroutine print_dipole_int(dtfs,nt,irmtr,irmtv,iskip)
         tps = it*dtps
         write (11,*)tps, irmtr(it,3,1)
         write (13,*)tps, irmtv(it,3,1)
-    enddo
-    close (unit=11)
-    close (unit=13)
-
-    open (unit=11,file='I2Dmmr.out')
-    open (unit=13,file='I2Dmmv.out')
-    dtps = dtfs*1.d-3
-    do it = 0,nt,iskip
-        tps = it*dtps
-        write (11,*)tps, irmtr(it,4,2)
-        write (13,*)tps, irmtv(it,4,2)
     enddo
     close (unit=11)
     close (unit=13)
