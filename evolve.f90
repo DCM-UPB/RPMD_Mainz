@@ -827,7 +827,7 @@ endif
 #endif
 						
             call dynamics(nt,m,p,r,dvdr,dvdr2,na,nm,nb,boxlxyz,z,beta, &
-            dt,mass,irun,itcf,pt,pb,print,iskip,ntherm,vacfac)
+            dt,mass,irun,itcf,itst,pt,pb,print,iskip,ntherm,vacfac)
         endif
     endif
 

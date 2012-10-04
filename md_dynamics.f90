@@ -1,5 +1,5 @@
 subroutine dynamics(nt,m,p,r,dvdr,dvdr2,na,nm,nb,boxlxyz,z,beta, &
-dt,mass,irun,itcf,pt,pb,print,iskip,ntherm,vacfac)
+dt,mass,irun,itcf,itst,pt,pb,print,iskip,ntherm,vacfac)
     use thermostat
     use intmod
     use avmod
@@ -11,8 +11,8 @@ dt,mass,irun,itcf,pt,pb,print,iskip,ntherm,vacfac)
     ! ------------------------------------------------------------------
     ! Routine to calculate dynamical properties
     ! ------------------------------------------------------------------
-    integer nt,m,na,nm,nb,irun,itcf(3),pt,pb
-    integer k,i,ib,print(3),iskip,ntherm,vacfac,ierr,myid
+    integer nt,m,na,nm,nb,irun,itcf(3),itst(3),pt,pb
+    integer k,i,ib,print(3),iskip,ntherm,vacfac,ierr,myid,eefile
     real(8) r(3,na,nb),p(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb)
     real(8) boxlxyz(3),z(na),mass(na),vir(3,3),vir_lf(3,3)
     real(8) beta,dt,dtfs,dtps,cscale,wt,tv,pe,dqq,dqx,dqy,dqz,ran2,thresh,ttaufs
@@ -79,6 +79,11 @@ if(myid.eq.0) then
         open(71,file='diff.out')
     endif
 
+    if (itst(2).eq.1) then
+        eefile=8765
+        open(eefile,file='trajee.out')
+    end if
+
     if (pt.gt.0) then
         if (print(1).eq.1) then
             open(36,file='vmd_traj.xyz')
@@ -123,6 +128,11 @@ endif
 #ifdef PARALLEL_BINDING
 			if(myid.eq.0) then
 #endif
+
+			    write(eefile,*)
+			    write(eefile,*)'Trajectory',k
+			    write(eefile,*)'----------------------------'
+
         ! Find a new configuration
      
         if (therm.eq.'AND') then
@@ -168,8 +178,8 @@ write(*,*) "myid in evolve:", myid
         ! Run an NVT (NVE if therm == AND) trajectory of 2*nt time steps
         call trajectory(p,r,v,dvdr,dvdr2,dct,dtv,dmtr,dmtv,idmtr,idmtv, &
         dqqt,davx,davy,davz,dmot1,nt,na,nb,boxlxyz,z, &
-        beta,dt,mass,itcf,nm,dpe,irun,dcvinter,dcvintra,&
-        dke,pt,pb,print,iskip,vacfac)
+        beta,dt,mass,itcf,itst,nm,dpe,irun,dcvinter,dcvintra,&
+        dke,pt,pb,print,iskip,vacfac,eefile)
 #ifdef PARALLEL_BINDING
 				if(myid.eq.0) then
 #endif			
@@ -311,8 +321,8 @@ end subroutine dynamics
 
 subroutine trajectory(p,r,v,dvdr,dvdr2,ct,dtv,dmtr,dmtv,idmtr,idmtv, &
 dqq,davx,davy,davz,dmot1,nt,na,nb,boxlxyz,z, &
-beta,dt,mass,itcf,nm,pe,irun,dcvinter, &
-dcvintra,dke,pt,pb,print,iskip,vacfac)
+beta,dt,mass,itcf,itst,nm,pe,irun,dcvinter, &
+dcvintra,dke,pt,pb,print,iskip,vacfac,eefile)
     use intmod
     implicit none
   include 'globals.inc'
@@ -322,14 +332,17 @@ dcvintra,dke,pt,pb,print,iskip,vacfac)
     ! -----------------------------------------------------------------
     ! Sample dynamic properties over NVE trajectory.
     ! -----------------------------------------------------------------
-    integer na,nb,nt,itcf(3),nm,irun,myid,ierr
-    integer i,ib,j,jt,it,it10,jt10,k,pt,pb,print(3),iskip,vacfac
+    integer na,nb,nt,itcf(3),itst(3),nm,irun,myid,ierr,eefile
+    integer i,ib,j,jt,it,it10,jt10,k,pt,pb,print(3),iskip,vacfac,rpmddft,nbdf1,nbdf2
     real(8) dt,beta,alpha,alpha2,wm,wh,v,v1,v2,v3,w1,w2,w3
     real(8) em,tv,dipx,dipy,dipz,tbar,wt,wt1,vir(3,3),vir_lf(3,3)
     real(8) fac1,fac2,pe,dtq1,dtq2,ecut,tvxyz(3)
     real(8) dtv,dqq,davx,davy,davz,dip2,dipm,dotx,doty,dotz
     real(8) emi,vew,vlj,vint,rke
+    real(8) tavee,tq1aee,tq2aee,v1eeav,v2eeav,v3eeav,tq1,tq2,tqe
     common /ew_param/ alpha,ecut,wm,wh
+    common /RPMDDFT/ rpmddft
+    common /beaddiabatic/ nbdf1,nbdf2
 
     ! Passed Arrays
 
@@ -348,6 +361,7 @@ dcvintra,dke,pt,pb,print,iskip,vacfac)
     real(8), allocatable :: dmxv(:),dmyv(:),dmzv(:)
     real(8), allocatable :: idmxr(:,:,:),idmyr(:,:,:),idmzr(:,:,:)
     real(8), allocatable :: idmxv(:,:,:),idmyv(:,:,:),idmzv(:,:,:)
+    real(8), allocatable :: dvdre(:,:,:)
 
     ! Allocate arrays
 
@@ -367,13 +381,25 @@ dcvintra,dke,pt,pb,print,iskip,vacfac)
         allocate (az2(6,nm,0:(2*nt/iskip)))
     end if
 
-    allocate (pc(3,nm,0:2*nt),pca(3,na),rca(3,na))
+    allocate (pc(3,nm,0:2*nt),pca(3,na),rca(3,na),dvdre(3,na,nb))
 
     ! Define some useful constants and zero-out arrays
 
     alpha2 = 0.5d0 * (1.d0 - alpha)
     nm = na / 3
     em = mass(1) + mass(2) + mass(3)
+
+    if (itst(2).eq.1) then
+
+        v1eeav = 0.d0
+        v2eeav = 0.d0
+        v3eeav = 0.d0
+
+        tavee  = 0.d0
+        tq1aee = 0.d0
+        tq2aee = 0.d0
+
+    end if
 
     if (itcf(2).eq.1) then
 
@@ -509,16 +535,17 @@ dcvintra,dke,pt,pb,print,iskip,vacfac)
 
         endif
 
-        if (vacfac.ne.1) then
-                if (mod(jt,iskip).eq.0) then
-                    call center_atoms(r,rca,na,nb)
-                    call intupdate(toA*rca)
-                end if
-        end if
-
 #ifdef PARALLEL_BINDING
 						if(myid.eq.0) then
 #endif
+
+        if (vacfac.ne.1) then
+                if (mod(jt,iskip).eq.0) then
+                    call center_atoms(r,rca,na,nb)
+                    call intupdate(toA*rca)     !interface and hbond calculations
+                end if
+        end if
+
         ! KE
         rke = 0.d0
         do k = 1, nb
@@ -527,6 +554,36 @@ dcvintra,dke,pt,pb,print,iskip,vacfac)
             enddo
         enddo
         dke(jt) = rke
+
+        ! Exact Estimators for Energies
+        ! -----------------------------
+
+        if ((itst(2).eq.1) .and. (mod(jt,iskip).eq.0)) then   ! not suitable for AI-RPMD use
+            if ((rpmddft.eq.0).and.((nbdf1.gt.0).or.(nbdf2.gt.0))) then
+
+                ! Exact Estimators for Beadiabatic
+
+                ! Ewald
+                call forces(r,v1,dvdre,nb,na,boxlxyz,z,vir,2)
+                call virial_ke_ee(r,dvdre,tv,tqe,beta,na,nb)
+
+                ! LJ
+                call forces(r,v2,dvdre,nb,na,boxlxyz,z,vir,3)
+                call virial_ke_ee(r,dvdre,tv,tq1,beta,na,nb)
+                tq1 = tq1 + tqe
+
+                ! Intramolecular
+                call forces(r,v3,dvdre,nb,na,boxlxyz,z,vir,4)
+                call virial_ke_ee(r,dvdre,tv,tq2,beta,na,nb)
+                tv = tv + tq1
+                tavee = tavee + tv
+                tq1aee = tq1aee + tq1
+                tq2aee = tq2aee + tq2
+                v1eeav = v1eeav + v1
+                v2eeav = v2eeav + v2
+                v3eeav = v3eeav + v3
+            endif
+        endif
 
 
         ! Cvv - centroid momenta
@@ -639,6 +696,34 @@ dcvintra,dke,pt,pb,print,iskip,vacfac)
     davy = davy*wt
     davz = davz*wt
 
+    wt=1.d0/dble((2*nt/iskip+1)*nm)
+    tavee = wt*tavee
+    tq1aee = wt*tq1aee
+    tq2aee = wt*tq2aee
+    v1eeav = wt*v1eeav
+    v2eeav = wt*v2eeav
+    v3eeav = wt*v3eeav
+
+    if (itst(2).eq.1) then
+        if ((rpmddft.eq.0).and.((nbdf1.gt.0).or.(nbdf2.gt.0))) then
+
+            write(eefile,*)'<V> per molecule = ',toKjmol* &
+            (v1eeav+v2eeav+v3eeav),' KJ mol^-1'
+            write(eefile,*)'<V>_ew = ', toKjmol*v1eeav,' KJ mol^-1'
+            write(eefile,*)'<V>_lj = ', toKjmol*v2eeav,' KJ mol^-1'
+            write(eefile,*)'<V>_inter = ', toKjmol*(v1eeav+v2eeav), &
+            ' KJ mol^-1'
+            write(eefile,*)'<V>_intra = ', toKjmol*v3eeav,' KJ mol^-1'
+            write(eefile,*)
+            write(eefile,*)'<Virial KE> per molecule = ', toKjmol*tavee, &
+            ' KJ mol^-1'
+            write(eefile,*)'<Virial KE>_inter = ', toKjmol*tq1aee, &
+            ' KJ mol^-1'
+            write(eefile,*)'<Virial KE>_intra = ', toKjmol*tq2aee, &
+            ' KJ mol^-1'
+        endif
+    endif
+
     ! Velocity auto-correlation function.
     ! -----------------------------------
 
@@ -741,12 +826,13 @@ dcvintra,dke,pt,pb,print,iskip,vacfac)
             enddo
         enddo
     endif
+
 #ifdef PARALLEL_BINDING
 	endif
 #endif
     ! Deallocate arrays
 
-    deallocate(pc,pca,rca)
+    deallocate(pc,pca,rca,dvdre)
 
     if (itcf(2).eq.1) then
         deallocate(dmxr,dmyr,dmzr,dmxv,dmyv,dmzv)
