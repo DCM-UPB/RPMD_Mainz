@@ -23,6 +23,7 @@ dt,mass,irun,itcf,itst,pt,pb,print,iskip,ntherm,vacfac)
     real(8), allocatable :: irmtr(:,:,:),irmtv(:,:,:),idmtr(:,:,:),idmtv(:,:,:)
     real(8), allocatable :: dcvinter(:),dcvintra(:),dke(:)
     real(8), allocatable :: cvinter(:), cvintra(:),cke(:)
+    integer(8), allocatable :: ihhh(:),ihoo(:),ihoh(:)
     character(128) file_name
     external ran2
     common /thinp/ ttaufs
@@ -56,6 +57,7 @@ dt,mass,irun,itcf,itst,pt,pb,print,iskip,ntherm,vacfac)
     allocate (cvinter(0:2*nt), dcvinter(0:2*nt))
     allocate (cvintra(0:2*nt), dcvintra(0:2*nt))
     allocate (cke(0:2*nt), dke(0:2*nt))
+    allocate (ihhh(imaxbin),ihoo(imaxbin),ihoh(imaxbin))
 
     tv = 0.d0
     pe = 0.d0
@@ -72,6 +74,11 @@ dt,mass,irun,itcf,itst,pt,pb,print,iskip,ntherm,vacfac)
     cvinter(:) = 0.d0
     cvintra(:) = 0.d0
     cke(:) = 0.d0
+
+    ihoo(:) = 0
+    ihoh(:) = 0
+    ihhh(:) = 0
+
 #ifdef PARALLEL_BINDING
 if(myid.eq.0) then
 #endif
@@ -177,7 +184,7 @@ write(*,*) "myid in evolve:", myid
 
         ! Run an NVT (NVE if therm == AND) trajectory of 2*nt time steps
         call trajectory(p,r,v,dvdr,dvdr2,dct,dtv,dmtr,dmtv,idmtr,idmtv, &
-        dqqt,davx,davy,davz,dmot1,nt,na,nb,boxlxyz,z, &
+        dqqt,davx,davy,davz,dmot1,ihoo,ihoh,ihhh,nt,na,nb,boxlxyz,z, &
         beta,dt,mass,itcf,itst,nm,dpe,irun,dcvinter,dcvintra,&
         dke,pt,pb,print,iskip,vacfac,eefile)
 #ifdef PARALLEL_BINDING
@@ -263,6 +270,11 @@ write(*,*) "myid in evolve:", myid
         endif
     endif
 
+    ! Print the total RDFs.
+    if (itst(1).eq.1) then
+      call print_rdf(ihoo,ihoh,ihhh,na,boxlxyz,nt,nb,(2*nt/iskip+1)*m)
+    endif
+
     ! Print the (unit.potential) correlation functions.
     open(51,file='c1v.out',status='unknown')
     do i = 0, 2*nt
@@ -320,7 +332,7 @@ endif
 end subroutine dynamics
 
 subroutine trajectory(p,r,v,dvdr,dvdr2,ct,dtv,dmtr,dmtv,idmtr,idmtv, &
-dqq,davx,davy,davz,dmot1,nt,na,nb,boxlxyz,z, &
+dqq,davx,davy,davz,dmot1,ihoo,ihoh,ihhh,nt,na,nb,boxlxyz,z, &
 beta,dt,mass,itcf,itst,nm,pe,irun,dcvinter, &
 dcvintra,dke,pt,pb,print,iskip,vacfac,eefile)
     use intmod
@@ -333,8 +345,8 @@ dcvintra,dke,pt,pb,print,iskip,vacfac,eefile)
     ! Sample dynamic properties over NVE trajectory.
     ! -----------------------------------------------------------------
     integer na,nb,nt,itcf(3),itst(3),nm,irun,myid,ierr,eefile
-    integer i,ib,j,jt,it,it10,jt10,k,pt,pb,print(3),iskip,vacfac,rpmddft,nbdf1,nbdf2
-    real(8) dt,beta,alpha,alpha2,wm,wh,v,v1,v2,v3,w1,w2,w3
+    integer i,ib,j,jt,it,it10,jt10,k,pt,pb,print(3),iskip,vacfac,rpmddft,nbdf1,nbdf2,ibin,ii,jj
+    real(8) dt,beta,alpha,alpha2,wm,wh,v,v1,v2,v3,w1,w2,w3,dx,dy,dz,rij,delr,boxmax
     real(8) em,tv,dipx,dipy,dipz,tbar,wt,wt1,vir(3,3),vir_lf(3,3)
     real(8) fac1,fac2,pe,dtq1,dtq2,ecut,tvxyz(3)
     real(8) dtv,dqq,davx,davy,davz,dip2,dipm,dotx,doty,dotz
@@ -351,6 +363,7 @@ dcvintra,dke,pt,pb,print,iskip,vacfac,eefile)
     real(8) ct(0:nt),dmot1(6,0:nt)
     real(8) dmtr(0:nt),dmtv(0:nt),idmtr(0:nt,4,2),idmtv(0:nt,4,2)
     real(8) dcvinter(0:2*nt), dcvintra(0:2*nt),dke(0:2*nt)
+    integer(8) ihoo(imaxbin),ihoh(imaxbin),ihhh(imaxbin)
 
     ! Cvv, OCF and Dipole Working Arrays
 
@@ -361,7 +374,7 @@ dcvintra,dke,pt,pb,print,iskip,vacfac,eefile)
     real(8), allocatable :: dmxv(:),dmyv(:),dmzv(:)
     real(8), allocatable :: idmxr(:,:,:),idmyr(:,:,:),idmzr(:,:,:)
     real(8), allocatable :: idmxv(:,:,:),idmyv(:,:,:),idmzv(:,:,:)
-    real(8), allocatable :: dvdre(:,:,:)
+    real(8), allocatable :: dist(:,:),dvdre(:,:,:)
 
     ! Allocate arrays
 
@@ -381,7 +394,7 @@ dcvintra,dke,pt,pb,print,iskip,vacfac,eefile)
         allocate (az2(6,nm,0:(2*nt/iskip)))
     end if
 
-    allocate (pc(3,nm,0:2*nt),pca(3,na),rca(3,na),dvdre(3,na,nb))
+    allocate (pc(3,nm,0:2*nt),pca(3,na),rca(3,na),dvdre(3,na,nb),dist(na,na))
 
     ! Define some useful constants and zero-out arrays
 
@@ -447,6 +460,8 @@ dcvintra,dke,pt,pb,print,iskip,vacfac,eefile)
     tv = 0.d0
     pe = 0.d0
     nm = na/3
+    dist(:,:) = 0.d0
+
     if (3*nm .ne. na) stop 'trajectory : na is NOT 3*nm !'
 #ifdef PARALLEL_BINDING
 	call MPI_COMM_RANK( MPI_COMM_WORLD, myid, ierr)
@@ -554,6 +569,79 @@ dcvintra,dke,pt,pb,print,iskip,vacfac,eefile)
             enddo
         enddo
         dke(jt) = rke
+
+        ! RDF g_oo,g_oh,g_hh
+        !------------------------
+        if ((itst(1).eq.1) .and. (mod(jt,iskip).eq.0)) then
+           do k = 1, nb
+              do i = 2, na
+                 do j = 1, i-1
+                    dx = r(1,i,k) - r(1,j,k)
+                    dy = r(2,i,k) - r(2,j,k)
+                    dz = r(3,i,k) - r(3,j,k)
+                    dx = dx-boxlxyz(1)*dble(nint(dx/boxlxyz(1)))
+                    dy = dy-boxlxyz(2)*dble(nint(dy/boxlxyz(2)))
+                    dz = dz-boxlxyz(3)*dble(nint(dz/boxlxyz(3)))
+                    dist(i,j) = dsqrt(dx*dx+dy*dy+dz*dz)
+                    dist(j,i) = dist(i,j)
+                 enddo
+              enddo
+
+              do i = 1,na
+                 dist(i,i) = 0.d0
+              enddo
+
+              ! calculate and bin O - O pair distances
+
+
+              boxmax = max(boxlxyz(1),boxlxyz(2),boxlxyz(3))
+              delr = dble(0.5d0*boxmax/dble(imaxbin))
+              do i = 1, nm - 1
+                 do j = i + 1, nm
+                    ii = 3*i - 2
+                    jj = 3*j - 2
+                    rij = dist(ii,jj)
+                    ibin = int(rij/delr) + 1
+                    if (ibin.le.imaxbin) then
+                       ihoo(ibin) = ihoo(ibin) + 2
+                    endif
+                 enddo
+              enddo
+
+              ! calculate and bin O - H pair distances
+
+              do i = 1, nm
+                 do j = 1, na, 3
+                    ii = 3*i - 2
+                    jj = j+1
+                    rij = dist(ii,jj)
+                    ibin = int( rij / delr) + 1
+                    if (ibin.le.imaxbin) then
+                       ihoh(ibin) = ihoh(ibin) + 1
+                    endif
+                    rij=dist(ii,jj+1)
+                    ibin = int( rij / delr) + 1
+                    if (ibin.le.imaxbin) then
+                       ihoh(ibin) = ihoh(ibin) + 1
+                    endif
+                 enddo
+              enddo
+
+              ! calculate and bin H - H pair distances
+
+              do i = 1, na-1
+                 do j = i+1, na
+                    if (mod(i-1,3).ne.0.and.mod(j-1,3).ne.0) then
+                       rij = dist(i,j)
+                       ibin = int(rij/delr) + 1
+                       if (ibin.le.imaxbin) then
+                          ihhh(ibin) = ihhh(ibin) + 2
+                       endif
+                    endif
+                 enddo
+              enddo
+           enddo
+        endif
 
         ! Exact Estimators for Energies
         ! -----------------------------
@@ -832,7 +920,7 @@ dcvintra,dke,pt,pb,print,iskip,vacfac,eefile)
 #endif
     ! Deallocate arrays
 
-    deallocate(pc,pca,rca,dvdre)
+    deallocate(pc,pca,rca,dvdre,dist)
 
     if (itcf(2).eq.1) then
         deallocate(dmxr,dmyr,dmzr,dmxv,dmyv,dmzv)

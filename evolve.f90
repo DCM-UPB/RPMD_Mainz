@@ -361,10 +361,10 @@ if(myid.eq.0) then
                 ! Read first bead coordinate
 
                 read(61,*) boxlxyz(1),boxlxyz(2),boxlxyz(3)
-                do j = 1,na
-                    read(61,*) r(1,j,1),r(2,j,1),r(3,j,1)
-                enddo
-
+                !do j = 1,na
+                !    read(61,*) r(1,j,1),r(2,j,1),r(3,j,1)
+                !enddo
+                read(61,*) r(:,:,1)
                 ! Copy to all other beads
 
                 do k = 2,nb
@@ -453,7 +453,7 @@ if(myid.eq.0) then
 
             if (vacfac.gt.1) then
                 boxlxyz(3)=vacfac*boxlxyz(3)
-                r(3,:,:)=r(3,:,:)+0.5d0*vacfac*boxlxyz(3)
+                r(3,:,:)=r(3,:,:)+0.5d0*boxlxyz(3)
                 iamcub=.false.
                 write(6,*)'* Vacuum preparation done'
             else if (vacfac.eq.1) then
