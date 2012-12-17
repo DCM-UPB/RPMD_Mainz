@@ -50,8 +50,11 @@ if(myid.eq.0) then
   p(:,:,:) = p(:,:,:) - halfdt*(dvdr(:,:,:)+dvdr2(:,:,:)) !dvdr2 sollte nach erstem step = 0 sein, in erstem aber noch kraft aus äquilibrierung --> dvdr2 !=0
   
   !  get new coordinates
-  call freerp_rpmd(p,r,dt,mass,na,nb,beta) ! Was ist mit ACMD???
-
+     if (type.eq.'ACMD') then
+        call freerp_acmd (p,r,dtsmall,mass,na,nb,beta,irun,om)
+     else if (type.eq.'RPMD') then
+        call freerp_rpmd (p,r,dtsmall,mass,na,nb,beta)
+     endif
 
 !  ! Barostat
 !  ! (note:// COMs scaled therefore do not need to recalculate

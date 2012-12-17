@@ -64,7 +64,7 @@ if(myid.eq.0) then
   
   ! transform force to dvdr
   dvdr(:,:) = -dvdr(:,:)
-
+	!write(*,*) "TEST"
 #ifdef PARALLEL_BINDING
 endif
 	call MPI_bcast(dvdr,SIZE(dvdr),MPI_real8,0,MPI_COMM_WORLD,ierr)

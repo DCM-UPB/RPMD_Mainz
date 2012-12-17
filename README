@@ -102,6 +102,7 @@ ecut     -   Ewald sum accuracy parameter. Set to 0.d0 for automatic
              selection of ewald parameters
 nt       -   Dynamic simulation trajectory length
 ne       -   Equilibration steps
+ntherm   -   Number of Steps between parallel trajectories
 nb       -   Number of beads
 m        -   Number of dynamic trajectories
 ng       -   Number of static property sampling steps
@@ -124,7 +125,10 @@ nbdf1    -   RP contraction modes for ewald forces (set to zero for full nb, set
 nbdf2    -   RP contraction modes for LJ forces (set to zero for full nb)
 nbdf3    -   RP contraction modes for RPMDDFT forces
 sig      -   Electrostatic RP Contraction cut-off (Angstroms, usually ~ 5.0)
-rpmddft  -   use RPMDDFT force Calculation
+rpmddft  -   Use RPMDDFT force Calculation
+rctdk    -   Use the T.D. Kühne Method (important nbdf1 and nbdf2 have to be 0, nbdf3 is the 							 delta Force contraction)
+aieq     -   Use RPMDDFT forces for equilibration too
+DOH      -   Use DOH for AND thermostat and the kinetic energy calculation
 
 
 Parameters for popular water model

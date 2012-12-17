@@ -85,7 +85,11 @@ if(myid.eq.0) then
   p(:,:,:) = p(:,:,:) - halfdt*(dvdr(:,:,:)+dvdr2(:,:,:)) !hier sind alle Kräfte drin!
 
   !  get new coordinates
-  call freerp_rpmd(p,r,dt,mass,na,nb,beta)
+     if (type.eq.'ACMD') then
+        call freerp_acmd (p,r,dt,mass,na,nb,beta,irun,om)
+     else if (type.eq.'RPMD') then
+        call freerp_rpmd (p,r,dt,mass,na,nb,beta)
+     endif
 
   ! Form Bead Positions and evaluate high-frequency forces
   call forces(r,vint,dvdr2,nb,na,boxlxyz,z,vir_hf,4)

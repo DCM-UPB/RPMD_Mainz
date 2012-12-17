@@ -286,6 +286,8 @@ subroutine evolve_rigid_pi_RPMDDFT(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
   halfsmalldt = 0.5d0*smalldt
   nm = na / 3
 
+
+
 #ifdef PARALLEL_BINDING
 	call MPI_COMM_RANK( MPI_COMM_WORLD, myid, ierr)
 !write(*,*) "myid iin evolve:",myid
@@ -404,3 +406,119 @@ endif
 #endif
   return
 end subroutine evolve_rigid_pi_RPMDDFT
+
+subroutine evolve_rigid_cl_RPMDDFT(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
+                         boxlxyz,z,beta,vir,vir_lf,irun,nbaro)
+  use thermostat
+  use barostat
+  implicit none
+  include 'globals.inc'
+#ifdef PARALLEL_BINDING
+  include 'mpif.h' !parallel
+#endif
+  ! ------------------------------------------------------------------
+  ! Classical evolution using RPMD-DFT-Method
+  ! ------------------------------------------------------------------
+  integer na,nb,irun,i,mts,nbaro,reftraj,ierr,rpmddft,iii1,jjj1,myid,nm,k,j
+  real(8) p(3,na,nb), r(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb)
+  real(8) vir(3,3), vir_lf(3,3),vir_hf(3,3),vir_tmp(3,3)
+  real(8) halfdtsmall,dt,boxlxyz(3),tvxyz(3),v,beta,dtsmall
+  real(8) mass(na),z(na)
+  real(8) halfdt,om,v_lf,v_hf
+  real(8) tv,tq1,tq2
+  character(len=4) type
+  common /multiple_ts/ mts
+  common /path_i/ om,type
+  common /reftraj/ reftraj
+  common /RPMDDFT/ rpmddft
+  real(8), allocatable :: rold(:,:)
+
+
+  dvdr2(:,:,:) = 0.d0
+  halfdt = 0.5d0*dt
+  nm = na/3
+  vir_hf(:,:) = 0.d0 
+#ifdef PARALLEL_BINDING
+	call MPI_COMM_RANK( MPI_COMM_WORLD, myid, ierr)
+
+if(myid.eq.0) then     
+#endif 
+  allocate (rold(3,na))
+  ! Evolve : Velocity Verlet Stage 1
+  
+  if (therm.eq.'PRG') then
+     call parinello_therm(p,mass,ttau,na,nb,halfdt,irun,beta)
+  else if (therm.eq.'PRL') then
+     call parinello_therm_loc(p,mass,ttau,na,nb,halfdt,irun,beta)
+  endif
+
+  do k = 1,nb
+     rold(:,:) = r(:,:,k)
+     do j = 1,na
+        do i = 1,3
+           p(i,j,k) = p(i,j,k) - halfdt*dvdr(i,j,k)
+           r(i,j,k) = r(i,j,k) + p(i,j,k)*dt/mass(j)
+        enddo
+     enddo
+
+     ! Rattle Stage 1
+
+     call rattle_s1(r(1,1,k),rold,p(1,1,k),nm,mass,dt, &
+                    dvdr(1,1,k),vir_hf,na)
+  enddo
+#ifdef PARALLEL_BINDING
+endif
+	call MPI_bcast(r,SIZE(r),MPI_real8,0,MPI_COMM_WORLD,ierr)
+	call MPI_bcast(p,SIZE(p),MPI_real8,0,MPI_COMM_WORLD,ierr)
+#endif
+  
+  ! Intermolecular Forces
+
+  call forces(r,v,dvdr,nb,na,boxlxyz,z,vir_lf,9)
+#ifdef PARALLEL_BINDING
+if(myid.eq.0) then
+#endif
+  ! Evolve : Velocity Verlet Stage 2
+
+  p(:,:,:) = p(:,:,:) - halfdt*dvdr(:,:,:)
+
+  ! Rattle Stage 2
+
+  do k = 1,nb
+     call rattle_s2(r(1,1,k),p(1,1,k),nm,mass,dt, &
+                    dvdr(1,1,k),vir_hf,na)
+  enddo
+  
+  if (therm.eq.'PRG') then
+     call parinello_therm(p,mass,ttau,na,nb,halfdt,irun,beta)
+  else if (therm.eq.'PRL') then
+     call parinello_therm_loc(p,mass,ttau,na,nb,halfdt,irun,beta)
+  endif
+
+  ! Barostat
+  ! (note:// COMs scaled therefore does not affect RATTLE)
+
+  vir(:,:) = vir_lf(:,:) + vir_hf(:,:)
+  if (nbaro.eq.1) then
+     if (baro.eq.'BER') then
+        call virial_ke(r,dvdr,dvdr2,tv,tvxyz,tq1,tq2,beta,na,nb)
+        call beren_driver(vir,tv,tvxyz,dt,r,boxlxyz,na,nb)
+     else if (baro.eq.'MCI') then
+        call mc_baro(r,dvdr,dvdr2,vir,v,z,beta,boxlxyz,na,nb,irun)
+     else
+        write(6,*) ' ** Invalid barostat **'
+        stop
+     endif
+  endif
+
+  vir(:,:) = vir_lf(:,:) + vir_hf(:,:)
+  v_lf = v
+  v_hf = 0.d0
+
+  deallocate (rold)
+#ifdef PARALLEL_BINDING
+endif
+#endif
+  return
+end subroutine evolve_rigid_cl_RPMDDFT
+

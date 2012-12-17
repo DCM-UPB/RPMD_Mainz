@@ -68,7 +68,11 @@ if(myid.eq.0) then
 
 
 	if(mts .eq. 1) then
-		call freerp_rpmd(p,r,dtsmall,mass,na,nb,beta)
+		if (type.eq.'ACMD') then
+				call freerp_acmd(p,r,dtsmall,mass,na,nb,beta,irun,om)
+		else
+				call freerp_rpmd(p,r,dtsmall,mass,na,nb,beta)
+		endif
 	else
  	 !! Multiple timestep for freerpmd propagation
   	do i = 1,mts
@@ -84,7 +88,12 @@ if(myid.eq.0) then
   		endif
 
   	!  get new coordinates
-	  	call freerp_rpmd(p,r,dtsmall,mass,na,nb,beta)
+
+		if (type.eq.'ACMD') then
+				call freerp_acmd(p,r,dtsmall,mass,na,nb,beta,irun,om)
+		else
+				call freerp_rpmd(p,r,dtsmall,mass,na,nb,beta)
+		endif
 
 				if (type.eq.'RPMD') then
 	  	  	 if (therm.eq.'PRG') then

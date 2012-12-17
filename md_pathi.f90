@@ -1,4 +1,4 @@
-subroutine freerp_acmd(p,r,dt,mass,na,nb,beta,irun,om,monod,delp)
+subroutine freerp_acmd(p,r,dt,mass,na,nb,beta,irun,om)
   use thermostat
   implicit none
   include 'globals.inc'

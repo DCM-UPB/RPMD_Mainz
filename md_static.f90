@@ -95,7 +95,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   real(8) dipx,dipy,dipz,dip2,dipm,dtps,dr
   real(8) boxmax
   real(8) rgh,rgo,rgcm,rghav,rgoav,rgcmav,tq1,tq2,tqe
-  real(8) v1,v2,v3,v1ave,v2ave,v1eeav,v2eeav,v3ave,v3eeav,denc
+  real(8) v1,v2,v3,v1ave,v2ave,v1eeav,v2eeav,v3ave,v3eeav,veeav,denc
   real(8) pres,volav,pav,pvav,xav,yav,zav,denav,wmass
   real(8), allocatable :: dist(:,:), dvdre(:,:,:)
   character(len=3) ens
@@ -156,6 +156,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   v1eeav = 0.d0
   v2eeav = 0.d0
   v3eeav = 0.d0
+	veeav  = 0.d0
 
   tave   = 0.d0
   tq1ave = 0.d0
@@ -339,8 +340,10 @@ if (myid.eq.0) then
         
         call virial_ke(r,dvdr,dvdr2,tv,tvxyz,tq1,tq2,beta,na,nb,mass)  !!!! CHANGED
         tave = tave + tv
+				if(rpmddft.eq.0) then
         tq1ave = tq1ave + tq1
         tq2ave = tq2ave + tq2
+				endif
         if (mod(je,100).eq.0) then
            write(20,*) je*dtps,v,tv/nm
         endif
@@ -394,7 +397,13 @@ if (myid.eq.0) then
               v2eeav = v2eeav + v2
               v3eeav = v3eeav + v3
            endif
-        endif
+				endif
+				if ((itst(2).eq.1).and.(rpmddft.eq.1)) then !force_env_ zu groß, da nur für weniger initialisiert
+					call forces(r,v,dvdr,nb,na,boxlxyz,z,vir,9)
+          call virial_ke_ee(r,dvdr,tv,tq1,beta,na,nb) !ich brauche nur tv, da 1 mal konstante abhängig von beta und dann rest.... oben 3 stück+ konstante, daher erst am ende tv
+					tavee = tavee + tv
+					veeav = veeav + v
+				endif
 
         ! Calculate molecular properties.
 
@@ -627,6 +636,7 @@ if (myid.eq.0) then
     v1eeav = v1eeav / dble(nrdf * nm)
     v2eeav = v2eeav / dble(nrdf * nm)
     v3eeav = v3eeav / dble(nrdf * nm)
+		veeav = veeav / dble(nrdf * nm)
 
     pav = pav / dble(nrdf)
     if (ens.eq.'NPT') then
@@ -654,6 +664,7 @@ if (myid.eq.0) then
 !      write(6,*)'<Virial KE> per molecule = ',toKjmol*tave, &
 !                                           ' KJ mol^-1'
       write(6,*)'<Virial KE> per molecule = ',toK*tave*(2.0/3.0),' K ' 
+      write(6,*)'<Virial KE> per molecule = ',toKjmol*tave,' KJ mol^-1 '			
       write(6,*)'<Virial KE>_inter = ', toKjmol*tq1ave,' KJ mol^-1'
       write(6,*)'<Virial KE>_intra = ', toKjmol*tq2ave,' KJ mol^-1'
     else
@@ -664,7 +675,7 @@ if (myid.eq.0) then
       write(6,*)'<V>_intra = ', toKjmol*v3ave,' KJ mol^-1'
       write(6,*)
       write(6,*)'<Virial KE> per molecule = ',toK*tave*(2.0/3.0),' K '
-!      write(6,*)'<Virial KE> per molecule = ',toKjmol*tave,' Kjmol-1 '
+      write(6,*)'<Virial KE> per molecule = ',toKjmol*tave,' Kjmol-1 '
       write(6,*)'<Virial KE>_inter = ', toKjmol*tq1ave,' KJ mol^-1'
       write(6,*)'<Virial KE>_intra = ', toKjmol*tq2ave,' KJ mol^-1'
       if (itst(2).eq.1) then
@@ -687,6 +698,15 @@ if (myid.eq.0) then
            write(6,*)'<Virial KE>_intra = ', toKjmol*tq2aee, &
                 ' KJ mol^-1'
         endif
+			  if (rpmddft.eq.1) then
+           write(6,*)
+           write(6,*)'* Energies using Exact Estimators '
+           write(6,*)'----------------------------'
+           write(6,*)'<V> per molecule = ',toKjmol* veeav, &
+																											' KJ mol^-1'
+           write(6,*)'<Virial KE> per molecule = ', toKjmol*tavee, &
+                                                       ' KJ mol^-1'
+				endif
       endif
     endif
 

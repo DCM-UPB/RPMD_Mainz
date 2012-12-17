@@ -243,7 +243,7 @@ dqy,dqz,boxlxyz,beta,dt,iskip)
     pi = dacos(-1.d0)
     open (unit=11,file='Dmmr.out')
     open (unit=13,file='Dmmv.out')
-    dtps = dtfs*1.d-3
+    dtps = dtfs*1.d-3 !dtfs is the one from the input file --> unit is fs
     do it = 0,nt,iskip
         tps = it*dtps
         write (11,*)tps, rmtr(it)

@@ -245,7 +245,7 @@ write(*,*) "myid in evolve:", myid
         dqx = dqx / dble(m)
         dqy = dqy / dble(m)
         dqz = dqz / dble(m)
-        call print_dipole(dtfs,nt,rmtr,rmtv,dqq,dqx,dqy,dqz, &
+        call print_dipole(dtfs,nt,rmtr,rmtv,dqq,dqx,dqy,dqz, & !dtfs is the one from the input
         boxlxyz,beta,dt,iskip)
         if (vacfac.ne.1) then
             call print_dipole_int(dtfs,nt,irmtr,irmtv,iskip)

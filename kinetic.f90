@@ -186,7 +186,7 @@ subroutine kinetic(p,na,tk,mass,nb,beta)
   real(8) p(3,na,nb),mass(na),tk,beta,om
   character(len=4) type
   common /path_i/ om,type
-
+	!write(*,*) mass(:)
   if ((type.eq.'RPMD').or.(nb.eq.1)) then
      call kinetic_rpmd(p,na,tk,mass,nb)
   else if (type.eq.'ACMD') then

@@ -29,6 +29,8 @@ subroutine evolve_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   common /correct/ sig
   common /RPMDDFT/ rpmddft
 
+
+
 	dtsmall = dt/mts
   vew = 0.d0
   vlj = 0.d0
@@ -39,6 +41,7 @@ subroutine evolve_pi_RPMDDFT(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   vir_hf(:,:) = 0.d0
   tv = 0.d0 ! im ersten schritt falsch!!!!
   tvxyz(:) = 0.d0
+
 
 #ifdef PARALLEL_BINDING
 	call MPI_COMM_RANK( MPI_COMM_WORLD, myid, ierr)
@@ -65,7 +68,11 @@ if(myid.eq.0) then
 
   !  get new coordinates
   if(mts .eq. 1) then
-		call freerp_rpmd(p,r,dtsmall,mass,na,nb,beta)
+		if (type.eq.'ACMD') then
+			call freerp_acmd(p,r,dtsmall,mass,na,nb,beta,irun,om)
+		else
+			call freerp_rpmd(p,r,dtsmall,mass,na,nb,beta)
+		endif
 	else
  	 !! Multiple timestep for freerpmd propagation
   	do i = 1,mts
@@ -81,8 +88,12 @@ if(myid.eq.0) then
   		endif
 
   	!  get new coordinates
-	  	call freerp_rpmd(p,r,dtsmall,mass,na,nb,beta)
-
+	  	
+			if (type.eq.'ACMD') then
+				call freerp_acmd(p,r,dtsmall,mass,na,nb,beta,irun,om)
+			else
+				call freerp_rpmd(p,r,dtsmall,mass,na,nb,beta)
+			endif
 				if (type.eq.'RPMD') then
 	  	  	 if (therm.eq.'PRG') then
 	  	  	    call parinello_therm(p,mass,ttau,na,nb,halfdt,irun,beta)
@@ -132,7 +143,7 @@ if(myid.eq.0) then
   ! Set dvdr2 = 0 because we don't have a high frequency part
   dvdr2(:,:,:) = 0.d0
 
-  ! Evolve the momenta under the low frequency forces
+  ! Evolve the momenta under the new force
 
   p(:,:,:) = p(:,:,:) - halfdt*dvdr(:,:,:)
   

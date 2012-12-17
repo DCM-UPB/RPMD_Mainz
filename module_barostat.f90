@@ -112,8 +112,8 @@ contains
     ! Scale water COMs
     
     allocate (rcm(3,nm))
-    call center_water(r,rcm,nm,nb)
-    do i = 1, nm
+    call center_water(r,rcm,nm,nb)  ! Wenn Fehler in NPT dann hier !!!! da nicht wirklich center of water sonder mit Massen gewichtet!
+    do i = 1, nm 
        ii = 3*i-2
        jj = 3*i-1
        kk = 3*i
