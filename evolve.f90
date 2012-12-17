@@ -141,7 +141,7 @@ subroutine start_rpmd()
     rctdk = 0
 		itst(3) = 0 ! itst 3 argument is for RMS calculation
 		aieq = 0 ! use TIP4P for equilibration if not aieq = 1 in input
-		HOD = 0
+		DOH = 0
 
 		! Using CP2K parallel?
 #ifdef PARALLEL_BINDING
