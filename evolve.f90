@@ -14,8 +14,13 @@ subroutine evolve(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
 
   if (nb.eq.1) then
     if (rpmddft.eq.1) then
-      call evolve_cl_RPMDDFT(p,r,v,v1,v2,dvdr,dvdr2,dt,mass,na,nb, &
+			if (iamrigid) then
+          call evolve_rigid_cl_RPMDDFT(p,r,v,v1,v2,dvdr,dvdr2,dt,mass,na,nb, &
+                           boxlxyz,z,beta,vir,vir_lf,irun,nbaro)					
+			else
+          call evolve_cl_RPMDDFT(p,r,v,v1,v2,dvdr,dvdr2,dt,mass,na,nb, &
                             boxlxyz,z,beta,vir,vir_lf,irun,nbaro)
+		  endif
     else
       if (iamrigid) then
          call evolve_rig_cl(p,r,v,v1,v2,dvdr,dvdr2,dt,mass,na,nb, &
@@ -71,8 +76,8 @@ subroutine start_rpmd()
     !--------------------------------------------------------------------
     !Classical/RPMD/PACMD Simulation Program for Flexible water
     !--------------------------------------------------------------------
-    integer nt,ne,nb,m,ng,npre_eq,pt,pb,irun,nm,na,narg,iargc,nbdf1,nbdf2,nbdf3,rctdk,i,j,k
-    integer nbr,mts,nlat,itcf(3),itst(3),ncellxyz(3),print(3),intcstep,ntherm,iskip!,sizeMPI(9)
+    integer nt,ne,nb,m,ng,npre_eq,pt,pb,irun,nm,na,narg,iargc,nbdf1,nbdf2,nbdf3,rctdk,i,j,k,aieq
+    integer nbr,mts,nlat,itcf(3),itst(3),ncellxyz(3),print(3),intcstep,ntherm,iskip,DOH
 
     ! used for reftrj and RPMD-DFT
     integer reftraj,rpmddft,ierr,rpmddfthelp,myid,numid
@@ -103,7 +108,7 @@ subroutine start_rpmd()
     namelist/input/ens,temp,pres,rho,lattice,vacfac,iamcub,dtfs, &
     ecut,nt,ne,npre_eq,ntherm,nb,m,ng,print,reftraj,iskip,pt,pb, &
     ncellxyz,irun,itcf,itst,intcstep,rcut, &
-    type,therm,ttaufs,baro,taufs,mts,om,nbdf1,nbdf2,sig,rpmddft,CP2K_path,nbdf3,rctdk
+    type,therm,ttaufs,baro,taufs,mts,om,nbdf1,nbdf2,sig,rpmddft,CP2K_path,nbdf3,rctdk,aieq,DOH
     namelist/param/ wmass,omass,hmass,qo,alpha,oo_sig,oo_eps,oo_gam, &
     thetad,reoh,apot,bpot,alp,alpb,wm,wh
 
@@ -135,6 +140,8 @@ subroutine start_rpmd()
     nbdf3 = 0
     rctdk = 0
 		itst(3) = 0 ! itst 3 argument is for RMS calculation
+		aieq = 0 ! use TIP4P for equilibration if not aieq = 1 in input
+		HOD = 0
 
 		! Using CP2K parallel?
 #ifdef PARALLEL_BINDING
@@ -540,6 +547,17 @@ if(myid.eq.0) then
         mass(i+1) = hmass    ! Hydrogen
         mass(i+2) = hmass    ! Hydrogen
     enddo
+		
+		if (DOH.eq.1) then
+    	do i = 1,na,3
+      	  mass(i) = omass        ! Oxygen
+      	  mass(i+1) = hmass      ! Hydrogen
+      	  mass(i+2) = 2*hmass    ! Deuterium
+    	enddo
+		endif
+
+
+
 
     qh = -0.5d0*qo
     do i = 1,na,3
@@ -686,10 +704,42 @@ endif
 #ifdef PARALLEL_BINDING
 if(myid.eq.0) then
 #endif
-    ! set rpmddft = 0 because classical equilibration, set it back to old value later
+    ! choose mode for equilibration
+
+		if (aieq.eq.0) then
+		! set rpmddft = 0 because classical equilibration, set it back to old value later
     rpmddfthelp = rpmddft
     rpmddft = 0
-
+		else 
+		if (rpmddft.eq.1) then
+					rpmddfthelp = rpmddft
+			  	if (nbdf3.eq.0) then
+        	    do i = 1, nb 
+        	        call cp_create_fenv(f_env_id(i),CP2K_path,"out.out",ierr)
+        	        ! set cell in CP2K
+        	        cell(1,1) = boxlxyz(1)
+        	        cell(2,2) = boxlxyz(2)
+        	        cell(3,3) = boxlxyz(3)
+        	        call cp_set_cell(f_env_id(i),cell,ierr)
+        	        if (ierr.ne.0) STOP "set_cell"
+									!write(*,*) "f_env_id:",f_env_id(i)
+        	    enddo
+        	else
+          	  do i = 1, nbdf3 ! if nbdf3 >= 1 set up nbdf3 versions of cp2k f_env_id = i
+          	      call cp_create_fenv(f_env_id(i),CP2K_path,"out.out",ierr)
+          	      !write(*,*) "f_env_id:",f_env_id(i)
+          	      !set cell in CP2K
+          	      cell(1,1) = boxlxyz(1)
+          	      cell(2,2) = boxlxyz(2)
+          	      cell(3,3) = boxlxyz(3)
+          	      call cp_set_cell(f_env_id(i),cell,ierr)
+          	      if (ierr.ne.0) STOP "set_cell"
+          	  enddo
+        	endif
+				endif
+			endif
+		
+		
 
     if (reftraj.eq.0) then
         ! Initial forces and momenta
@@ -738,30 +788,32 @@ endif
 #ifdef CP2K_BINDING
       !  RPMD-DFT
       ! -----------------------
-			if (rpmddft.eq.1) then
-			  if (nbdf3.eq.0) then
-            do i = 1, nb 
-                call cp_create_fenv(f_env_id(i),CP2K_path,"out.out",ierr)
-                ! set cell in CP2K
-                cell(1,1) = boxlxyz(1)
-                cell(2,2) = boxlxyz(2)
-                cell(3,3) = boxlxyz(3)
-                call cp_set_cell(f_env_id(i),cell,ierr)
-                if (ierr.ne.0) STOP "set_cell"
-								!write(*,*) "f_env_id:",f_env_id(i)
-            enddo
-        else
-            do i = 1, nbdf3 ! if nbdf3 >= 1 set up nbdf3 versions of cp2k f_env_id = i
-                call cp_create_fenv(f_env_id(i),CP2K_path,"out.out",ierr)
-                !write(*,*) "f_env_id:",f_env_id(i)
-                !set cell in CP2K
-                cell(1,1) = boxlxyz(1)
-                cell(2,2) = boxlxyz(2)
-                cell(3,3) = boxlxyz(3)
-                call cp_set_cell(f_env_id(i),cell,ierr)
-                if (ierr.ne.0) STOP "set_cell"
-            enddo
-        endif
+			if(aieq.eq.0) then			
+				if (rpmddft.eq.1) then
+			  	if (nbdf3.eq.0) then
+        	    do i = 1, nb 
+        	        call cp_create_fenv(f_env_id(i),CP2K_path,"out.out",ierr)
+        	        ! set cell in CP2K
+        	        cell(1,1) = boxlxyz(1)
+        	        cell(2,2) = boxlxyz(2)
+        	        cell(3,3) = boxlxyz(3)
+        	        call cp_set_cell(f_env_id(i),cell,ierr)
+        	        if (ierr.ne.0) STOP "set_cell"
+									!write(*,*) "f_env_id:",f_env_id(i)
+        	    enddo
+        	else
+          	  do i = 1, nbdf3 ! if nbdf3 >= 1 set up nbdf3 versions of cp2k f_env_id = i
+          	      call cp_create_fenv(f_env_id(i),CP2K_path,"out.out",ierr)
+          	      !write(*,*) "f_env_id:",f_env_id(i)
+          	      !set cell in CP2K
+          	      cell(1,1) = boxlxyz(1)
+          	      cell(2,2) = boxlxyz(2)
+          	      cell(3,3) = boxlxyz(3)
+          	      call cp_set_cell(f_env_id(i),cell,ierr)
+          	      if (ierr.ne.0) STOP "set_cell"
+          	  enddo
+        	endif
+				endif
 			endif
 #endif
 
