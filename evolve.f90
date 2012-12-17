@@ -370,9 +370,10 @@ if(myid.eq.0) then
                 ! Read first bead coordinate
 
                 read(61,*) boxlxyz(1),boxlxyz(2),boxlxyz(3)
-                do j = 1,na
-                    read(61,*) r(1,j,1),r(2,j,1),r(3,j,1)
-                enddo
+                !do j = 1,na
+                !    read(61,*) r(1,j,1),r(2,j,1),r(3,j,1)
+                !enddo
+                read(61,*) r(:,:,1)
 
                 ! Copy to all other beads
 
