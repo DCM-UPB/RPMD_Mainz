@@ -236,11 +236,11 @@ subroutine md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
      endif
 
      if (mod(je,20).eq.0) then
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!falsch, da center_water nicht mit Massen gewichtet, da für Impulse gemacht
+
         ! Output RMS distance moved by centroid COM
 
         rmsq = 0.d0
-        call center_water(r,rcm,nm,nb)
+        call center_water(r,rcm,nm,nb) !calculates the centroid of the ring-polymer and not the center of mass
         
         do i = 1,nm
            do k = 1,3

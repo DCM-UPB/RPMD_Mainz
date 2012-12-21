@@ -111,7 +111,7 @@ end subroutine forces
 
 
 subroutine potenl_opt(r,v,dvdr,vir,na,nb,boxlxyz, &
-                      z,list,point,iopt,bead) ! da f_env_id (nb)
+                      z,list,point,iopt,bead) 
   implicit none
   include 'globals.inc'
   ! ------------------------------------------------------------------
@@ -125,7 +125,7 @@ subroutine potenl_opt(r,v,dvdr,vir,na,nb,boxlxyz, &
   ! iopt = 2   - Ewald force evaluation
   ! iopt = 3   - LJ force evaluation
   ! iopt = 4   - Intramolecular force evaluation
-  ! iopt = 9   - RPMD-DFT force evaluation
+  ! iopt = 9   - RPMD-DFT force evaluation for AI-RPMD use
   ! ------------------------------------------------------------------
   integer na,nb,mol(na),nm,i,j,imol,ic,iopt,point(na+3),list(maxnab*na),bead
   real(8) z(na),r(3,na),dvdr(3,na),vir(3,3),vir_ew(3,3),vir_oo(3,3)
@@ -249,7 +249,7 @@ subroutine potenl_opt(r,v,dvdr,vir,na,nb,boxlxyz, &
 #ifdef CP2K_BINDING
   !*** RPMD-DFT Force ***
   if (iopt.eq.9) then
-        call RPMDDFT_force(r,dvdr,na,nb,v,vir,boxlxyz,bead) !!! übergebe auch boxlxyz, da NPT und bead, da PI
+        call RPMDDFT_force(r,dvdr,na,nb,v,vir,boxlxyz,bead)
 
   endif
 #endif
@@ -297,7 +297,7 @@ subroutine full_forces(r,na,nb,v,vew,voo,vint,vir,z,boxlxyz, &
 
     ! High Frequency forces
 
-    call forces(r,vint,dvdr2,nb,na,boxlxyz,z,vir_itr,4)                     !dvdr2 wird in forces = 0 gesetzt
+    call forces(r,vint,dvdr2,nb,na,boxlxyz,z,vir_itr,4)                     !dvdr2 is set to zero in forces
 
     ! Evaluation of the low frequency forces using RP-contraction
 
@@ -311,7 +311,7 @@ subroutine full_forces(r,na,nb,v,vew,voo,vint,vir,z,boxlxyz, &
           ! Ewald
 
           if (nbdf1.gt.0) then
-             call rp_contract_nm(r,vew,dvdr,nb,na,boxlxyz,z,vir_ew, &            !dvdr vorher = 0 gesetzt
+             call rp_contract_nm(r,vew,dvdr,nb,na,boxlxyz,z,vir_ew, &           
                                 nbdf1,2)
 
              if (sig.gt.0.d0) then
@@ -386,9 +386,10 @@ subroutine full_forces(r,na,nb,v,vew,voo,vint,vir,z,boxlxyz, &
     ! Intermolecular PE
 
   !!!!!  vint = vew + voo
-#ifdef CP2K_BINDING
+
   else
-	if(nbdf3.ne.0) then		!when ring contracted you need to put nbdf3
+#ifdef CP2K_BINDING
+	if(nbdf3.ne.0) then	! for Thomas-approach use
 		rnm(:,:,:) = r(:,:,:)
     call realft (rnm,3*na,nb,+1)
 
@@ -398,13 +399,16 @@ subroutine full_forces(r,na,nb,v,vew,voo,vint,vir,z,boxlxyz, &
 
     call forces(rb,v,dvdrb,nbdf3,na,boxlxyz,z,vir,9)
     call force_contract(dvdr,dvdrb,na,nb,nbdf3)
+
   else
+
     ! Calculate full force using CP2K
+
     call forces(r,v,dvdr,nb,na,boxlxyz,z,vir,9)
   endif
-    dvdr2 = 0.d0
+    dvdr2 = 0.d0 !there are no high-frequency forces for AI-RPMD use
 #endif
-endif
+	endif
 
   deallocate(dvdre,dvdrl)
 

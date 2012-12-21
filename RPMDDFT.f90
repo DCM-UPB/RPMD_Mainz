@@ -26,11 +26,12 @@ subroutine RPMDDFT_force(r,dvdr,na,nb,v,vir,boxlxyz,bead)
   cell(:,:) = 0.d0
 #ifdef PARALLEL_BINDING
 	call MPI_COMM_RANK( MPI_COMM_WORLD, myid, ierr)
-!write(*,*) "myid in RPMDDFTFORCE:", myid
 	call MPI_bcast(r,SIZE(r),MPI_real8,0,MPI_COMM_WORLD,ierr)
 	call MPI_bcast(boxlxyz,SIZE(boxlxyz),MPI_real8,0,MPI_COMM_WORLD,ierr)
 #endif
-  ! If Barostat is used set new cell
+write(*,*) "in RPMDDFT", bead
+  ! If a barostat is used, set new cell
+
   if(ens.eq."NPT") then  
     cell(1,1) = boxlxyz(1)
     cell(2,2) = boxlxyz(2)
@@ -39,32 +40,40 @@ subroutine RPMDDFT_force(r,dvdr,na,nb,v,vir,boxlxyz,bead)
     if (ierr.ne.0) STOP "set_cell"
   endif
 
-  ! Set Positions in CP2K
+  ! Set positions in CP2K
+
   call cp_set_pos(f_env_id(bead),r,SIZE(r),ierr)
   if (ierr.ne.0) STOP "set_pos"
-!  write(*,*) "bead = ", bead, "f_env_id =", f_env_id(bead)
 
   ! Calculate new energy and force
+
   call cp_calc_energy_force(f_env_id(bead), r, SIZE(r), v, dvdr, SIZE(dvdr), ierr)
   if (ierr.ne.0) STOP "calc_energy_force"
+
 #ifdef PARALLEL_BINDING
 if(myid.eq.0) then
 #endif
+
   ! Get force and energy
+
   call cp_get_force(f_env_id(bead),dvdr,SIZE(dvdr),ierr)
   if (ierr.ne.0) STOP "get_force"
   call cp_get_energy(f_env_id(bead),v,ierr)
   if (ierr.ne.0) STOP "get_energy"
+
   ! Get virial
+
   call cp_get_virial(f_env_id(bead),vir,SIZE(vir)*na,ierr)  ! gets the virial from CP2K in right units
   if (ierr.ne.0) STOP "get_virial"
 
   ! transform vir, because force has to be transformed to dvdr
+
   vir(:,:) = -vir(:,:) 
   
   ! transform force to dvdr
+
   dvdr(:,:) = -dvdr(:,:)
-	!write(*,*) "TEST"
+
 #ifdef PARALLEL_BINDING
 endif
 	call MPI_bcast(dvdr,SIZE(dvdr),MPI_real8,0,MPI_COMM_WORLD,ierr)

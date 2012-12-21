@@ -14,7 +14,7 @@ subroutine evolve_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
   real(8) mass(na),z(na)
   real(8) halfdt,om,v_lf,v_hf
   real(8) tv,tq1,tq2
-  real(8), allocatable :: monod(:,:,:),delp(:,:)
+  !real(8), allocatable :: monod(:,:,:),delp(:,:)
   character(len=4) type
   common /multiple_ts/ mts
   common /path_i/ om,type
@@ -24,9 +24,9 @@ subroutine evolve_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
   real(8), allocatable :: r_backup(:,:,:)
   allocate (r_backup(3,na,nb))
 
-  allocate (monod(3,4,nb),delp(3,nb))
-  monod(:,:,:) = 0.d0
-  delp(:,:) = 0.d0
+  !allocate (monod(3,4,nb),delp(3,nb))
+  !monod(:,:,:) = 0.d0
+  !delp(:,:) = 0.d0
   vir_hf(:,:) = 0.d0
 
   halfdt = 0.5d0*dt
@@ -62,8 +62,7 @@ subroutine evolve_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
      endif
 
      if (type.eq.'ACMD') then
-        call freerp_acmd (p,r,dtsmall,mass,na,nb,beta,irun,om, &
-                          monod,delp)
+        call freerp_acmd (p,r,dtsmall,mass,na,nb,beta,irun,om)
      else if (type.eq.'RPMD') then
         call freerp_rpmd (p,r,dtsmall,mass,na,nb,beta)
      endif
@@ -129,7 +128,7 @@ subroutine evolve_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
      call parinello_therm_loc(p,mass,ttau,na,nb,halfdt,irun,beta)
   endif
 
-  deallocate (monod,delp)
+  !deallocate (monod,delp)
   
   return
 end subroutine evolve_cl

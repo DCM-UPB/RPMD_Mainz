@@ -127,6 +127,7 @@ subroutine start_rpmd()
     common /constraint/ nctot,nbond
     common /inp/ npre_eq
     common /RPMDDFT/ rpmddft,nbdf3,rctdk
+		common /other/ DOH
 
     vacfac = 1
     intcstep = 1
@@ -706,40 +707,42 @@ endif
 if(myid.eq.0) then
 #endif
     ! choose mode for equilibration
-
+		write(*,*) "RPMD", rpmddft
 		if (aieq.eq.0) then
-		! set rpmddft = 0 because classical equilibration, set it back to old value later
-    rpmddfthelp = rpmddft
-    rpmddft = 0
+			! set rpmddft = 0 because classical equilibration, set it back to old value later
+    	rpmddfthelp = rpmddft
+    	rpmddft = 0
 		else 
-		if (rpmddft.eq.1) then
-					rpmddfthelp = rpmddft
-			  	if (nbdf3.eq.0) then
-        	    do i = 1, nb 
-        	        call cp_create_fenv(f_env_id(i),CP2K_path,"out.out",ierr)
-        	        ! set cell in CP2K
-        	        cell(1,1) = boxlxyz(1)
-        	        cell(2,2) = boxlxyz(2)
-        	        cell(3,3) = boxlxyz(3)
-        	        call cp_set_cell(f_env_id(i),cell,ierr)
-        	        if (ierr.ne.0) STOP "set_cell"
-									!write(*,*) "f_env_id:",f_env_id(i)
-        	    enddo
-        	else
-          	  do i = 1, nbdf3 ! if nbdf3 >= 1 set up nbdf3 versions of cp2k f_env_id = i
-          	      call cp_create_fenv(f_env_id(i),CP2K_path,"out.out",ierr)
-          	      !write(*,*) "f_env_id:",f_env_id(i)
-          	      !set cell in CP2K
-          	      cell(1,1) = boxlxyz(1)
-          	      cell(2,2) = boxlxyz(2)
-          	      cell(3,3) = boxlxyz(3)
-          	      call cp_set_cell(f_env_id(i),cell,ierr)
-          	      if (ierr.ne.0) STOP "set_cell"
-          	  enddo
-        	endif
-				endif
+#ifdef CP2K_BINDING
+			if (rpmddft.eq.1) then
+						rpmddfthelp = rpmddft
+				  	if (nbdf3.eq.0) then
+    	    	    do i = 1, nb 
+    	    	        call cp_create_fenv(f_env_id(i),CP2K_path,"out.out",ierr)
+    	    	        ! set cell in CP2K
+    	    	        cell(1,1) = boxlxyz(1)
+    	    	        cell(2,2) = boxlxyz(2)
+    	    	        cell(3,3) = boxlxyz(3)
+    	    	        call cp_set_cell(f_env_id(i),cell,ierr)
+    	    	        if (ierr.ne.0) STOP "set_cell"
+										!write(*,*) "f_env_id:",f_env_id(i)
+    	    	    enddo
+    	    	else
+    	      	  do i = 1, nbdf3 ! if nbdf3 >= 1 set up nbdf3 versions of cp2k f_env_id = i
+    	      	      call cp_create_fenv(f_env_id(i),CP2K_path,"out.out",ierr)
+    	      	      !write(*,*) "f_env_id:",f_env_id(i)
+    	      	      !set cell in CP2K
+    	      	      cell(1,1) = boxlxyz(1)
+    	      	      cell(2,2) = boxlxyz(2)
+    	      	      cell(3,3) = boxlxyz(3)
+    	      	      call cp_set_cell(f_env_id(i),cell,ierr)
+    	      	      if (ierr.ne.0) STOP "set_cell"
+    	      	  enddo
+    	    	endif
 			endif
-		
+#endif
+		endif
+		write(*,*) "RPMD ", rpmddft, " help ", rpmddfthelp
 		
 
     if (reftraj.eq.0) then
@@ -751,10 +754,10 @@ if(myid.eq.0) then
         write(6,*)
         call sample(p,na,nb,mass,beta,irun,dt)
 
-		if (iamrigid) then
-				write(*,*) "Rigid Simulation"
-				write(*,*) ""
-		endif
+			if (iamrigid) then
+					write(*,*) "Rigid Simulation"
+					write(*,*) ""
+			endif
 
         ! Equilibration or Interface Melting
         ! -----------------------------------
@@ -789,6 +792,8 @@ endif
 #ifdef CP2K_BINDING
       !  RPMD-DFT
       ! -----------------------
+		write(*,*) "RPMD ", rpmddft, " help ", rpmddfthelp
+
 			if(aieq.eq.0) then			
 				if (rpmddft.eq.1) then
 			  	if (nbdf3.eq.0) then
@@ -818,7 +823,7 @@ endif
 			endif
 #endif
 
-
+		write(*,*) "RPMD ", rpmddft, " help ", rpmddfthelp
 
 
       ! Static Properties

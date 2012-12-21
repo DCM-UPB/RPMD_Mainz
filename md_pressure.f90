@@ -3,8 +3,7 @@ subroutine pressure(pres,vir,tv,na,boxlxyz)
   include 'globals.inc'
   ! ------------------------------------------------------------------
   ! Pressure calculation including tail correction
-  ! 01.02.2012 If RPMD-DFT then get pressure from CP2K and convert it 
-  !            from Bar to internal units
+  ! 01.02.2012 If RPMD-DFT then get pressure from CP2K, units are consistent
   ! ------------------------------------------------------------------
   integer na, rpmddft
   real(8) vir(3,3),boxlxyz(3),tv,vol,pres,ptail,w
@@ -25,7 +24,7 @@ subroutine pressure(pres,vir,tv,na,boxlxyz)
     endif
   
     pres = pres + ptail
-  else
+  else  !for AI-RPMD use
       w = (vir(1,1) + vir(2,2) + vir(3,3)) 
       w = -w/3.d0
       vol = boxlxyz(1)*boxlxyz(2)*boxlxyz(3)

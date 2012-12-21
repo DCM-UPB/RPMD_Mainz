@@ -190,7 +190,7 @@ contains
        ! Calculate new forces and energy
 
        call full_forces(rn,na,nb,en,vew,vlj,vint,virn,z,boxlxyzn, &
-                        dvdrn,dvdr2n)                                 !!!!!!!!!!!!!!!!11 hier sieht man, dass dvdr und dvdr2 immer neu berechnet werden bei full_forces call
+                        dvdrn,dvdr2n)                                 
 
        ! Acceptance test
 

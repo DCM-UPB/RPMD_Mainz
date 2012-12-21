@@ -272,6 +272,7 @@ if(myid.eq.0) then
 #ifdef PARALLEL_BINDING
 endif
 #endif
+
   ! Evolve for ng steps, calculating properties
 
   do je = 1,ng
@@ -287,7 +288,6 @@ endif
 		 call MPI_bcast(v3,1,MPI_real8,0,MPI_COMM_WORLD,ierr)   
 		 call MPI_bcast(vir,SIZE(vir),MPI_real8,0,MPI_COMM_WORLD,ierr)   
 		 call MPI_bcast(vir_lf,SIZE(vir_lf),MPI_real8,0,MPI_COMM_WORLD,ierr)   
-!write(*,*) "myid in md_static:", myid
 #endif
 
 
@@ -397,13 +397,7 @@ if (myid.eq.0) then
               v2eeav = v2eeav + v2
               v3eeav = v3eeav + v3
            endif
-				endif
-				if ((itst(2).eq.1).and.(rpmddft.eq.1)) then !force_env_ zu groß, da nur für weniger initialisiert
-					call forces(r,v,dvdr,nb,na,boxlxyz,z,vir,9)
-          call virial_ke_ee(r,dvdr,tv,tq1,beta,na,nb) !ich brauche nur tv, da 1 mal konstante abhängig von beta und dann rest.... oben 3 stück+ konstante, daher erst am ende tv
-					tavee = tavee + tv
-					veeav = veeav + v
-				endif
+				endif				
 
         ! Calculate molecular properties.
 
@@ -536,11 +530,16 @@ if (myid.eq.0) then
 
     endif
 
-    ! Output MSD moved by centroid COM and O molecules in Angstrom^2/ps !hier stimmt noch was nicht
+    ! Output MSD moved by centroid COM and O molecules in Angstrom^2/ps 
+
+		!***** Careful, there is still some mistake here ***** !
+
 		if(itst(3).eq.1 .and. nb.eq.1) then
 	   if (mod(je,10).eq.0) then
 				msd = 0.d0
-	  ! Calculate COM for each molecule
+
+   !Calculate COM for each molecule
+
 			  do i = 0,nm-1
 			     do j = 1,3
 			           rcm(j,i+1) = mass(1)*r(j,3*i+1,1)+ &
@@ -555,7 +554,8 @@ if (myid.eq.0) then
            enddo
         enddo
         msd = msd / dble(nm)
-		! O MSD in Angstrom^2/ps
+
+   ! O MSD in Angstrom^2/ps
 				msdO = 0.d0
         do i = 1,nm
 					 ii = 3*(i-1) + 1
@@ -661,8 +661,8 @@ if (myid.eq.0) then
       write(6,*)'<V>_inter = ', toKjmol*v1ave,' KJ mol^-1'
       write(6,*)'<V>_intra = ', toKjmol*v2ave,' KJ mol^-1'
       write(6,*)
-!      write(6,*)'<Virial KE> per molecule = ',toKjmol*tave, &
-!                                           ' KJ mol^-1'
+      write(6,*)'<Virial KE> per molecule = ',toKjmol*tave, &
+                                           ' KJ mol^-1'
       write(6,*)'<Virial KE> per molecule = ',toK*tave*(2.0/3.0),' K ' 
       write(6,*)'<Virial KE> per molecule = ',toKjmol*tave,' KJ mol^-1 '			
       write(6,*)'<Virial KE>_inter = ', toKjmol*tq1ave,' KJ mol^-1'
