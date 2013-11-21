@@ -836,7 +836,7 @@ end program
     integer nc_ice(3),nc_wat(3),nm_ice,nm_wat,nctot,nbond,vacfac
     real(8) temp,rho,dtfs,ecut,test,beta,dt,dtps,boxmin,pres
     real(8) teqm,tsim,trdf,gaussian,wmass,rcut,om,ttaufs
-    real(8) taufs,v,vew,vlj,vint,pi,vir(3,3),cell(3,3)
+    real(8) taufs,v,vew,voo,vlj,vint,pi,vir(3,3),cell(3,3)
     real(8) qo,qh,alpha,oo_sig,oo_eps,oo_gam,theta,reoh,thetad
     real(8) apot,bpot,alp,alpb,wm,wh,omass,hmass,sig,boxlxyz(3),iboxlxyz(3,3),vdum
     real(8) box_ice(3),box_wat(3),rcut_old
@@ -1009,8 +1009,10 @@ end program
          !CALL force_env_set_cell(force_env,cell=cpcell,error=error)
          
          !CALL force_env_calc_energy_force(force_env,calc_force=.TRUE. ,error=error)    
-         call md_static(1,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta,&
-                         dt,mass,irun,itst,pt,pb,print)
+         !call md_static(1,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta,&
+         !                dt,mass,irun,itst,pt,pb,print)
+         call full_forces(r,na,nb,v,vew,voo,vint,vir,z,boxlxyz, &
+                     dvdr,dvdr2)
     
          if (ionode) write(*,*) " @ DRIVER MODE: Received positions "
          
@@ -1036,8 +1038,7 @@ end program
          if (ionode) write(*,*) " @ DRIVER MODE: Returning v,forces,stress "
          if (ionode) then     
             call writebuffer(socket,"FORCEREADY  ",MSGLEN)            
-            !FIXME
-            call writebuffer(socket,vir(1,1),8)
+            call writebuffer(socket,v,8)
             call writebuffer(socket,nat,4)            
             call writebuffer(socket,combuf,3*nat*8)
             call writebuffer(socket,vir,9*8)
