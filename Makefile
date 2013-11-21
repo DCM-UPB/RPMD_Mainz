@@ -17,7 +17,9 @@ FC+=	-Wall -pedantic -Waliasing -Wcharacter-truncation -Wconversion -Wsurprising
 # speed warnings
 FC+=	-Warray-temporaries
 
-FFLAGS= -O2 
+FC+= 	-fbounds-check -g 
+
+FFLAGS= -O2
 LFLAGS=	$(FFLAGS)
 
 EXE= qmd.x
@@ -75,7 +77,7 @@ SRC= \
 .SUFFIXES:
 .SUFFIXES: .f90 .o
 
-OBJ=	$(SRC:.f90=.o)
+OBJ=	$(SRC:.f90=.o) sockets.o
 
 .f90.o:
 	echo $(NOCP2K)
@@ -88,6 +90,9 @@ $(EXE):	$(OBJ)
 	$(FC) $(LFLAGS) -o $@ $(OBJ) $(LIBS)
 
 $(OBJ):	$(MF)
+
+sockets.o:	sockets.c
+	gcc -O2 -c sockets.c -o sockets.o
 
 tar:
 	tar cvf $(EXE).tar $(MF) $(SRC)
