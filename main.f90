@@ -776,6 +776,12 @@ endif
             dt,mass,irun,itcf,itst,pt,pb,print,iskip,ntherm,vacfac)
         endif
     endif
+    ! Write a vmd output of ending structure
+    if (reftraj.eq.0) then
+        open (unit=12,file='vmd_end.xyz')
+        call print_vmd_full(r,nb,na,nm,boxlxyz,12)
+        close (unit=12)
+    end if
 
 #ifdef PARALLEL_BINDING
 if(myid.eq.0) then
