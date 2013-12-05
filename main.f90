@@ -732,7 +732,7 @@ endif
             dt,mass,irun,itst,pt,pb,print)
         endif
     else
-        if (reftraj.eq.-1) then
+        if (reftraj.lt.0) then
             ! act as i-pi driver
             call run_driver(p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta,&
             dt,mass,irun,itst,pt,pb,print)
