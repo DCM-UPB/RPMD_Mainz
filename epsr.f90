@@ -1,29 +1,59 @@
+subroutine epsr_run(r,boxlxyz)
+  implicit none
+  include "globals.inc"
+  ! ------------------------------------------------------------------
+  ! Calculate EPSR correction
+  ! ------------------------------------------------------------------
+  integer na,nm,nb
+  real(8) r(3,na),boxlxyz(3)
+  common /internal/ na,nm,nb
+
+  !write(6,*) "Calculating EPSR correction"
+
+  open(123456,file='EPSRrun/vmd_current.xyz',STATUS='replace')
+  call print_vmd_bead(r,nb,1,na,nm,boxlxyz,123456)
+  close(123456)
+
+  ! Save current box in subfolder
+  ! Run epsr
+  ! Get results
+
+end subroutine epsr_run
+
 subroutine epsr_driver(r,dvdr,v,vir,list,point,na,boxlxyz,njump)
   implicit none
   include 'globals.inc'
   ! ------------------------------------------------------------------
-  ! Lennard-Jones Driver
+  ! EPSR Driver
   ! ------------------------------------------------------------------
   integer na,point(na+3),list(maxnab*na),njump
   real(8) r(3,na),dvdr(3,na),vir(3,3),boxlxyz(3)
   real(8) v,oo_eps,oo_sig,oo_gam,rcut,boxmax
   common /oo_param/ oo_eps,oo_sig,oo_gam,rcut
 
+  if (1.mod.epsr_mts)
+    call epsr_run(r,boxlxyz)
+  endif
+
+  dvdr(:,:) = 0.0d0
+  v = 0.0d0
+  vir(:,:) = 0.0d0
+
   ! Cubic
 
-  if (list(1).ne.0) then
-     call epsr_list(r,dvdr,v,vir,na,boxlxyz,list,point,njump)
-  else
-     boxmax = maxval(boxlxyz)
-     if (3.d0*rcut .gt. boxmax) then
-        call epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
-     else
-        
-        ! Use linked cell list
-        
-        call epsr_cell(r,v,vir,dvdr,na,boxlxyz,njump)
-     endif
-  endif
+  !if (list(1).ne.0) then
+  !   call epsr_list(r,dvdr,v,vir,na,boxlxyz,list,point,njump)
+  !else
+  !   boxmax = maxval(boxlxyz)
+  !   if (3.d0*rcut .gt. boxmax) then
+  !      call epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
+  !   else
+  !
+  !      ! Use linked cell list
+  !
+  !      call epsr_cell(r,v,vir,dvdr,na,boxlxyz,njump)
+  !   endif
+  !endif
   
   return
 end subroutine epsr_driver
@@ -32,7 +62,7 @@ end subroutine epsr_driver
 subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
   implicit none
   ! ----------------------------------------------------------------
-  ! Lennard Jones - General Version
+  ! EPSR - General Version
   ! ----------------------------------------------------------------
   integer na,i,j,njump
   real(8) r(3,na),dvdr(3,na),vir(3,3),boxlxyz(3),v
@@ -112,7 +142,7 @@ subroutine epsr_list(r,dvdr,v,vir,na,boxlxyz,list,point,njump)
   implicit none
   include 'globals.inc'
   ! ----------------------------------------------------------------
-  ! Lennard Jones - Neighbour list version
+  ! EPSR - Neighbour list version
   ! ----------------------------------------------------------------
   integer na,i,j,point(na+3),list(maxnab*na),ibeg,iend,inab,njump
   real(8) r(3,na),dvdr(3,na),vir(3,3),boxlxyz(3),v
@@ -211,7 +241,7 @@ end subroutine epsr_list
 subroutine epsr_cell(r,v,vir,dvdr,na,boxlxyz,njump)
   implicit none
   ! ------------------------------------------------------------------
-  ! Lennard Jones - Linked Cell Version
+  ! EPSR - Linked Cell Version
   ! ------------------------------------------------------------------
   integer na,ix,iy,iz,k,i,j,incx,incy,incz,njump
   integer jx,jy,jz,nn,ncellxyz(3),mcellxyz(3)
