@@ -4,14 +4,12 @@ subroutine epsr_run(r,boxlxyz)
   ! ------------------------------------------------------------------
   ! Calculate EPSR correction
   ! ------------------------------------------------------------------
-  integer na,nm,nb
-  real(8) r(3,na),boxlxyz(3)
-  common /internal/ na,nm,nb
+  real(8) r(3,ina),boxlxyz(3)
 
   !write(6,*) "Calculating EPSR correction"
 
   open(123456,file='EPSRrun/vmd_current.xyz',STATUS='replace')
-  call print_vmd_bead(r,nb,1,na,nm,boxlxyz,123456)
+  call print_vmd_bead(r,inb,1,ina,inm,boxlxyz,123456)
   close(123456)
 
   ! Save current box in subfolder
@@ -29,9 +27,12 @@ subroutine epsr_driver(r,dvdr,v,vir,list,point,na,boxlxyz,njump)
   integer na,point(na+3),list(maxnab*na),njump
   real(8) r(3,na),dvdr(3,na),vir(3,3),boxlxyz(3)
   real(8) v,oo_eps,oo_sig,oo_gam,rcut,boxmax
+  logical epsr
+  integer epsr_mts
   common /oo_param/ oo_eps,oo_sig,oo_gam,rcut
+  common /EPSR/ epsr, epsr_mts
 
-  if (1.mod.epsr_mts)
+  if (mod(istep,epsr_mts).eq.0) then
     call epsr_run(r,boxlxyz)
   endif
 

@@ -282,6 +282,7 @@ endif
   ! Evolve for ng steps, calculating properties
 
   do je = 1,ng
+    istep = je
 	
 #ifdef PARALLEL_BINDING
   	 call MPI_bcast(r,SIZE(r),MPI_real8,0,MPI_COMM_WORLD,ierr)

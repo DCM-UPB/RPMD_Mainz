@@ -5,6 +5,8 @@
       real(8) Kboltz,Kboltz_SI,toA,echarge,emass
       real(8) ToDebye,toK,hbar,toKjmol,tobar,tokgcm3,tofs
       integer imaxbin,nbondmax,maxnab
+      integer ina,inm,inb,istep
+      common /internal/ ina,inm,inb,istep
       parameter (Kboltz = 3.166829d-6)
       parameter (Kboltz_SI = 1.3806505d-23)
       parameter (toA = 0.5291772108d0)

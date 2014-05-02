@@ -472,6 +472,10 @@ if(myid.eq.0) then
         nctot = 0
         nbond = 0
     endif
+
+    ina = na
+    inb = nb
+    inm = nm
     ! Assign masses and charges :
     ! -----------------------------
 
