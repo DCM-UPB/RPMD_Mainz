@@ -152,6 +152,7 @@ subroutine md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
 
   write(6,*) '* Beginning Equilibration'
   do je = 1,ne
+     istep = je
 
      ! Evolve the system by dt
 

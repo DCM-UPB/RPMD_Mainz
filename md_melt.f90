@@ -141,6 +141,7 @@ subroutine md_melt(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
 
   write(6,*) '* Beginning Melting/Freezing'
   do je = 1,ne
+     istep = je
      if (je.gt.50000) then
         thresh = 0.0025d0
      endif
