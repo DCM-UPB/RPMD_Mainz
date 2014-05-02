@@ -32,21 +32,30 @@ subroutine epsr_run(r,boxlxyz)
 
   open(123456, file="vmd_current.EPSR.p01", action="read")
   read(123456,*) line
-  write(*,*) "LINE", line
   do i=1,1000
     read(123456,*,iostat=io_err) pos(i),potOO(i),frcOO(i),potOH(i),frcOH(i),potHH(i),frcHH(i)
     if(io_err.ne.0) then
       exit
     endif
   enddo
+  do i=2,1000
+    pos(i-1) = pos(i)
+    potOO(i-1) = potOO(i)
+    potOH(i-1) = potOH(i)
+    potHH(i-1) = potHH(i)
+    frcOO(i-1) = frcOO(i)
+    frcOH(i-1) = frcOH(i)
+    frcHH(i-1) = frcHH(i)
+  enddo
   close(123456)
   potOO(:) = potOO(:)/toKjmol
   potOH(:) = potOH(:)/toKjmol
   potHH(:) = potHH(:)/toKjmol
+  pos(:) = pos(:)/toA
 
   ! calculate force as it is not (yet) implemented in EPSR
   do i = 2,999
-    diff = (pos(i+1)-pos(i-1))/toA
+    diff = (pos(i+1)-pos(i-1))
     if (diff.gt.1.0d-5.or.diff.lt.-1.0d-5) then
       frcOO(i) = (potOO(i+1)-potOO(i-1))/diff
       frcOH(i) = (potOH(i+1)-potOH(i-1))/diff
@@ -94,7 +103,7 @@ subroutine epsr_driver(r,dvdr,v,vir,list,point,na,boxlxyz,njump)
   !else
   !   boxmax = maxval(boxlxyz)
   !   if (3.d0*rcut .gt. boxmax) then
-  !      call epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
+        call epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
   !   else
   !
   !      ! Use linked cell list
@@ -112,13 +121,17 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
   ! ----------------------------------------------------------------
   ! EPSR - General Version
   ! ----------------------------------------------------------------
-  integer na,i,j,njump
+  integer na,i,j,njump, bin
   real(8) r(3,na),dvdr(3,na),vir(3,3),boxlxyz(3),v
   real(8) onboxx,onboxy,onboxz,oo_eps,oo_sig,oo_gam,rcut
   real(8) sigsq,rcutsq,boxx,boxy,boxz,vij
   real(8) drsq,onr2,fij,dfx,dfy,dfz,sr2,sr6,wij
-  real(8) dx,dy,dz,vscale,dscale
+  real(8) dx,dy,dz,vscale,dscale,sq
   common /oo_param/ oo_eps,oo_sig,oo_gam,rcut
+  logical epsr
+  integer epsr_mts
+  real(8) pos(1000),potOO(1000),frcOO(1000),potOH(1000),frcOH(1000),potHH(1000),frcHH(1000)
+  common /EPSR/ epsr, epsr_mts, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
 
   sigsq = oo_sig*oo_sig
   rcutsq = rcut*rcut
@@ -133,6 +146,7 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
   vir(:,:) = 0.d0
   dvdr(:,:) = 0.d0
 
+  write(6,*) "lkjsf"
   do j = 1+njump,na,njump
      do i = 1,j-njump,njump
         dx = r(1,i)-r(1,j)
@@ -142,17 +156,20 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
         dy = dy - boxy*dble(nint(onboxy*dy))
         dz = dz - boxz*dble(nint(onboxz*dz))
         drsq = dx*dx + dy*dy + dz*dz
-        if (drsq .lt. rcutsq) then
-           onr2 = 1.d0/drsq
-           sr2 = sigsq * onr2
-           sr6 = sr2 * sr2 * sr2
-           vij = sr6 * (sr6-1.d0)
-           v = v + vij
-           wij = sr6 * (sr6-0.5d0)
-           fij = wij * onr2
-           dfx = fij * dx
-           dfy = fij * dy
-           dfz = fij * dz
+        sq = sqrt(drsq)
+        bin = sq/(pos(2)-pos(1))
+        !if (sq .lt. 7.7d0/0.5d0) then
+        !    write(6,*) i,j, bin, sq, pos(2)-pos(1)
+        !    write(6,*) pos(770)
+        !endif
+        if (bin .lt. 1000) then
+        !if (drsq .lt. rcutsq) then
+           v = v + potOO(bin)
+           dfx = frcOO(bin) * dx*dx/drsq
+           dfy = frcOO(bin) * dy*dy/drsq
+           dfz = frcOO(bin) * dz*dz/drsq
+           write(6,*) bin, frcOO(bin), dfx,dfy,dfz
+           write(6,*) dx, dy, dz, sq
            dvdr(1,i) = dvdr(1,i) - dfx
            dvdr(2,i) = dvdr(2,i) - dfy
            dvdr(3,i) = dvdr(3,i) - dfz
@@ -171,17 +188,18 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
         endif
      enddo
   enddo
+  stop
 
-  vscale = 4.d0*oo_eps
-  dscale = 48.d0*oo_eps
+  !vscale = 1.0d0 !4.d0*oo_eps
+  !dscale = 1.0d0 !48.d0*oo_eps
 
-  v = vscale * v
-  vir(:,:) = dscale * vir(:,:)
-  do i = 1,na,njump
-     dvdr(1,i) = dscale*dvdr(1,i)
-     dvdr(2,i) = dscale*dvdr(2,i)
-     dvdr(3,i) = dscale*dvdr(3,i)
-  enddo
+  !v = vscale * v
+  !vir(:,:) = dscale * vir(:,:)
+  !do i = 1,na,njump
+  !   dvdr(1,i) = dscale*dvdr(1,i)
+  !   dvdr(2,i) = dscale*dvdr(2,i)
+  !   dvdr(3,i) = dscale*dvdr(3,i)
+  !enddo
 
   return
 end subroutine epsr_basic
@@ -201,6 +219,10 @@ subroutine epsr_list(r,dvdr,v,vir,na,boxlxyz,list,point,njump)
   real(8) rxj,ryj,rzj,dvdxj,dvdyj,dvdzj
   real(8) onboxx,onboxy,onboxz,boxx,boxy,boxz
   common /oo_param/ oo_eps,oo_sig,oo_gam,rcut
+  logical epsr
+  integer epsr_mts
+  real(8) pos(1000),potOO(1000),frcOO(1000),potOH(1000),frcOH(1000),potHH(1000),frcHH(1000)
+  common /EPSR/ epsr, epsr_mts, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
 
   ! clear arrays
 
@@ -302,6 +324,10 @@ subroutine epsr_cell(r,v,vir,dvdr,na,boxlxyz,njump)
   integer, allocatable :: link(:,:,:),ink(:,:)
   integer, allocatable :: mapx(:,:),mapy(:,:),mapz(:,:)
   common /oo_param/ oo_eps,oo_sig,oo_gam,rcut
+  logical epsr
+  integer epsr_mts
+  real(8) pos(1000),potOO(1000),frcOO(1000),potOH(1000),frcOH(1000),potHH(1000),frcHH(1000)
+  common /EPSR/ epsr, epsr_mts, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
 
   ! generate linked cell list
 
