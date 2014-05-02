@@ -17,6 +17,8 @@ subroutine epsr_run(r,boxlxyz)
   ! Run epsr
   call chdir("EPSRrun")
   call getcwd(cwd)
+  write(cmd, '(A,A,A)') 'readxyz ', trim(cwd), '/ readxyz vmd_current.xyz 0.65'
+  call system(cmd)
   write(cmd, '(A,A,A)') 'epsr ', trim(cwd), '/ epsr vmd_current.EPSR.inp'
   call system(cmd)
 
