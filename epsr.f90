@@ -135,7 +135,7 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
   real(8) dx,dy,dz,vscale,dscale,sq
   common /oo_param/ oo_eps,oo_sig,oo_gam,rcut
   logical epsr
-  integer epsr_mts
+  integer epsr_mts, which_H
   real(8) pos(1000),potOO(1000),frcOO(1000),potOH(1000),frcOH(1000),potHH(1000),frcHH(1000)
   common /EPSR/ epsr, epsr_mts, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
 
@@ -155,6 +155,7 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
   write(6,*) "lkjsf"
   do j = 1+njump,na,njump
      do i = 1,j-njump,njump
+        ! O--O
         dx = r(1,i)-r(1,j)
         dy = r(2,i)-r(2,j)
         dz = r(3,i)-r(3,j)
@@ -188,6 +189,77 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
            vir(3,1) = vir(3,1) - dz * dfx
            vir(3,2) = vir(3,2) - dz * dfy
         endif
+
+        ! O--H
+        do which_H=1,2
+          dx = r(1,i)-r(1,j+which_H)
+          dy = r(2,i)-r(2,j+which_H)
+          dz = r(3,i)-r(3,j+which_H)
+          dx = dx - boxx*dble(nint(onboxx*dx))
+          dy = dy - boxy*dble(nint(onboxy*dy))
+          dz = dz - boxz*dble(nint(onboxz*dz))
+          drsq = dx*dx + dy*dy + dz*dz
+          sq = sqrt(drsq)
+          bin = sq/(pos(2)-pos(1))
+          if (bin .lt. 1000) then
+          !if (drsq .lt. rcutsq) then
+             v = v + potOH(bin)
+             dfx = frcOH(bin) * dx*dx/drsq
+             dfy = frcOH(bin) * dy*dy/drsq
+             dfz = frcOH(bin) * dz*dz/drsq
+             !write(6,*) bin, frcOO(bin), dfx,dfy,dfz
+             !write(6,*) dx, dy, dz, sq
+             dvdr(1,i) = dvdr(1,i) - dfx
+             dvdr(2,i) = dvdr(2,i) - dfy
+             dvdr(3,i) = dvdr(3,i) - dfz
+             dvdr(1,j+which_H) = dvdr(1,j+which_H) + dfx
+             dvdr(2,j+which_H) = dvdr(2,j+which_H) + dfy
+             dvdr(3,j+which_H) = dvdr(3,j+which_H) + dfz
+             vir(1,1) = vir(1,1) - dx * dfx
+             vir(2,2) = vir(2,2) - dy * dfy
+             vir(3,3) = vir(3,3) - dz * dfz
+             vir(1,2) = vir(1,2) - dx * dfy
+             vir(1,3) = vir(1,3) - dx * dfz
+             vir(2,1) = vir(2,1) - dy * dfx
+             vir(2,3) = vir(2,3) - dy * dfz
+             vir(3,1) = vir(3,1) - dz * dfx
+             vir(3,2) = vir(3,2) - dz * dfy
+          endif
+
+          dx = r(1,i+which_H)-r(1,j)
+          dy = r(2,i+which_H)-r(2,j)
+          dz = r(3,i+which_H)-r(3,j)
+          dx = dx - boxx*dble(nint(onboxx*dx))
+          dy = dy - boxy*dble(nint(onboxy*dy))
+          dz = dz - boxz*dble(nint(onboxz*dz))
+          drsq = dx*dx + dy*dy + dz*dz
+          sq = sqrt(drsq)
+          bin = sq/(pos(2)-pos(1))
+          if (bin .lt. 1000) then
+          !if (drsq .lt. rcutsq) then
+             v = v + potOH(bin)
+             dfx = frcOH(bin) * dx*dx/drsq
+             dfy = frcOH(bin) * dy*dy/drsq
+             dfz = frcOH(bin) * dz*dz/drsq
+             !write(6,*) bin, frcOH(bin), dfx,dfy,dfz
+             !write(6,*) dx, dy, dz, sq
+             dvdr(1,i+which_H) = dvdr(1,i+which_H) - dfx
+             dvdr(2,i+which_H) = dvdr(2,i+which_H) - dfy
+             dvdr(3,i+which_H) = dvdr(3,i+which_H) - dfz
+             dvdr(1,j) = dvdr(1,j) + dfx
+             dvdr(2,j) = dvdr(2,j) + dfy
+             dvdr(3,j) = dvdr(3,j) + dfz
+             vir(1,1) = vir(1,1) - dx * dfx
+             vir(2,2) = vir(2,2) - dy * dfy
+             vir(3,3) = vir(3,3) - dz * dfz
+             vir(1,2) = vir(1,2) - dx * dfy
+             vir(1,3) = vir(1,3) - dx * dfz
+             vir(2,1) = vir(2,1) - dy * dfx
+             vir(2,3) = vir(2,3) - dy * dfz
+             vir(3,1) = vir(3,1) - dz * dfx
+             vir(3,2) = vir(3,2) - dz * dfy
+          endif
+        enddo ! O--H
      enddo
   enddo
   stop
