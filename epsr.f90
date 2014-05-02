@@ -5,7 +5,13 @@ subroutine epsr_run(r,boxlxyz)
   ! Calculate EPSR correction
   ! ------------------------------------------------------------------
   real(8) r(3,ina),boxlxyz(3)
-  character(len=255) :: cwd,cmd
+  real(8) diff
+  character(len=255) :: cwd,cmd,line
+  integer i, io_err
+  integer epsr_mts
+  logical epsr
+  real(8) pos(1000),potOO(1000),frcOO(1000),potOH(1000),frcOH(1000),potHH(1000),frcHH(1000)
+  common /EPSR/ epsr, epsr_mts, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
 
   !write(6,*) "Calculating EPSR correction"
 
@@ -23,6 +29,37 @@ subroutine epsr_run(r,boxlxyz)
   call system(cmd)
 
   ! Get results
+
+  open(123456, file="vmd_current.EPSR.p01", action="read")
+  read(123456,*) line
+  write(*,*) "LINE", line
+  do i=1,1000
+    read(123456,*,iostat=io_err) pos(i),potOO(i),frcOO(i),potOH(i),frcOH(i),potHH(i),frcHH(i)
+    if(io_err.ne.0) then
+      exit
+    endif
+  enddo
+  close(123456)
+  potOO(:) = potOO(:)/toKjmol
+  potOH(:) = potOH(:)/toKjmol
+  potHH(:) = potHH(:)/toKjmol
+
+  ! calculate force as it is not (yet) implemented in EPSR
+  do i = 2,999
+    diff = (pos(i+1)-pos(i-1))/toA
+    if (diff.gt.1.0d-5.or.diff.lt.-1.0d-5) then
+      frcOO(i) = (potOO(i+1)-potOO(i-1))/diff
+      frcOH(i) = (potOH(i+1)-potOH(i-1))/diff
+      frcHH(i) = (potHH(i+1)-potHH(i-1))/diff
+    endif
+  enddo
+
+  open(123456, file="test.dat", action="write")
+  do i=1,1000
+    write(123456,*) pos(i),potOO(i),frcOO(i),potOH(i),frcOH(i),potHH(i),frcHH(i)
+  enddo
+  close(123456)
+
   call chdir("..")
 
 end subroutine epsr_run
@@ -38,8 +75,9 @@ subroutine epsr_driver(r,dvdr,v,vir,list,point,na,boxlxyz,njump)
   real(8) v,oo_eps,oo_sig,oo_gam,rcut,boxmax
   logical epsr
   integer epsr_mts
+  real(8) pos(1000),potOO(1000),frcOO(1000),potOH(1000),frcOH(1000),potHH(1000),frcHH(1000)
+  common /EPSR/ epsr, epsr_mts, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
   common /oo_param/ oo_eps,oo_sig,oo_gam,rcut
-  common /EPSR/ epsr, epsr_mts
 
   if (mod(istep,epsr_mts).eq.0) then
     call epsr_run(r,boxlxyz)
