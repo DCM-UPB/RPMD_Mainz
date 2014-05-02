@@ -29,6 +29,12 @@ subroutine epsr_run(r,boxlxyz)
   call system(cmd)
 
   ! Get results
+  potOO(:) = 0.0d0
+  potOH(:) = 0.0d0
+  potHH(:) = 0.0d0
+  frcOO(:) = 0.0d0
+  frcOH(:) = 0.0d0
+  frcHH(:) = 0.0d0
 
   open(123456, file="vmd_current.EPSR.p01", action="read")
   read(123456,*) line
@@ -158,10 +164,6 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
         drsq = dx*dx + dy*dy + dz*dz
         sq = sqrt(drsq)
         bin = sq/(pos(2)-pos(1))
-        !if (sq .lt. 7.7d0/0.5d0) then
-        !    write(6,*) i,j, bin, sq, pos(2)-pos(1)
-        !    write(6,*) pos(770)
-        !endif
         if (bin .lt. 1000) then
         !if (drsq .lt. rcutsq) then
            v = v + potOO(bin)
