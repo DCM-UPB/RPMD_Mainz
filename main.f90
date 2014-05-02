@@ -61,6 +61,7 @@ program qmd
     common /inp/ npre_eq
     common /thinp/ ttaufs
     common /RPMDDFT/ rpmddft,nbdf3,rctdk
+    common /EPSR/ epsr
   
     vacfac = 1
     ntherm = 0
@@ -74,6 +75,7 @@ program qmd
     nbdf3 = 0
     rctdk = 0
     itst(3) = 0 ! itst 3 argument is for RMS calculation
+    epsr = .false.
 
 		! Using CP2K parallel?
 #ifdef PARALLEL_BINDING
@@ -846,7 +848,7 @@ end program
     integer nc_ice(3),nc_wat(3),nm_ice,nm_wat,nctot,nbond,vacfac
     real(8) temp,rho,dtfs,ecut,test,beta,dt,dtps,boxmin,pres
     real(8) teqm,tsim,trdf,gaussian,wmass,rcut,om,ttaufs
-    real(8) taufs,v,vew,voo,vlj,vint,pi,vir(3,3),cell(3,3)
+    real(8) taufs,v,vew,voo,vlj,vint,pi,vir(3,3),send_vir(3,3),cell(3,3)
     real(8) qo,qh,alpha,oo_sig,oo_eps,oo_gam,theta,reoh,thetad
     real(8) apot,bpot,alp,alpb,wm,wh,omass,hmass,sig,boxlxyz(3),iboxlxyz(3,3),vdum
     real(8) box_ice(3),box_wat(3),rcut_old

@@ -270,6 +270,8 @@ subroutine full_forces(r,na,nb,v,vew,voo,vint,vir,z,boxlxyz, &
   real(8) vir_itr(3,3),vir_ewc(3,3)
   real(8) v,vew,voo,vint,sig,ve
   real(8), allocatable :: dvdre(:,:,:),dvdrl(:,:,:)
+  logical epsr
+  common /EPSR/ epsr
   common /beaddiabatic/ nbdf1,nbdf2
   common /correct/ sig
   common /RPMDDFT/ rpmddft,nbdf3,rctdk
@@ -408,7 +410,9 @@ endif
 
   deallocate(dvdre,dvdrl)
 
+  if(epsr.eqv..true.) then
+    ! Calculate epsr contribution and fix forces/virial/energy
+  endif
+
   return
 end subroutine full_forces
-
-
