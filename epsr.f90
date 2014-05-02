@@ -5,16 +5,23 @@ subroutine epsr_run(r,boxlxyz)
   ! Calculate EPSR correction
   ! ------------------------------------------------------------------
   real(8) r(3,ina),boxlxyz(3)
+  character(len=255) :: cwd,cmd
 
   !write(6,*) "Calculating EPSR correction"
 
+  ! Save current box in subfolder
   open(123456,file='EPSRrun/vmd_current.xyz',STATUS='replace')
   call print_vmd_bead(r,inb,1,ina,inm,boxlxyz,123456)
   close(123456)
 
-  ! Save current box in subfolder
   ! Run epsr
+  call chdir("EPSRrun")
+  call getcwd(cwd)
+  write(cmd, '(A,A,A)') 'epsr ', trim(cwd), '/ epsr vmd_current.EPSR.inp'
+  call system(cmd)
+
   ! Get results
+  call chdir("..")
 
 end subroutine epsr_run
 
