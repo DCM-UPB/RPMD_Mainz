@@ -781,6 +781,9 @@ endif
         open (unit=12,file='vmd_end.xyz')
         call print_vmd_full(r,nb,na,nm,boxlxyz,12)
         close (unit=12)
+        open(10, file = 'end.xyz')
+        call print_structure(r,boxlxyz,nm,na,nb,10)
+        close (unit=10)
     end if
 
 #ifdef PARALLEL_BINDING
