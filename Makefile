@@ -59,6 +59,7 @@ SRC= \
 	trajavmod.f90 \
 	io.f90 \
 	ljones.f90 \
+	epsr.f90 \
 	buckingham.f90 \
 	ewald_cubic.f90 \
 	ewald_noncubic.f90 \
