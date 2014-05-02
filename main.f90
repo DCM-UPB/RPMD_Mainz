@@ -35,12 +35,13 @@ program qmd
     character(len=4) type
     character(len=3) lattice,ens,therm_backup
     logical iamcub,iamrigid
+    logical epsr
     external gaussian
 
     namelist/input/ens,temp,pres,rho,lattice,vacfac,iamcub,dtfs, &
     ecut,nt,ne,npre_eq,ntherm,nb,m,ng,print,reftraj,iskip,pt,pb, &
     ncellxyz,irun,itcf,itst,rcut, &
-    type,therm,ttaufs,baro,taufs,mts,om,nbdf1,nbdf2,sig,rpmddft,CP2K_path,nbdf3,rctdk
+    type,therm,ttaufs,baro,taufs,mts,om,nbdf1,nbdf2,sig,rpmddft,CP2K_path,nbdf3,rctdk,epsr
     namelist/param/ wmass,omass,hmass,qo,alpha,oo_sig,oo_eps,oo_gam, &
     thetad,reoh,apot,bpot,alp,alpb,wm,wh
 
@@ -1038,6 +1039,8 @@ end program
          !CALL force_env_get(force_env, potential_energy=pot, error=error)
          !CALL force_env_get(force_env,cell=cpcell, virial=virial, error=error)
          !vir = transpose(virial%pv_virial)
+         send_vir = transpose(vir)
+         send_vir = -1.0*send_vir
          
          !CALL external_control(should_stop,"DPI",globenv=globenv,error=error)
          IF (should_stop) EXIT
@@ -1050,7 +1053,7 @@ end program
             call writebuffer(socket,v,8)
             call writebuffer(socket,nat,4)            
             call writebuffer(socket,combuf,3*nat*8)
-            call writebuffer(socket,vir,9*8)
+            call writebuffer(socket,send_vir,9*8)
 
             ! i-pi can also receive an arbitrary string, that will be printed out to the "extra" 
             ! trajectory file. this is useful if you want to return additional information, e.g.
