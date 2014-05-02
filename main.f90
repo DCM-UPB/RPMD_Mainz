@@ -77,7 +77,7 @@ program qmd
     rctdk = 0
     itst(3) = 0 ! itst 3 argument is for RMS calculation
     epsr = .false.
-    epsr_mts
+    epsr_mts = 1
 
 		! Using CP2K parallel?
 #ifdef PARALLEL_BINDING
