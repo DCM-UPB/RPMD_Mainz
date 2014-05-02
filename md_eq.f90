@@ -78,6 +78,7 @@ subroutine md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
      write(6,'(a,f6.2,a)') ' * NVT pre-equilibration for: ', &
                                dtqt, ' ps'
      do jq = 1,nq
+        istep=jq
 
         ! Evolve system
 
