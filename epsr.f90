@@ -63,9 +63,9 @@ subroutine epsr_run(r,boxlxyz)
   do i = 2,999
     diff = (pos(i+1)-pos(i-1))
     if (diff.gt.1.0d-5.or.diff.lt.-1.0d-5) then
-      frcOO(i) = (potOO(i+1)-potOO(i-1))/diff
-      frcOH(i) = (potOH(i+1)-potOH(i-1))/diff
-      frcHH(i) = (potHH(i+1)-potHH(i-1))/diff
+      frcOO(i) = -(potOO(i+1)-potOO(i-1))/diff
+      frcOH(i) = -(potOH(i+1)-potOH(i-1))/diff
+      frcHH(i) = -(potHH(i+1)-potHH(i-1))/diff
     endif
   enddo
 
