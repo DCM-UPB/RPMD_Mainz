@@ -8,10 +8,10 @@ subroutine epsr_run(r,boxlxyz)
   real(8) diff
   character(len=255) :: cwd,cmd,line
   integer i, io_err
-  integer epsr_mts
+  integer epsr_update
   logical epsr
   real(8) pos(1000),potOO(1000),frcOO(1000),potOH(1000),frcOH(1000),potHH(1000),frcHH(1000)
-  common /EPSR/ epsr, epsr_mts, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
+  common /EPSR/ epsr, epsr_update, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
 
   !write(6,*) "Calculating EPSR correction"
 
@@ -89,12 +89,12 @@ subroutine epsr_driver(r,dvdr,v,vir,list,point,na,boxlxyz,njump)
   real(8) r(3,na),dvdr(3,na),vir(3,3),boxlxyz(3)
   real(8) v,oo_eps,oo_sig,oo_gam,rcut,boxmax
   logical epsr
-  integer epsr_mts
+  integer epsr_update
   real(8) pos(1000),potOO(1000),frcOO(1000),potOH(1000),frcOH(1000),potHH(1000),frcHH(1000)
-  common /EPSR/ epsr, epsr_mts, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
+  common /EPSR/ epsr, epsr_update, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
   common /oo_param/ oo_eps,oo_sig,oo_gam,rcut
 
-  if (mod(istep,epsr_mts).eq.0) then
+  if (mod(istep,epsr_update).eq.0) then
     call epsr_run(r,boxlxyz)
   endif
 
@@ -135,9 +135,9 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
   real(8) dx,dy,dz,vscale,dscale,sq
   common /oo_param/ oo_eps,oo_sig,oo_gam,rcut
   logical epsr
-  integer epsr_mts, which_H
+  integer epsr_update, which_H
   real(8) pos(1000),potOO(1000),frcOO(1000),potOH(1000),frcOH(1000),potHH(1000),frcHH(1000)
-  common /EPSR/ epsr, epsr_mts, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
+  common /EPSR/ epsr, epsr_update, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
 
   sigsq = oo_sig*oo_sig
   rcutsq = rcut*rcut
@@ -432,9 +432,9 @@ subroutine epsr_list(r,dvdr,v,vir,na,boxlxyz,list,point,njump)
   real(8) onboxx,onboxy,onboxz,boxx,boxy,boxz
   common /oo_param/ oo_eps,oo_sig,oo_gam,rcut
   logical epsr
-  integer epsr_mts
+  integer epsr_update
   real(8) pos(1000),potOO(1000),frcOO(1000),potOH(1000),frcOH(1000),potHH(1000),frcHH(1000)
-  common /EPSR/ epsr, epsr_mts, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
+  common /EPSR/ epsr, epsr_update, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
 
   ! clear arrays
 
@@ -537,9 +537,9 @@ subroutine epsr_cell(r,v,vir,dvdr,na,boxlxyz,njump)
   integer, allocatable :: mapx(:,:),mapy(:,:),mapz(:,:)
   common /oo_param/ oo_eps,oo_sig,oo_gam,rcut
   logical epsr
-  integer epsr_mts
+  integer epsr_update
   real(8) pos(1000),potOO(1000),frcOO(1000),potOH(1000),frcOH(1000),potHH(1000),frcHH(1000)
-  common /EPSR/ epsr, epsr_mts, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
+  common /EPSR/ epsr, epsr_update, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
 
   ! generate linked cell list
 

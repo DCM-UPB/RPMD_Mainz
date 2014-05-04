@@ -15,7 +15,7 @@ program qmd
     integer nbr,mts,nlat,itcf(3),itst(3),ncellxyz(3),print(3),ntherm,iskip!,sizeMPI(9)
 
     ! used for reftrj and RPMD-DFT
-    integer reftraj,rpmddft,ierr,rpmddfthelp,myid,numid,epsr_mts
+    integer reftraj,rpmddft,ierr,rpmddfthelp,myid,numid,epsr_update
     character(len=35) CP2K_path
     ! r_traj(xyz,molecules,nb,reftraj)
     real(8), allocatable :: r_traj(:,:,:,:),boxlxyz_traj(:,:)
@@ -42,7 +42,7 @@ program qmd
     ecut,nt,ne,npre_eq,ntherm,nb,m,ng,print,reftraj,iskip,pt,pb, &
     ncellxyz,irun,itcf,itst,rcut, &
     type,therm,ttaufs,baro,taufs,mts,om,nbdf1,nbdf2,sig,rpmddft, &
-    CP2K_path,nbdf3,rctdk,epsr,epsr_mts
+    CP2K_path,nbdf3,rctdk,epsr,epsr_update
     namelist/param/ wmass,omass,hmass,qo,alpha,oo_sig,oo_eps,oo_gam, &
     thetad,reoh,apot,bpot,alp,alpb,wm,wh
 
@@ -62,7 +62,7 @@ program qmd
     common /inp/ npre_eq
     common /thinp/ ttaufs
     common /RPMDDFT/ rpmddft,nbdf3,rctdk
-    common /EPSR/ epsr, epsr_mts
+    common /EPSR/ epsr, epsr_update
   
     vacfac = 1
     ntherm = 0
@@ -77,7 +77,7 @@ program qmd
     rctdk = 0
     itst(3) = 0 ! itst 3 argument is for RMS calculation
     epsr = .false.
-    epsr_mts = 1
+    epsr_update = 1
 
 		! Using CP2K parallel?
 #ifdef PARALLEL_BINDING
