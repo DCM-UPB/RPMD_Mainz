@@ -23,6 +23,7 @@ program qmd
     common /reftraj/ reftraj,line
   
     integer nc_ice(3),nc_wat(3),nm_ice,nm_wat,nctot,nbond,vacfac
+    integer natoms ! Used in reftraj mode for obtaining read in atoms for consitency check
     real(8) temp,rho,dtfs,ecut,test,beta,dt,dtps,boxmin,pres
     real(8) teqm,tsim,trdf,gaussian,wmass,rcut,om,ttaufs
     real(8) taufs,v,vew,vlj,vint,pi,vir(3,3),cell(3,3)
@@ -342,7 +343,17 @@ if(myid.eq.0) then
 
             do k = 1, nb
                 do i = 1, reftraj
-                    read(61,*) line
+                    read(61,*) natoms
+                    write (6,*) "ATOMS", natoms
+                    if (natoms.gt.na) then
+                        write(6,*) "natoms from reftraj file too big! You must set a bigger cell in the input file !!! Aborting..."
+                        stop
+                    endif
+                    if (natoms.lt.na) then
+                        write(6,*) "WARNING: overwriting na=", na, "in reftraj mode with", natoms, "!"
+                        na = natoms
+                        nm = na/3
+                    endif
 
                     ! setup_ewald is not needed, ecut, wrcut, walpha, rkmax and kmax
                     !   are all independent of boxlxyz, so just set that
