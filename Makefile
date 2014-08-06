@@ -1,4 +1,4 @@
-MF=	Makefile
+MF=	Makefile sockets.c globals.inc 2DPMF.inc
 FC=	gfortran -cpp -DCP2K_BINDING #-DPARALLEL_BINDING
 #LIBS = -lfftw3
 LIBS = -L/home/cp2k/trunk/cp2k/lib/Linux-x86-64-gfortran/sopt -lcp2k_lib -lcp2k_base_lib -lcp2k_fft_lib -lcp2k_ma_lib -lcp2k_dbcsr_lib \
@@ -94,6 +94,9 @@ $(OBJ):	$(MF)
 
 sockets.o:	sockets.c
 	gcc -O2 -c sockets.c -o sockets.o
+
+zip:
+	zip $(EXE).zip $(MF) $(SRC)
 
 tar:
 	tar cvf $(EXE).tar $(MF) $(SRC)
