@@ -29,6 +29,7 @@ program qmd
     real(8) qo,qh,alpha,oo_sig,oo_eps,oo_gam,theta,reoh,thetad
     real(8) apot,bpot,alp,alpb,wm,wh,omass,hmass,sig,boxlxyz(3),vdum
     real(8) box_ice(3),box_wat(3),rcut_old
+    real(8) vave
     real(8), allocatable :: mass(:),z(:),r(:,:,:)
     real(8), allocatable :: p(:,:,:),dvdr(:,:,:),dvdr2(:,:,:)
     character(len=25) filename
@@ -738,7 +739,7 @@ endif
 #endif
 
 						call md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta,&
-            dt,mass,irun,itst,pt,pb,print)
+            dt,mass,irun,itst,pt,pb,print,vave)
         endif
     else
         if (reftraj.lt.0) then
@@ -750,7 +751,8 @@ endif
             boxlxyz(:) = boxlxyz_traj(:,i)
             r(:,:,:) = r_traj(:,:,:,i)
             call md_static(1,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta,&
-            dt,mass,irun,itst,pt,pb,print)
+            dt,mass,irun,itst,pt,pb,print,vave)
+            write (6,*) "potential of snapshot", i, "is", vave*toKjmol, "kJ/mol"
         enddo
         endif
     endif

@@ -71,7 +71,7 @@ subroutine md_static_prepare_traj(nb,pt,pb,print)
 end subroutine md_static_prepare_traj
 
 subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
-                     dt,mass,irun,itst,pt,pb,print)
+                     dt,mass,irun,itst,pt,pb,print,vave)
   use thermostat
   use barostat
   implicit none
