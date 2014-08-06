@@ -1,6 +1,8 @@
 subroutine dynamics(nt,m,p,r,dvdr,dvdr2,na,nm,nb,boxlxyz,z,beta, &
-dt,mass,irun,itcf,pt,pb,print,intcstep,iskip,ntherm,vacfac)
+dt,mass,irun,itcf,itst,pt,pb,print,iskip,ntherm,vacfac)
     use thermostat
+    use intmod
+    use avmod
     implicit none
   include 'globals.inc'
 #ifdef PARALLEL_BINDING
@@ -9,11 +11,11 @@ dt,mass,irun,itcf,pt,pb,print,intcstep,iskip,ntherm,vacfac)
     ! ------------------------------------------------------------------
     ! Routine to calculate dynamical properties
     ! ------------------------------------------------------------------
-    integer nt,m,na,nm,nb,irun,itcf(3),pt,pb
-    integer k,i,ib,print(3),intcstep,iskip,ntherm,vacfac,ierr,myid
+    integer nt,m,na,nm,nb,irun,itcf(3),itst(3),pt,pb
+    integer k,i,ib,print(3),iskip,ntherm,vacfac,ierr,myid,eefile
     real(8) r(3,na,nb),p(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb)
     real(8) boxlxyz(3),z(na),mass(na),vir(3,3),vir_lf(3,3)
-    real(8) beta,dt,dtfs,dtps,cscale,wt,tv,pe,dqq,dqx,dqy,dqz,ran2,thresh
+    real(8) beta,dt,dtfs,dtps,cscale,wt,tv,pe,dqq,dqx,dqy,dqz,ran2,thresh,ttaufs
     real(8) v,v1,v2,v3,dtv,dqqt,davx,davy,davz,dpe,sum
     real(8), allocatable :: ct(:),dct(:)
     real(8), allocatable :: dmo1(:,:),dmot1(:,:)
@@ -21,8 +23,11 @@ dt,mass,irun,itcf,pt,pb,print,intcstep,iskip,ntherm,vacfac)
     real(8), allocatable :: irmtr(:,:,:),irmtv(:,:,:),idmtr(:,:,:),idmtv(:,:,:)
     real(8), allocatable :: dcvinter(:),dcvintra(:),dke(:)
     real(8), allocatable :: cvinter(:), cvintra(:),cke(:)
+    integer(8), allocatable :: ihhh(:),ihoo(:),ihoh(:)
     character(128) file_name
     external ran2
+    common /thinp/ ttaufs
+
 
     ! Define some local variable values
 #ifdef PARALLEL_BINDING
@@ -33,20 +38,26 @@ dt,mass,irun,itcf,pt,pb,print,intcstep,iskip,ntherm,vacfac)
     dtps = dtfs*1.d-3
     cscale = (toA/(dtps/dt))**2
     wt = 1.d0 / dble(m)
-    thresh = 1.d0/dsqrt(dble(ntherm))   !for AND thermostat between trajectories
-    thresh = max(thresh,0.01d0)         !same definition as in md_eq.f90
+
+    if (ttaufs.gt.0.d0 .and. (therm.eq.'AND' .or. therm.eq.'PRA')) then
+        thresh = dtfs/ttaufs
+    else
+        thresh = 1.d0/dsqrt(dble(ntherm))   !for AND thermostat between trajectories
+        thresh = max(thresh,0.01d0)         !same definition as in md_eq.f90
+    end if
 
     ! Allocate relevant arrays
 
     allocate (ct(0:nt),dct(0:nt))
     allocate (rmtr(0:nt),rmtv(0:nt))
     allocate (dmtr(0:nt),dmtv(0:nt))
-    allocate (irmtr(0:nt,5,2),irmtv(0:nt,5,2))
-    allocate (idmtr(0:nt,5,2),idmtv(0:nt,5,2))
+    allocate (irmtr(0:nt,4,2),irmtv(0:nt,4,2))
+    allocate (idmtr(0:nt,4,2),idmtv(0:nt,4,2))
     allocate (dmo1(6,0:nt),dmot1(6,0:nt))
     allocate (cvinter(0:2*nt), dcvinter(0:2*nt))
     allocate (cvintra(0:2*nt), dcvintra(0:2*nt))
     allocate (cke(0:2*nt), dke(0:2*nt))
+    allocate (ihhh(imaxbin),ihoo(imaxbin),ihoh(imaxbin))
 
     tv = 0.d0
     pe = 0.d0
@@ -63,12 +74,22 @@ dt,mass,irun,itcf,pt,pb,print,intcstep,iskip,ntherm,vacfac)
     cvinter(:) = 0.d0
     cvintra(:) = 0.d0
     cke(:) = 0.d0
+
+    ihoo(:) = 0
+    ihoh(:) = 0
+    ihhh(:) = 0
+
 #ifdef PARALLEL_BINDING
 if(myid.eq.0) then
 #endif
     if (itcf(1).eq.1) then
         open(71,file='diff.out')
     endif
+
+    if (itst(2).eq.1) then
+        eefile=8765
+        open(eefile,file='trajee.out')
+    end if
 
     if (pt.gt.0) then
         if (print(1).eq.1) then
@@ -104,10 +125,21 @@ if(myid.eq.0) then
 #ifdef PARALLEL_BINDING
 endif
 #endif
+
+    if (vacfac.ne.1) then
+        call intinit(na,toA*boxlxyz,dtfs,(2*nt)/iskip+1)
+        call avinit(m)
+    end if
+
     do k = 1,m !Anzahl paralleler Trajektorien für Dynamik
 #ifdef PARALLEL_BINDING
 			if(myid.eq.0) then
 #endif
+
+			    write(eefile,*)
+			    write(eefile,*)'Trajectory',k
+			    write(eefile,*)'----------------------------'
+
         ! Find a new configuration
      
         if (therm.eq.'AND') then
@@ -130,31 +162,31 @@ endif
 write(*,*) "myid in evolve:", myid
 #endif
 
-        if (k.gt.1) then        !thermalize for ntherm steps if AND or PRA thermostat
+        !thermalize for ntherm steps if AND or PRA thermostat
+        if ((therm.eq.'AND').or.(therm.eq.'PRA')) then
             do i = 1,ntherm
                 call evolve(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
                 boxlxyz,z,beta,vir,vir_lf,irun,0)
 #ifdef PARALLEL_BINDING
 								if(myid.eq.0) then
 #endif			
-                if ((therm.eq.'AND').or.(therm.eq.'PRA')) then
-                    if (ran2(irun,0.d0,1.d0) .lt. thresh) then
-                        call sample(p,na,nb,mass,beta,irun,dt)
-                    endif
-                endif
+                !if ((therm.eq.'AND').or.(therm.eq.'PRA')) then
+                !    if (ran2(irun,0.d0,1.d0) .lt. thresh) then
+                !        call sample(p,na,nb,mass,beta,irun,dt)
+                !    endif
+                !endif
 #ifdef PARALLEL_BINDING
 								endif
 		 						call MPI_bcast(p,SIZE(p),MPI_real8,0,MPI_COMM_WORLD,ierr)
 #endif			
             enddo
         end if
-     
 
         ! Run an NVT (NVE if therm == AND) trajectory of 2*nt time steps
         call trajectory(p,r,v,dvdr,dvdr2,dct,dtv,dmtr,dmtv,idmtr,idmtv, &
-        dqqt,davx,davy,davz,dmot1,nt,na,nb,boxlxyz,z, &
-        beta,dt,mass,itcf,nm,dpe,irun,dcvinter,dcvintra,&
-        dke,pt,pb,print,intcstep,iskip,vacfac)
+        dqqt,davx,davy,davz,dmot1,ihoo,ihoh,ihhh,nt,na,nb,boxlxyz,z, &
+        beta,dt,mass,itcf,itst,nm,dpe,irun,dcvinter,dcvintra,&
+        dke,pt,pb,print,iskip,vacfac,eefile)
 #ifdef PARALLEL_BINDING
 				if(myid.eq.0) then
 #endif			
@@ -179,6 +211,16 @@ write(*,*) "myid in evolve:", myid
         cvintra(:) = cvintra(:) + wt*dcvintra(:)
         cke(:) = cke(:) + wt*dke(:)
 
+        if (vacfac.ne.1) then
+            write(6,*) 'Mean/Corr calculation and module reset...'
+            call meancalc()
+            write(6,*) 'Calculation done.'
+            call avupdate()
+            write(6,*) 'Average arrays updated.'
+            call intreset()
+            write(6,*) 'Module resetted.'
+        end if
+
         ! Check convergence of the diffusion constant:
 
         if (itcf(1).eq.1) then
@@ -192,6 +234,10 @@ write(*,*) "myid in evolve:", myid
 
     enddo
 
+    if (vacfac.ne.1) then
+        call avcalcm()
+        call avintprint()
+    end if
 #ifdef PARALLEL_BINDING
 				if(myid.eq.0) then
 #endif	
@@ -222,6 +268,11 @@ write(*,*) "myid in evolve:", myid
                 close(unit=500127+ib)
             enddo
         endif
+    endif
+
+    ! Print the total RDFs.
+    if (itst(1).eq.1) then
+      call print_rdf(ihoo,ihoh,ihhh,na,boxlxyz,nt,nb,(2*nt/iskip+1)*m)
     endif
 
     ! Print the (unit.potential) correlation functions.
@@ -281,9 +332,10 @@ endif
 end subroutine dynamics
 
 subroutine trajectory(p,r,v,dvdr,dvdr2,ct,dtv,dmtr,dmtv,idmtr,idmtv, &
-dqq,davx,davy,davz,dmot1,nt,na,nb,boxlxyz,z, &
-beta,dt,mass,itcf,nm,pe,irun,dcvinter, &
-dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
+dqq,davx,davy,davz,dmot1,ihoo,ihoh,ihhh,nt,na,nb,boxlxyz,z, &
+beta,dt,mass,itcf,itst,nm,pe,irun,dcvinter, &
+dcvintra,dke,pt,pb,print,iskip,vacfac,eefile)
+    use intmod
     implicit none
   include 'globals.inc'
 #ifdef PARALLEL_BINDING
@@ -292,22 +344,26 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
     ! -----------------------------------------------------------------
     ! Sample dynamic properties over NVE trajectory.
     ! -----------------------------------------------------------------
-    integer na,nb,nt,itcf(3),nm,irun,myid,ierr
-    integer i,ib,j,jt,it,it10,jt10,k,pt,pb,print(3),intcstep,iskip,vacfac
-    real(8) dt,beta,alpha,alpha2,wm,wh,v,v1,v2,v3,w1,w2,w3
+    integer na,nb,nt,itcf(3),itst(3),nm,irun,myid,ierr,eefile
+    integer i,ib,j,jt,it,it10,jt10,k,pt,pb,print(3),iskip,vacfac,rpmddft,nbdf1,nbdf2,ibin,ii,jj
+    real(8) dt,beta,alpha,alpha2,wm,wh,v,v1,v2,v3,w1,w2,w3,dx,dy,dz,rij,delr,boxmax
     real(8) em,tv,dipx,dipy,dipz,tbar,wt,wt1,vir(3,3),vir_lf(3,3)
     real(8) fac1,fac2,pe,dtq1,dtq2,ecut,tvxyz(3)
     real(8) dtv,dqq,davx,davy,davz,dip2,dipm,dotx,doty,dotz
     real(8) emi,vew,vlj,vint,rke
+    real(8) tavee,tq1aee,tq2aee,v1eeav,v2eeav,v3eeav,tq1,tq2,tqe
     common /ew_param/ alpha,ecut,wm,wh
+    common /RPMDDFT/ rpmddft
+    common /beaddiabatic/ nbdf1,nbdf2
 
     ! Passed Arrays
 
     real(8) p(3,na,nb),r(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb)
     real(8) boxlxyz(3),z(na),mass(na)
     real(8) ct(0:nt),dmot1(6,0:nt)
-    real(8) dmtr(0:nt),dmtv(0:nt),idmtr(0:nt,5,2),idmtv(0:nt,5,2)
+    real(8) dmtr(0:nt),dmtv(0:nt),idmtr(0:nt,4,2),idmtv(0:nt,4,2)
     real(8) dcvinter(0:2*nt), dcvintra(0:2*nt),dke(0:2*nt)
+    integer(8) ihoo(imaxbin),ihoh(imaxbin),ihhh(imaxbin)
 
     ! Cvv, OCF and Dipole Working Arrays
 
@@ -318,16 +374,15 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
     real(8), allocatable :: dmxv(:),dmyv(:),dmzv(:)
     real(8), allocatable :: idmxr(:,:,:),idmyr(:,:,:),idmzr(:,:,:)
     real(8), allocatable :: idmxv(:,:,:),idmyv(:,:,:),idmzv(:,:,:)
-    logical, allocatable :: inint(:,:,:)
+    real(8), allocatable :: dist(:,:),dvdre(:,:,:)
 
     ! Allocate arrays
 
     if (itcf(2).eq.1) then
         allocate (dmxr(0:2*nt),dmyr(0:2*nt),dmzr(0:2*nt))
         allocate (dmxv(0:2*nt),dmyv(0:2*nt),dmzv(0:2*nt))
-        allocate (idmxr(0:2*nt,5,2),idmyr(0:2*nt,5,2),idmzr(0:2*nt,5,2))
-        allocate (idmxv(0:2*nt,5,2),idmyv(0:2*nt,5,2),idmzv(0:2*nt,5,2))
-        allocate (inint(na/3,5,2))
+        allocate (idmxr(0:2*nt,4,2),idmyr(0:2*nt,4,2),idmzr(0:2*nt,4,2))
+        allocate (idmxv(0:2*nt,4,2),idmyv(0:2*nt,4,2),idmzv(0:2*nt,4,2))
     end if
 
     if (itcf(3).eq.1) then
@@ -339,13 +394,25 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
         allocate (az2(6,nm,0:(2*nt/iskip)))
     end if
 
-    allocate (pc(3,nm,0:2*nt),pca(3,na),rca(3,na))
+    allocate (pc(3,nm,0:2*nt),pca(3,na),rca(3,na),dvdre(3,na,nb),dist(na,na))
 
     ! Define some useful constants and zero-out arrays
 
     alpha2 = 0.5d0 * (1.d0 - alpha)
     nm = na / 3
     em = mass(1) + mass(2) + mass(3)
+
+    if (itst(2).eq.1) then
+
+        v1eeav = 0.d0
+        v2eeav = 0.d0
+        v3eeav = 0.d0
+
+        tavee  = 0.d0
+        tq1aee = 0.d0
+        tq2aee = 0.d0
+
+    end if
 
     if (itcf(2).eq.1) then
 
@@ -393,6 +460,8 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
     tv = 0.d0
     pe = 0.d0
     nm = na/3
+    dist(:,:) = 0.d0
+
     if (3*nm .ne. na) stop 'trajectory : na is NOT 3*nm !'
 #ifdef PARALLEL_BINDING
 	call MPI_COMM_RANK( MPI_COMM_WORLD, myid, ierr)
@@ -480,9 +549,18 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
 #endif
 
         endif
+
 #ifdef PARALLEL_BINDING
 						if(myid.eq.0) then
 #endif
+
+        if (vacfac.ne.1) then
+                if (mod(jt,iskip).eq.0) then
+                    call center_atoms(r,rca,na,nb)
+                    call intupdate(toA*rca)     !interface and hbond calculations
+                end if
+        end if
+
         ! KE
         rke = 0.d0
         do k = 1, nb
@@ -491,6 +569,109 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
             enddo
         enddo
         dke(jt) = rke
+
+        ! RDF g_oo,g_oh,g_hh
+        !------------------------
+        if ((itst(1).eq.1) .and. (mod(jt,iskip).eq.0)) then
+           do k = 1, nb
+              do i = 2, na
+                 do j = 1, i-1
+                    dx = r(1,i,k) - r(1,j,k)
+                    dy = r(2,i,k) - r(2,j,k)
+                    dz = r(3,i,k) - r(3,j,k)
+                    dx = dx-boxlxyz(1)*dble(nint(dx/boxlxyz(1)))
+                    dy = dy-boxlxyz(2)*dble(nint(dy/boxlxyz(2)))
+                    dz = dz-boxlxyz(3)*dble(nint(dz/boxlxyz(3)))
+                    dist(i,j) = dsqrt(dx*dx+dy*dy+dz*dz)
+                    dist(j,i) = dist(i,j)
+                 enddo
+              enddo
+
+              do i = 1,na
+                 dist(i,i) = 0.d0
+              enddo
+
+              ! calculate and bin O - O pair distances
+
+
+              boxmax = max(boxlxyz(1),boxlxyz(2),boxlxyz(3))
+              delr = dble(0.5d0*boxmax/dble(imaxbin))
+              do i = 1, nm - 1
+                 do j = i + 1, nm
+                    ii = 3*i - 2
+                    jj = 3*j - 2
+                    rij = dist(ii,jj)
+                    ibin = int(rij/delr) + 1
+                    if (ibin.le.imaxbin) then
+                       ihoo(ibin) = ihoo(ibin) + 2
+                    endif
+                 enddo
+              enddo
+
+              ! calculate and bin O - H pair distances
+
+              do i = 1, nm
+                 do j = 1, na, 3
+                    ii = 3*i - 2
+                    jj = j+1
+                    rij = dist(ii,jj)
+                    ibin = int( rij / delr) + 1
+                    if (ibin.le.imaxbin) then
+                       ihoh(ibin) = ihoh(ibin) + 1
+                    endif
+                    rij=dist(ii,jj+1)
+                    ibin = int( rij / delr) + 1
+                    if (ibin.le.imaxbin) then
+                       ihoh(ibin) = ihoh(ibin) + 1
+                    endif
+                 enddo
+              enddo
+
+              ! calculate and bin H - H pair distances
+
+              do i = 1, na-1
+                 do j = i+1, na
+                    if (mod(i-1,3).ne.0.and.mod(j-1,3).ne.0) then
+                       rij = dist(i,j)
+                       ibin = int(rij/delr) + 1
+                       if (ibin.le.imaxbin) then
+                          ihhh(ibin) = ihhh(ibin) + 2
+                       endif
+                    endif
+                 enddo
+              enddo
+           enddo
+        endif
+
+        ! Exact Estimators for Energies
+        ! -----------------------------
+
+        if ((itst(2).eq.1) .and. (mod(jt,iskip).eq.0)) then   ! not suitable for AI-RPMD use
+            if ((rpmddft.eq.0).and.((nbdf1.gt.0).or.(nbdf2.gt.0))) then
+
+                ! Exact Estimators for Beadiabatic
+
+                ! Ewald
+                call forces(r,v1,dvdre,nb,na,boxlxyz,z,vir,2)
+                call virial_ke_ee(r,dvdre,tv,tqe,beta,na,nb)
+
+                ! LJ
+                call forces(r,v2,dvdre,nb,na,boxlxyz,z,vir,3)
+                call virial_ke_ee(r,dvdre,tv,tq1,beta,na,nb)
+                tq1 = tq1 + tqe
+
+                ! Intramolecular
+                call forces(r,v3,dvdre,nb,na,boxlxyz,z,vir,4)
+                call virial_ke_ee(r,dvdre,tv,tq2,beta,na,nb)
+                tv = tv + tq1
+                tavee = tavee + tv
+                tq1aee = tq1aee + tq1
+                tq2aee = tq2aee + tq2
+                v1eeav = v1eeav + v1
+                v2eeav = v2eeav + v2
+                v3eeav = v3eeav + v3
+            endif
+        endif
 
 
         ! Cvv - centroid momenta
@@ -550,14 +731,12 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
             enddo
         
             if (vacfac.ne.1) then
-                if (mod(jt/iskip,intcstep).eq.0) then
-                    call instvacint(rca,inint,na,boxlxyz)
-                end if
                 do ib=1,2
-                    do i=1,5
-        	
+                    do i=1,4
                         do j = 1, na,3
-                            if (inint(j/3+1,i,ib)) then
+
+                            if (inint(j/3+1,i,ib,wntc)) then
+
                                 fac1 = (z(j+1)+alpha2*z(j))
                                 fac2 = (z(j+2)+alpha2*z(j))
                                 w1 = 1.d0 / mass(j)
@@ -605,6 +784,34 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
     davy = davy*wt
     davz = davz*wt
 
+    wt=1.d0/dble((2*nt/iskip+1)*nm)
+    tavee = wt*tavee
+    tq1aee = wt*tq1aee
+    tq2aee = wt*tq2aee
+    v1eeav = wt*v1eeav
+    v2eeav = wt*v2eeav
+    v3eeav = wt*v3eeav
+
+    if (itst(2).eq.1) then
+        if ((rpmddft.eq.0).and.((nbdf1.gt.0).or.(nbdf2.gt.0))) then
+
+            write(eefile,*)'<V> per molecule = ',toKjmol* &
+            (v1eeav+v2eeav+v3eeav),' KJ mol^-1'
+            write(eefile,*)'<V>_ew = ', toKjmol*v1eeav,' KJ mol^-1'
+            write(eefile,*)'<V>_lj = ', toKjmol*v2eeav,' KJ mol^-1'
+            write(eefile,*)'<V>_inter = ', toKjmol*(v1eeav+v2eeav), &
+            ' KJ mol^-1'
+            write(eefile,*)'<V>_intra = ', toKjmol*v3eeav,' KJ mol^-1'
+            write(eefile,*)
+            write(eefile,*)'<Virial KE> per molecule = ', toKjmol*tavee, &
+            ' KJ mol^-1'
+            write(eefile,*)'<Virial KE>_inter = ', toKjmol*tq1aee, &
+            ' KJ mol^-1'
+            write(eefile,*)'<Virial KE>_intra = ', toKjmol*tq2aee, &
+            ' KJ mol^-1'
+        endif
+    endif
+
     ! Velocity auto-correlation function.
     ! -----------------------------------
 
@@ -648,7 +855,7 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
         enddo
         if (vacfac.ne.1) then
             do ib=1,2
-                do i=1,5
+                do i=1,4
                     do jt = 0,nt,iskip
                         do it = 0,nt,iskip
                             idmtr(jt,i,ib) = idmtr(jt,i,ib) + (idmxr(it,i,ib)*idmxr(it+jt,i,ib)+ &
@@ -707,16 +914,17 @@ dcvintra,dke,pt,pb,print,intcstep,iskip,vacfac)
             enddo
         enddo
     endif
+
 #ifdef PARALLEL_BINDING
 	endif
 #endif
     ! Deallocate arrays
 
-    deallocate(pc,pca,rca)
+    deallocate(pc,pca,rca,dvdre,dist)
 
     if (itcf(2).eq.1) then
         deallocate(dmxr,dmyr,dmzr,dmxv,dmyv,dmzv)
-        deallocate(idmxr,idmyr,idmzr,idmxv,idmyv,idmzv,inint)
+        deallocate(idmxr,idmyr,idmzr,idmxv,idmyv,idmzv)
     end if
     if (itcf(3).eq.1) then
         deallocate(ax1,ay1,az1,ax2,ay2,az2)

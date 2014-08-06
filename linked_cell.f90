@@ -95,7 +95,8 @@ subroutine cell_list_unit(r,list,link,ink,map,nn,n,ncell, &
   ! Constructs a linked cell list for a box with all
   ! sides of unit length - cell size is 0.5*rcut
   ! ------------------------------------------------------------------
-  integer i,ix,iy,iz,ncell,mcell,ijump,n,nn
+  integer i,ncell,mcell,ijump,n,nn
+  integer(8) ix,iy,iz
   real(8) dx,dy,dz
   real(8) r(3,n),cell
   integer link(ncell,ncell,ncell),list(n)

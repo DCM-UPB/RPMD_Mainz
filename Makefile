@@ -1,4 +1,4 @@
-MF=	Makefile
+MF=	Makefile sockets.c globals.inc 2DPMF.inc
 FC=	gfortran -cpp -DCP2K_BINDING #-DPARALLEL_BINDING
 #LIBS = -lfftw3
 LIBS = -L/home/cp2k/trunk/cp2k/lib/Linux-x86-64-gfortran/sopt -lcp2k_lib -lcp2k_base_lib -lcp2k_fft_lib -lcp2k_ma_lib -lcp2k_dbcsr_lib \
@@ -17,7 +17,9 @@ FC+=	-Wall -pedantic -Waliasing -Wcharacter-truncation -Wconversion -Wsurprising
 # speed warnings
 FC+=	-Warray-temporaries
 
-FFLAGS=	-O3 
+FC+= 	-fbounds-check -g 
+
+FFLAGS= -O2
 LFLAGS=	$(FFLAGS)
 
 EXE= qmd.x
@@ -53,9 +55,11 @@ SRC= \
 	random.f90 \
 	kinetic.f90 \
 	fourier.f90 \
-	instvacint.f90 \
+	intmod.f90 \
+	trajavmod.f90 \
 	io.f90 \
 	ljones.f90 \
+	epsr.f90 \
 	buckingham.f90 \
 	ewald_cubic.f90 \
 	ewald_noncubic.f90 \
@@ -74,7 +78,7 @@ SRC= \
 .SUFFIXES:
 .SUFFIXES: .f90 .o
 
-OBJ=	$(SRC:.f90=.o)
+OBJ=	$(SRC:.f90=.o) sockets.o
 
 .f90.o:
 	echo $(NOCP2K)
@@ -87,6 +91,12 @@ $(EXE):	$(OBJ)
 	$(FC) $(LFLAGS) -o $@ $(OBJ) $(LIBS)
 
 $(OBJ):	$(MF)
+
+sockets.o:	sockets.c
+	gcc -O2 -c sockets.c -o sockets.o
+
+zip:
+	zip $(EXE).zip $(MF) $(SRC)
 
 tar:
 	tar cvf $(EXE).tar $(MF) $(SRC)

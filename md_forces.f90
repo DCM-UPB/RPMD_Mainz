@@ -123,21 +123,23 @@ subroutine potenl_opt(r,v,dvdr,vir,na,nb,boxlxyz, &
   ! iopt = 0   - Full force evaluation
   ! iopt = 1   - Ewald and LJ force evaluation
   ! iopt = 2   - Ewald force evaluation
-  ! iopt = 3   - LJ force evaluation
+  ! iopt = 3   - LJ force evaluation and possibly EPSR correction
   ! iopt = 4   - Intramolecular force evaluation
   ! iopt = 9   - RPMD-DFT force evaluation for AI-RPMD use
   ! ------------------------------------------------------------------
   integer na,nb,mol(na),nm,i,j,imol,ic,iopt,point(na+3),list(maxnab*na),bead
-  real(8) z(na),r(3,na),dvdr(3,na),vir(3,3),vir_ew(3,3),vir_oo(3,3)
+  real(8) z(na),r(3,na),dvdr(3,na),vir(3,3),vir_ew(3,3),vir_oo(3,3),vir_epsr(3,3)
   real(8) vir_int(3,3),boxlxyz(3)
-  real(8) alpha,alpha2,wm,wh,ecut,voo,oo_eps,oo_sig,oo_gam,rcut
+  real(8) alpha,alpha2,wm,wh,ecut,voo,vepsr,oo_eps,oo_sig,oo_gam,rcut
   real(8) v,vint,vew,apot,alp,bpot,alpb,boxl
-  real(8), allocatable :: ro(:,:),dvdroo(:,:)
+  real(8), allocatable :: ro(:,:),dvdroo(:,:),dvdrepsr(:,:)
   logical iamcub
   common /ew_param/ alpha,ecut,wm,wh
   common /oo_param/ oo_eps,oo_sig,oo_gam,rcut
   common /intra_param/ apot,bpot,alp,alpb
   common /symmetry/ iamcub
+  logical epsr
+  common /EPSR/ epsr
 
   ! Zero the energy and forces
 
@@ -226,6 +228,17 @@ subroutine potenl_opt(r,v,dvdr,vir,na,nb,boxlxyz, &
      v = v + voo
      vir(:,:) = vir(:,:) + vir_oo(:,:)
      deallocate (dvdroo)
+
+     if(epsr.eqv..true.) then
+       allocate (dvdrepsr(3,na))
+       ! Calculate epsr contribution and fix forces/virial/energy
+       call epsr_driver(r,dvdrepsr,vepsr,vir_epsr,list,point,na,boxlxyz,3)
+       dvdr(:,:) = dvdr(:,:) + dvdrepsr(:,:)
+       v = v + vepsr
+       vir(:,:) = vir(:,:) + vir_epsr(:,:)
+       deallocate(dvdrepsr)
+     endif
+
   endif
   
   ! **Decide whether to calculate high frequency parts**
@@ -414,5 +427,3 @@ subroutine full_forces(r,na,nb,v,vew,voo,vint,vir,z,boxlxyz, &
 
   return
 end subroutine full_forces
-
-

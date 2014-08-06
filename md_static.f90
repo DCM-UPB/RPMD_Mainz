@@ -90,6 +90,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   real(8) r(3,na,nb),mass(na),vir(3,3),vir_lf(3,3),rcm(3,na/3),rst(3,na/3),r0(3,na,nb)
   real(8) delr,dx,dy,dz,rij,thresh,dconv,dconv2,pi,fac,vol
   real(8) avang,avoh,tavang,tavoh,msd,msdO
+  real(8) ttaufs
   real(8) vave,tave,tq1ave,tq2ave,tv,tvxyz(3),tavee,tq1aee,tq2aee
   real(8) tavdip,tavdipx,tavdipy,tavdipz,tavdip2,tavdipsq,eps
   real(8) dipx,dipy,dipz,dip2,dipm,dtps,dr
@@ -106,6 +107,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   integer reftraj,rpmddft
   common /reftraj/ reftraj
   common /RPMDDFT/ rpmddft
+  common /thinp/ ttaufs
 
   nbaro = 0
   if (ens.eq.'NPT') then
@@ -126,8 +128,14 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   dtps = 1d-3*dt/tofs
   dconv = (ToA * 1d-10 * echarge) / ToDebye
   dconv2 = dconv*dconv
-  thresh = 1.d0/dsqrt(dble(ng))
-  thresh = max(thresh,0.005d0)
+
+  if (ttaufs.gt.0.d0 .and. (therm.eq.'AND' .or. therm.eq.'PRA')) then
+      thresh = 1d-3*dtps/ttaufs !dtfs is not used in md_static
+  else
+      thresh = 1.d0/dsqrt(dble(ng))
+      thresh = max(0.005d0,thresh)
+  end if
+
   nm = na/3
   no = na/3
   wmass = mass(1)+mass(2)+mass(3)
@@ -276,6 +284,7 @@ endif
   ! Evolve for ng steps, calculating properties
 
   do je = 1,ng
+    istep = je
 	
 #ifdef PARALLEL_BINDING
   	 call MPI_bcast(r,SIZE(r),MPI_real8,0,MPI_COMM_WORLD,ierr)
