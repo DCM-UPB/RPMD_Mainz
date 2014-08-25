@@ -76,6 +76,7 @@ SRC= \
 	correct_tem.f90 \
 	blas_lapack.f90 \
 	md_pressure.f90 \
+        e3b.f90 \
 ###############################
 
 .SUFFIXES:

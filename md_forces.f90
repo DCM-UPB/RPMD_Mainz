@@ -127,11 +127,13 @@ subroutine potenl_opt(r,v,dvdr,vir,na,nb,boxlxyz, &
   ! iopt = 4   - Intramolecular force evaluation
   ! iopt = 9   - RPMD-DFT force evaluation for AI-RPMD use
   ! ------------------------------------------------------------------
-  integer na,nb,mol(na),nm,i,j,imol,ic,iopt,point(na+3),list(maxnab*na),bead
+  integer na,nb,mol(na),nm,i,j,imol,ic,iopt,point(na+3),list(maxnab*na),bead,rpmde3b
   real(8) z(na),r(3,na),dvdr(3,na),vir(3,3),vir_ew(3,3),vir_oo(3,3),vir_epsr(3,3)
   real(8) vir_int(3,3),boxlxyz(3)
   real(8) alpha,alpha2,wm,wh,ecut,voo,vepsr,oo_eps,oo_sig,oo_gam,rcut
   real(8) v,vint,vew,apot,alp,bpot,alpb,boxl
+  real(8) f3B(na/3,4,3),vir_e3b(3,3),v_e3b,dvdr_e3b(3,na)
+  real(8) box(3),pos(na/3,4,3) 
   real(8), allocatable :: ro(:,:),dvdroo(:,:),dvdrepsr(:,:)
   logical iamcub
   common /ew_param/ alpha,ecut,wm,wh
@@ -140,6 +142,7 @@ subroutine potenl_opt(r,v,dvdr,vir,na,nb,boxlxyz, &
   common /symmetry/ iamcub
   logical epsr
   common /EPSR/ epsr
+  common /E3B/ rpmde3b
 
   ! Zero the energy and forces
 
@@ -257,6 +260,17 @@ subroutine potenl_opt(r,v,dvdr,vir,na,nb,boxlxyz, &
      endif
      v = v + vint
      vir(:,:) = vir(:,:) + vir_int(:,:)
+     
+     !e3b-Correction     
+     if (rpmde3b.ne.0) then              
+        call scon (na,nb,nm,r,boxlxyz,pos,box)
+        call tainter_e3b(nm,pos,f3B,vir_e3b,box,v_e3b)
+        call econ (nm,f3B,vir_e3b,v_e3b,dvdr_e3b)
+        v = v + v_e3b
+        vir(:,:)= vir(:,:) + vir_e3b(:,:)
+        dvdr(:,:) = dvdr(:,:) - dvdr_e3b(:,:)     
+     endif
+
   endif
 
 #ifdef CP2K_BINDING
@@ -395,6 +409,7 @@ subroutine full_forces(r,na,nb,v,vew,voo,vint,vir,z,boxlxyz, &
     ! Virial
 
     vir(:,:) = vir_oo(:,:) + vir_ew(:,:) + vir_itr(:,:)
+
 
     ! Intermolecular PE
 

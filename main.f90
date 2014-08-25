@@ -15,7 +15,7 @@ program qmd
     integer nbr,mts,nlat,itcf(3),itst(3),ncellxyz(3),print(3),ntherm,iskip!,sizeMPI(9)
 
     ! used for reftrj and RPMD-DFT
-    integer reftraj,rpmddft,ierr,rpmddfthelp,myid,numid,epsr_update
+    integer reftraj,rpmddft,ierr,rpmddfthelp,myid,numid,epsr_update,rpmde3b
     character(len=35) CP2K_path
     ! r_traj(xyz,molecules,nb,reftraj)
     real(8), allocatable :: r_traj(:,:,:,:),boxlxyz_traj(:,:)
@@ -44,7 +44,7 @@ program qmd
     ecut,nt,ne,npre_eq,ntherm,nb,m,ng,print,reftraj,iskip,pt,pb, &
     ncellxyz,irun,itcf,itst,rcut, &
     type,therm,ttaufs,baro,taufs,mts,om,nbdf1,nbdf2,sig,rpmddft, &
-    CP2K_path,nbdf3,rctdk,epsr,epsr_update
+    CP2K_path,nbdf3,rctdk,epsr,epsr_update,rpmde3b
     namelist/param/ wmass,omass,hmass,qo,alpha,oo_sig,oo_eps,oo_gam, &
     thetad,reoh,apot,bpot,alp,alpb,wm,wh
 
@@ -65,12 +65,14 @@ program qmd
     common /thinp/ ttaufs
     common /RPMDDFT/ rpmddft,nbdf3,rctdk
     common /EPSR/ epsr, epsr_update
+    common /E3B/ rpmde3b
   
     vacfac = 1
     ntherm = 0
     ttaufs = 0.d0
     iskip = 1
     rpmddft = 0
+    rpmde3b = 0
     reftraj = 0
     npre_eq = 0
     cell(:,:) = 0.d0
@@ -607,6 +609,15 @@ if(myid.eq.0) then
         else
             write(6,*)'* Orientational CFs WILL NOT be calculated... '
         endif
+          
+        !E3B Correction to be calculated
+        !.......................................
+
+        if (rpmde3b.ne.0) then
+           write(6,*) '* Three body correction WILL be calculated...' 
+        else 
+           write(6,*) '* Three body correction WILL NOT be calculated...' 
+        endif
         write(6,*)
 
     endif
@@ -666,7 +677,7 @@ if(myid.eq.0) then
         ! Initial forces and momenta
         ! ---------------------------
 
-        call full_forces(r,na,nb,v,vew,vlj,vint,vir,z,boxlxyz,dvdr,dvdr2)
+        call full_forces(r,na,nb,v,vew,vlj,vint,vir,z,boxlxyz,dvdr,dvdr2,rpmde3b)
         write(6,'(a,f10.5,a)') ' * Initial energy =', v/dble(na), ' E_h per atom'
         write(6,*)
         call sample(p,na,nb,mass,beta,irun,dt)
