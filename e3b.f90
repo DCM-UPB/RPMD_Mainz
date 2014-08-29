@@ -1,17 +1,17 @@
 !Subroutine for conversion of rpmd variables to e3b variables
-   subroutine scon(na,nb,nm,r,boxlxyz,pos,box)
+   subroutine e3b_convert_pos(na,nm,r,boxlxyz,pos,box)
       implicit none
       include 'globals.inc'      
 
       integer i,j,k,l,n
-      integer na,nb,nm
-      real(8) r(3,na,nb),boxlxyz(3),pos(na/3,4,3),box(3),m(3,na/3,nb),alpha,alpha2
+      integer na,nm
+      real(8) r(3,na),boxlxyz(3),pos(na/3,4,3),box(3),m(3,na/3),alpha,alpha2
       common /ew_param/ alpha
 
       !Conversion boxlxyz (bohr) to box (nanometer)
-       box(1) = boxlxyz(1) * ToA / 10
-       box(2) = boxlxyz(2) * ToA / 10
-       box(3) = boxlxyz(3) * ToA / 10
+       box(1) = boxlxyz(1) * ToA / 10.d0
+       box(2) = boxlxyz(2) * ToA / 10.d0
+       box(3) = boxlxyz(3) * ToA / 10.d0
       
 
  
@@ -21,20 +21,20 @@
        do i = 1, na, 3
          n=n+1
         do j = 1, 3
-           m(j,n,nb) = alpha * r(j,i,nb) + alpha2*(r(j,i+1,nb)+r(j,i+2,nb))
+           m(j,n) = alpha * r(j,i) + alpha2*(r(j,i+1)+r(j,i+2))
         End do
       End do
 
      !Generate Array pos(molecule,site,xyz)
-      do k = 1, nm        
+      do k = 1, nm
         do l=1,3
-             pos(k,l,1) = r(1,k*3-3+l,nb)* ToA / 10
-             pos(k,l,2) = r(2,k*3-3+l,nb)* ToA / 10
-             pos(k,l,3) = r(3,k*3-3+l,nb)* ToA / 10
+             pos(k,l,1) = r(1,k*3-3+l)* ToA / 10.d0
+             pos(k,l,2) = r(2,k*3-3+l)* ToA / 10.d0
+             pos(k,l,3) = r(3,k*3-3+l)* ToA / 10.d0
         End do
-       pos(k,4,1) = m(1,k,nb)* ToA / 10
-       pos(k,4,2) = m(2,k,nb)* ToA / 10
-       pos(k,4,3) = m(3,k,nb)* ToA / 10
+       pos(k,4,1) = m(1,k)* ToA / 10.d0
+       pos(k,4,2) = m(2,k)* ToA / 10.d0
+       pos(k,4,3) = m(3,k)* ToA / 10.d0
      End do
       
     End
@@ -76,7 +76,7 @@
 !     appropriate term(s) depending on which type of three-body term
 !     is being calculated.  
 !**********************************************************************
-      subroutine tainter_e3b(nm,pos,f3B,vir,box,PE)
+      subroutine e3b_driver(nm,pos,f3B,vir,box,PE)
       implicit none
       include 'globals.inc'
       
@@ -370,7 +370,7 @@
       End
 
 
-subroutine econ(nm,f3B,vir_e3b,PE,dvdr_e3b)
+subroutine e3b_convert_forces(nm,f3B,vir_e3b,PE,dvdr_e3b)
  implicit none
   include 'globals.inc'
   integer nm,h,i

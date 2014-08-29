@@ -263,9 +263,9 @@ subroutine potenl_opt(r,v,dvdr,vir,na,nb,boxlxyz, &
      
      !e3b-Correction     
      if (rpmde3b.ne.0) then              
-        call scon (na,nb,nm,r,boxlxyz,pos,box)
-        call tainter_e3b(nm,pos,f3B,vir_e3b,box,v_e3b)
-        call econ (nm,f3B,vir_e3b,v_e3b,dvdr_e3b)
+        call e3b_convert_pos (na,nm,r,boxlxyz,pos,box)
+        call e3b_driver(nm,pos,f3B,vir_e3b,box,v_e3b)
+        call e3b_convert_forces (nm,f3B,vir_e3b,v_e3b,dvdr_e3b)
         v = v + v_e3b
         vir(:,:)= vir(:,:) + vir_e3b(:,:)
         dvdr(:,:) = dvdr(:,:) - dvdr_e3b(:,:)     
