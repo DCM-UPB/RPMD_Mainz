@@ -168,7 +168,7 @@ write(*,*) "myid in evolve:", myid
                 call evolve(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
                 boxlxyz,z,beta,vir,vir_lf,irun,0)
 #ifdef PARALLEL_BINDING
-								if(myid.eq.0) then
+	if(myid.eq.0) then
 #endif			
                 !if ((therm.eq.'AND').or.(therm.eq.'PRA')) then
                 !    if (ran2(irun,0.d0,1.d0) .lt. thresh) then
@@ -176,8 +176,8 @@ write(*,*) "myid in evolve:", myid
                 !    endif
                 !endif
 #ifdef PARALLEL_BINDING
-								endif
-		 						call MPI_bcast(p,SIZE(p),MPI_real8,0,MPI_COMM_WORLD,ierr)
+endif
+	call MPI_bcast(p,SIZE(p),MPI_real8,0,MPI_COMM_WORLD,ierr)
 #endif			
             enddo
         end if
