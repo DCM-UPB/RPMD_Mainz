@@ -137,7 +137,6 @@ subroutine epsr_driver(r,dvdr,v,vir,list,point,na,boxlxyz,njump)
   !   endif
   !endif
   
-  return
 end subroutine epsr_driver
 
 
@@ -419,7 +418,6 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
         enddo ! O--H
      enddo
   enddo
-  stop
 
   !vscale = 1.0d0 !4.d0*oo_eps
   !dscale = 1.0d0 !48.d0*oo_eps
