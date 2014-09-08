@@ -9,7 +9,7 @@ subroutine epsr_run(r,boxlxyz)
   character(len=255) :: cwd,cmd,line
   integer i, io_err
   integer epsr_update
-  logical epsr
+  logical epsr, file_exists
   real(8) pos(1000),potOO(1000),frcOO(1000),potOH(1000),frcOH(1000),potHH(1000),frcHH(1000)
   common /EPSR/ epsr, epsr_update, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
 
@@ -36,7 +36,18 @@ subroutine epsr_run(r,boxlxyz)
   frcOH(:) = 0.0d0
   frcHH(:) = 0.0d0
 
+
+#ifdef EPSR_STARTUP_READ
+  inquire(FILE="../vmd_current.EPSR.p01", EXIST=file_exists)
+  if (file_exists.eqv..true.) then
+    write(6,*) "Reading EPSR correction file now"
+    open(123456, file="../vmd_current.EPSR.p01", action="read")
+  else
+    write(6,*) "EPSR correction file ../vmd_current.EPSR.p01 not found! Aborting..."
+  endif
+#else
   open(123456, file="vmd_current.EPSR.p01", action="read")
+#endif
   read(123456,*) line
   do i=1,1000
     read(123456,*,iostat=io_err) pos(i),potOO(i),frcOO(i),potOH(i),frcOH(i),potHH(i),frcHH(i)
@@ -94,9 +105,17 @@ subroutine epsr_driver(r,dvdr,v,vir,list,point,na,boxlxyz,njump)
   common /EPSR/ epsr, epsr_update, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
   common /oo_param/ oo_eps,oo_sig,oo_gam,rcut
 
+#ifdef EPSR_STARTUP_READ
+  ! Only read once on startup
+  if (istep.eq.1) then
+    write (6,*) "DEBUG: istep is", istep
+    call epsr_run(r,boxlxyz)
+  endif
+#else
   if (mod(istep,epsr_update).eq.0) then
     call epsr_run(r,boxlxyz)
   endif
+#endif
 
   dvdr(:,:) = 0.0d0
   v = 0.0d0

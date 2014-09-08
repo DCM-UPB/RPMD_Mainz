@@ -265,6 +265,17 @@ if(myid.eq.0) then
 59  format (' taufs  = ',f9.3,' ps')
 58  format (' dv     = ',f9.3)
 
+    if (epsr.eqv..true.) then
+        write (6,*) "Using EPSR"
+#ifdef EPSR_STARTUP_READ
+        write (6,*) "Reading EPSR on STARTUP"
+#else
+        write (6,*) "NOT reading EPSR on STARTUP"
+#endif
+    else
+        write (6,*) "NOT using EPSR"
+    endif
+
     ! Initialize the random number generator:
     ! ---------------------------------------
 

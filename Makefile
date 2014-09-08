@@ -19,6 +19,9 @@ FC+=	-Warray-temporaries
 
 FC+= 	-fbounds-check -g 
 
+# Read EPSR only on startup
+FC+=	-DEPSR_STARTUP_READ
+
 FFLAGS= -O2
 LFLAGS=	$(FFLAGS)
 
