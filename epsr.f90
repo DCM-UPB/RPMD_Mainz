@@ -107,8 +107,7 @@ subroutine epsr_driver(r,dvdr,v,vir,list,point,na,boxlxyz,njump)
 
 #ifdef EPSR_STARTUP_READ
   ! Only read once on startup
-  if (istep.eq.1) then
-    write (6,*) "DEBUG: istep is", istep
+  if (istep.eq.0) then
     call epsr_run(r,boxlxyz)
   endif
 #else
