@@ -28,7 +28,21 @@ subroutine epsr_run(r,boxlxyz)
   call system(cmd)
   write(cmd, '(A,A,A)') 'epsr ', trim(cwd), '/ epsr vmd_current.EPSR.inp > /dev/null'
   call system(cmd)
+  call chdir("..")
+end subroutine
 
+
+subroutine epsr_read(r,boxlxyz)
+  implicit none
+  include "globals.inc"
+  real(8) r(3,ina),boxlxyz(3)
+  real(8) diff
+  character(len=255) :: cwd,cmd,line
+  integer i, io_err
+  integer epsr_update
+  logical epsr, file_exists
+  real(8) pos(1000),potOO(1000),frcOO(1000),potOH(1000),frcOH(1000),potHH(1000),frcHH(1000)
+  common /EPSR/ epsr, epsr_update, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
   ! Get results
   potOO(:) = 0.0d0
   potOH(:) = 0.0d0
@@ -39,10 +53,10 @@ subroutine epsr_run(r,boxlxyz)
 
 
 #ifdef EPSR_STARTUP_READ
-  inquire(FILE="../vmd_current.EPSR.p01", EXIST=file_exists)
+  inquire(FILE="vmd_current.EPSR.p01", EXIST=file_exists)
   if (file_exists.eqv..true.) then
     write(6,*) "Reading EPSR correction file now"
-    open(123456, file="../vmd_current.EPSR.p01", action="read")
+    open(123456, file="vmd_current.EPSR.p01", action="read")
   else
     write(6,*) "EPSR correction file vmd_current.EPSR.p01 not found!"
     write(6,*) "Setting everything to zero..."
@@ -52,7 +66,7 @@ subroutine epsr_run(r,boxlxyz)
     return
   endif
 #else
-  open(123456, file="vmd_current.EPSR.p01", action="read")
+  open(123456, file="EPSRrun/vmd_current.EPSR.p01", action="read")
 #endif
   read(123456,*) line
   do i=1,1000
@@ -92,9 +106,7 @@ subroutine epsr_run(r,boxlxyz)
   enddo
   close(123456)
 
-  call chdir("..")
-
-end subroutine epsr_run
+end subroutine epsr_read
 
 subroutine epsr_driver(r,dvdr,v,vir,list,point,na,boxlxyz,njump)
   implicit none
@@ -114,11 +126,14 @@ subroutine epsr_driver(r,dvdr,v,vir,list,point,na,boxlxyz,njump)
 #ifdef EPSR_STARTUP_READ
   ! Only read once on startup
   if (istep.eq.0) then
+    call epsr_read(r,boxlxyz)
+  else if (mod(istep,epsr_update).eq.0) then
     call epsr_run(r,boxlxyz)
   endif
 #else
   if (mod(istep,epsr_update).eq.0) then
     call epsr_run(r,boxlxyz)
+    call epsr_read(r,boxlxyz)
   endif
 #endif
 
