@@ -44,7 +44,12 @@ subroutine epsr_run(r,boxlxyz)
     write(6,*) "Reading EPSR correction file now"
     open(123456, file="../vmd_current.EPSR.p01", action="read")
   else
-    write(6,*) "EPSR correction file ../vmd_current.EPSR.p01 not found! Aborting..."
+    write(6,*) "EPSR correction file vmd_current.EPSR.p01 not found!"
+    write(6,*) "Setting everything to zero..."
+    do i=1,1000
+        pos(i) = i
+    enddo
+    return
   endif
 #else
   open(123456, file="vmd_current.EPSR.p01", action="read")
