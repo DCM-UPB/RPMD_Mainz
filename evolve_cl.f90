@@ -12,7 +12,8 @@ subroutine evolve_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
   real(8) vir(3,3), vir_lf(3,3),vir_hf(3,3),vir_tmp(3,3)
   real(8) halfdtsmall,dt,boxlxyz(3),tvxyz(3),v,beta,dtsmall
   real(8) mass(na),z(na)
-  real(8) halfdt,om,v_lf,v_hf
+  real(8) halfdt,om,v_lf,v_hf,v_corr
+  real(8) dvdr_corr(3,na,nb),vir_corr(3,3)
   real(8) tv,tq1,tq2
   !real(8), allocatable :: monod(:,:,:),delp(:,:)
   character(len=4) type
@@ -28,6 +29,10 @@ subroutine evolve_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
   !monod(:,:,:) = 0.d0
   !delp(:,:) = 0.d0
   vir_hf(:,:) = 0.d0
+
+  v_corr = 0.d0
+  vir_corr(:,:) = 0.d0
+  dvdr_corr(:,:,:) = 0.d0
 
   halfdt = 0.5d0*dt
   dtsmall = dt/dble(mts)
@@ -113,14 +118,19 @@ subroutine evolve_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
   ! Evaluatation of the low frequency forces
 
   call forces(r,v_lf,dvdr,nb,na,boxlxyz,z,vir_lf,1)
+
+  !Corrections
+   !call forces(r,v_corr,dvdr_corr,nb,na,boxlxyz,z,vir_corr,8)
+  
+  v_lf = v_lf + v_corr
   v = v_lf + v_hf
 
   ! Virial
-
-  vir(:,:) = vir_lf(:,:) + vir_hf(:,:)
+  vir_lf(:,:)= vir_lf(:,:) + vir_corr(:,:)
+  vir(:,:)= vir_lf(:,:) + vir_hf(:,:)
 
   ! Evolve the momenta
-
+  dvdr(:,:,:) = dvdr(:,:,:) + dvdr_corr(:,:,:)
   p(:,:,:) = p(:,:,:)-halfdt*dvdr(:,:,:)
   if (therm.eq.'PRG') then
      call parinello_therm(p,mass,ttau,na,nb,halfdt,irun,beta)

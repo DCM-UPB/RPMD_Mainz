@@ -10,10 +10,15 @@ subroutine evolve_rig_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
   real(8) p(3,na,nb),r(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb)
   real(8) mass(na),z(na),vir(3,3),vir_lf(3,3),vir_hf(3,3)
   real(8) beta,tv,tq1,tq2,tvxyz(3)
-  real(8) dt,halfdt,boxlxyz(3),v,v_lf,v_hf
+  real(8) dt,halfdt,boxlxyz(3),v,v_lf,v_hf,v_corr
+  real(8) dvdr_corr(3,na,nb),vir_corr(3,3)
   real(8), allocatable :: rold(:,:)
 
   allocate (rold(3,na))
+
+  v_corr = 0.d0
+  vir_corr(:,:) = 0.d0
+  dvdr_corr(:,:,:) = 0.d0
 
   dvdr2(:,:,:) = 0.d0
   halfdt = 0.5d0*dt
@@ -46,8 +51,11 @@ subroutine evolve_rig_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
 
   call forces(r,v,dvdr,nb,na,boxlxyz,z,vir_lf,1)
 
+ !Corrections
+  !call forces(r,v_corr,dvdr_corr,nb,na,boxlxyz,z,vir_corr,8)
+   
   ! Evolve : Velocity Verlet Stage 2
-
+  dvdr(:,:,:) = dvdr(:,:,:) + dvdr_corr(:,:,:)
   p(:,:,:) = p(:,:,:) - halfdt*dvdr(:,:,:)
 
   ! Rattle Stage 2
@@ -65,7 +73,7 @@ subroutine evolve_rig_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
 
   ! Barostat
   ! (note:// COMs scaled therefore does not affect RATTLE)
-
+  vir_lf(:,:) = vir_lf(:,:) + vir_corr(:,:) 
   vir(:,:) = vir_lf(:,:) + vir_hf(:,:)
   if (nbaro.eq.1) then
      if (baro.eq.'BER') then
@@ -78,8 +86,9 @@ subroutine evolve_rig_cl(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
         stop
      endif
   endif
-
-  vir(:,:) = vir_lf(:,:) + vir_hf(:,:)
+  
+  vir(:,:) = vir_lf(:,:) + vir_hf(:,:) 
+  v = v + v_corr
   v_lf = v
   v_hf = 0.d0
 
@@ -100,7 +109,8 @@ subroutine evolve_rig_pi(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
   real(8) p(3,na,nb),r(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb)
   real(8) mass(na),z(na),boxlxyz(3),vir(3,3),vir_lf(3,3),vir_hf(3,3)
   real(8) vir_tmp(3,3),dt,v,v_lf,v_hf,beta,tv,tvxyz(3),tq1,tq2
-  real(8) halfdt,smalldt,halfsmalldt
+  real(8) halfdt,smalldt,halfsmalldt,v_corr
+  real(8) dvdr_corr(3,na,nb),vir_corr(3,3)
   real(8), allocatable :: rold(:,:)
 
   allocate (rold(3,na))
@@ -163,8 +173,11 @@ subroutine evolve_rig_pi(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
 
   call forces(r,v,dvdr,nb,na,boxlxyz,z,vir_lf,1)
 
-  ! Velocity Verlet Stage 2 under intermolecular forces
+  !Corrections
+   !call forces(r,v_corr,dvdr_corr,nb,na,boxlxyz,z,vir_corr,8)
 
+  ! Velocity Verlet Stage 2 under intermolecular forces
+  dvdr(:,:,:) = dvdr(:,:,:) + dvdr_corr(:,:,:) 
   p(:,:,:) = p(:,:,:) - halfdt * dvdr(:,:,:)
 
   ! Rattle stage 2
@@ -183,7 +196,8 @@ subroutine evolve_rig_pi(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
   endif
 
   vir_hf(:,:) = vir_hf(:,:)/dble(nb)
-  vir(:,:) = vir_lf(:,:) + vir_hf(:,:)
+  vir_lf(:,:) = vir_lf(:,:) + vir_corr(:,:)
+  vir(:,:) = vir_lf(:,:) + vir_hf(:,:) + vir(:,:)
 
   ! Barostat
 
@@ -200,6 +214,7 @@ subroutine evolve_rig_pi(p,r,v,v_lf,v_hf,dvdr,dvdr2,dt,mass,na,nb, &
      endif
   endif
 
+  v = v + v_corr
   v_lf = v
   v_hf = 0.d0
 

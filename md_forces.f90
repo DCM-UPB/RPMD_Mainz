@@ -125,6 +125,8 @@ subroutine potenl_opt(r,v,dvdr,vir,na,nb,boxlxyz, &
   ! iopt = 2   - Ewald force evaluation
   ! iopt = 3   - LJ force evaluation and possibly EPSR correction
   ! iopt = 4   - Intramolecular force evaluation
+  ! iopt = 5   - Ewald short range correction, doesn't call potenl_opt
+  ! iopt = 8   - (Possibly EPSR correction)<-- not implemented
   ! iopt = 9   - RPMD-DFT force evaluation for AI-RPMD use
   ! ------------------------------------------------------------------
   integer na,nb,mol(na),nm,i,j,imol,ic,iopt,point(na+3),list(maxnab*na),bead,rpmde3b
@@ -241,6 +243,16 @@ subroutine potenl_opt(r,v,dvdr,vir,na,nb,boxlxyz, &
        vir(:,:) = vir(:,:) + vir_epsr(:,:)
        deallocate(dvdrepsr)
      endif
+    
+    !e3b-Correction     
+     if (rpmde3b.ne.0) then              
+        call e3b_convert_pos (na,nm,r,boxlxyz,pos,box)
+        call e3b_driver(nm,pos,f3B,vir_e3b,box,v_e3b)
+        call e3b_convert_forces (nm,f3B,vir_e3b,v_e3b,dvdr_e3b)
+        v = v + v_e3b
+        vir(:,:)= vir(:,:) + vir_e3b(:,:)
+        dvdr(:,:) = dvdr(:,:) - dvdr_e3b(:,:)     
+     endif
 
   endif
   
@@ -260,16 +272,20 @@ subroutine potenl_opt(r,v,dvdr,vir,na,nb,boxlxyz, &
      endif
      v = v + vint
      vir(:,:) = vir(:,:) + vir_int(:,:)
-     
-     !e3b-Correction     
-     if (rpmde3b.ne.0) then              
-        call e3b_convert_pos (na,nm,r,boxlxyz,pos,box)
-        call e3b_driver(nm,pos,f3B,vir_e3b,box,v_e3b)
-        call e3b_convert_forces (nm,f3B,vir_e3b,v_e3b,dvdr_e3b)
-        v = v + v_e3b
-        vir(:,:)= vir(:,:) + vir_e3b(:,:)
-        dvdr(:,:) = dvdr(:,:) - dvdr_e3b(:,:)     
-     endif
+        
+  endif
+  
+  !Corrections
+  if (iopt.eq.8) then
+    !e3b-Correction
+    !if (rpmde3b.ne.0) then              
+     !call e3b_convert_pos (na,nm,r,boxlxyz,pos,box)
+     !call e3b_driver(nm,pos,f3B,vir_e3b,box,v_e3b)
+     !call e3b_convert_forces (nm,f3B,vir_e3b,v_e3b,dvdr_e3b)       
+     !dvdr(:,:) = -dvdr_e3b
+     !v = v_e3b 
+     !vir(:,:) = vir_e3b(:,:)
+    !endif
 
   endif
 
@@ -295,7 +311,8 @@ subroutine full_forces(r,na,nb,v,vew,voo,vint,vir,z,boxlxyz, &
   real(8) r(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb),z(na),boxlxyz(3),rnm(3,na,nb),dvdrb(3,na,nbdf3),rb(3,na,nbdf3)
   real(8) vir(3,3),vir_oo(3,3),vir_ew(3,3)
   real(8) vir_itr(3,3),vir_ewc(3,3)
-  real(8) v,vew,voo,vint,sig,ve
+  real(8) v,vew,voo,vint,sig,ve,v_corr
+  real(8) dvdr_corr(3,na,nb),vir_corr(3,3)
   real(8), allocatable :: dvdre(:,:,:),dvdrl(:,:,:)
   common /beaddiabatic/ nbdf1,nbdf2
   common /correct/ sig
@@ -319,6 +336,10 @@ subroutine full_forces(r,na,nb,v,vew,voo,vint,vir,z,boxlxyz, &
   vir_itr(:,:) = 0.d0
   vir_oo(:,:) = 0.d0
   vir_ew(:,:) = 0.d0
+
+  v_corr = 0.d0
+  vir_corr(:,:) = 0.d0
+  dvdr_corr(:,:,:) = 0.d0
   
   if (rpmddft.eq.0) then
 
@@ -396,6 +417,11 @@ subroutine full_forces(r,na,nb,v,vew,voo,vint,vir,z,boxlxyz, &
        call forces(r,voo,dvdrl,nb,na,boxlxyz,z,vir_oo,3)
     endif
 
+  !Corrections
+   !call forces(r,v_corr,dvdr_corr,nb,na,boxlxyz,z,vir_corr,8)
+
+   dvdr(:,:,:) = dvdr(:,:,:) + dvdr_corr(:,:,:)
+
     ! Sum ewald and O-O forces if needed
 
   if ((nb.eq.1).or.(nbdf1.le.0).or.(nbdf2.le.0)) then
@@ -403,11 +429,11 @@ subroutine full_forces(r,na,nb,v,vew,voo,vint,vir,z,boxlxyz, &
   endif
 
     ! Potential Energy
-
+    voo = voo + v_corr
     v = vew + voo + vint
 
     ! Virial
-
+    vir_oo(:,:) = vir_oo(:,:) + vir_corr(:,:)
     vir(:,:) = vir_oo(:,:) + vir_ew(:,:) + vir_itr(:,:)
 
 

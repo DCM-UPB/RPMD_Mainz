@@ -97,7 +97,8 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   real(8) boxmax
   real(8) rgh,rgo,rgcm,rghav,rgoav,rgcmav,tq1,tq2,tqe
   real(8) v1,v2,v3,v1ave,v2ave,v1eeav,v2eeav,v3ave,v3eeav,veeav,denc
-  real(8) pres,volav,pav,pvav,xav,yav,zav,denav,wmass
+  real(8) pres,volav,pav,pvav,xav,yav,zav,denav,wmass,v_corr
+  real(8) dvdr_corr(3,na,nb),vir_corr(3,3)
   real(8), allocatable :: dist(:,:), dvdre(:,:,:)
   character(len=3) ens
   character(len=128) file_name
@@ -128,6 +129,10 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   dtps = 1d-3*dt/tofs
   dconv = (ToA * 1d-10 * echarge) / ToDebye
   dconv2 = dconv*dconv
+
+  v_corr = 0.d0
+  vir_corr(:,:) = 0.d0
+  dvdr_corr(:,:,:) = 0.d0
 
   if (ttaufs.gt.0.d0 .and. (therm.eq.'AND' .or. therm.eq.'PRA')) then
       thresh = 1d-3*dtps/ttaufs !dtfs is not used in md_static
@@ -392,9 +397,14 @@ if (myid.eq.0) then
               
               ! LJ
               call forces(r,v2,dvdre,nb,na,boxlxyz,z,vir,3)
+              !Corrections
+              !call forces(r,v_corr,dvdr_corr,nb,na,boxlxyz,z,vir_corr,8)
+              v2 = v2 + v_corr
+              vir(:,:) = vir(:,:) + vir_corr(:,:)
+              dvdre(:,:,:) = dvdre(:,:,:) + dvdr_corr(:,:,:)              
               call virial_ke_ee(r,dvdre,tv,tq1,beta,na,nb)
               tq1 = tq1 + tqe
-
+             
               ! Intramolecular
               call forces(r,v3,dvdre,nb,na,boxlxyz,z,vir,4)
               call virial_ke_ee(r,dvdre,tv,tq2,beta,na,nb)

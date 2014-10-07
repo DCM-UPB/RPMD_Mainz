@@ -16,7 +16,8 @@ subroutine evolve_pi(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   real(8) vir_itr(3,3),vir_ewc(3,3),vir_lf(3,3),vir_hf(3,3)
   real(8) pprime,halfdtsmall,halfdt,om,gaussian
   real(8) dt,v,beta,dtsmall,vew,vlj,vint,sig,ve
-  real(8) tv,tv_itr,tq1,tq2
+  real(8) tv,tv_itr,tq1,tq2,v_hf,v_corr
+  real(8) dvdr_corr(3,na,nb),vir_corr(3,3)
   real(8), allocatable :: dvdre(:,:,:),rst(:,:,:),dvdrl(:,:,:)
   real(8), allocatable :: monod(:,:,:),delp(:,:)
   real(8) dheat, comx, comy, comz, mm !!GLE
@@ -47,6 +48,10 @@ subroutine evolve_pi(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
   vir_hf(:,:) = 0.d0
   tv = 0.d0
   tvxyz(:) = 0.d0
+  
+  v_corr = 0.d0
+  vir_corr(:,:) = 0.d0
+  dvdr_corr(:,:,:) = 0.d0
 
   dtsmall = dt/dble(mts)
   halfdtsmall = 0.5d0*dtsmall
@@ -266,8 +271,11 @@ subroutine evolve_pi(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
      dvdr(:,:,:) = dvdr(:,:,:) + dvdrl(:,:,:)
   endif
 
+   !Corrections
+   !call forces(r,v_corr,dvdr_corr,nb,na,boxlxyz,z,vir_corr,8)
+  
   ! Evolve the momenta under the low frequency forces
-
+  dvdr(:,:,:)= dvdr(:,:,:) + dvdr_corr(:,:,:) 
   p(:,:,:) = p(:,:,:) - halfdt*dvdr(:,:,:)
   
   if (type.eq.'RPMD') then
@@ -280,12 +288,13 @@ subroutine evolve_pi(p,r,v,vew,vlj,vint,dvdr,dvdr2,dt,mass,na,nb, &
          call therm_gle(p,dheat,mass,na,nb,irun)
      endif
   endif
-  ! Potential Energy
 
+  ! Potential Energy
+  vlj = vlj + v_corr
   v = vew + vlj + vint
 
   ! Virial
-
+  vir_lj(:,:)= vir_lj(:,:) + vir_corr(:,:)
   vir_lf(:,:) = vir_lj(:,:) + vir_ew(:,:)
   vir(:,:) =  vir_lf(:,:) + vir_hf(:,:)
 
