@@ -66,6 +66,7 @@ program qmd
     common /RPMDDFT/ rpmddft,nbdf3,rctdk
     common /EPSR/ epsr, epsr_update
     common /E3B/ rpmde3b
+    common /global_input/ print,pb,pt,ng
   
     vacfac = 1
     ntherm = 0

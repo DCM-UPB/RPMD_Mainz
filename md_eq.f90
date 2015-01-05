@@ -24,6 +24,33 @@ subroutine md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   common /constraint/ nctot,nbond
   common /inp/ npre_eq
   common /thinp/ ttaufs
+  character(128) file_name
+  integer print(3),ib,pb,pt,ng,reftraj
+  common /global_input/ print,pb,pt,ng,reftraj
+
+  if (ng.eq.0.and.pt.gt.0) then
+      if (reftraj.ne.0) then
+          if (print(1).eq.1) then
+              open(32,file='vmd_traj_eq.xyz',position='APPEND')
+          endif
+          if (print(2).eq.1) then
+              open(33,file='vmd_traj_eq.frc',position='APPEND')
+          endif
+          if (print(3).eq.1) then
+              open(34,file='vmd_traj_eq.vel',position='APPEND')
+          endif
+      else
+      if (print(1).eq.1) then
+          open(32,file='vmd_traj_eq.xyz')
+      endif
+      if (print(2).eq.1) then
+          open(33,file='vmd_traj_eq.frc')
+      endif
+      if (print(3).eq.1) then
+          open(34,file='vmd_traj_eq.vel')
+      endif
+    endif
+  endif
 
   nbaro = 0
   if (ens.eq.'NPT') then
@@ -159,7 +186,7 @@ subroutine md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
 
      call evolve(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
                  boxlxyz,z,beta,vir,vir_lf,irun,nbaro)
-     
+
      tps = 1.d-3*je*dtfs
 
      ! Pressure and Virial Kinetic Energy
@@ -171,21 +198,21 @@ subroutine md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
      vol = boxlxyz(1)*boxlxyz(2)*boxlxyz(3)
      wmass = mass(1) + mass(2) + mass(3)
      den = tokgcm3*(wmass*dble(nm)/vol)
-     
+
      if (ens.eq.'NPT') then
-        
+
         ! Current Density
 
         if (mod(je,10).eq.0) then
            if (iamcub) then
               write(35,*) tps , den
            else
-              write(35,*) tps , den 
+              write(35,*) tps , den
               write(37,'(f10.3,3f10.5)') tps, boxlxyz(1), &
                                          boxlxyz(2),boxlxyz(3)
            endif
         endif
-        
+
         ! Running average density
 
         if ((je.gt.(ne/10)).or.(je.gt.100000)) then
@@ -196,17 +223,29 @@ subroutine md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
            endif
         endif
      endif
-     
+
      ! Pressure
 
      if (mod(je,10).eq.0) then
         write(50,*)tps,pres*tobar
      endif
 
+     if ((ng.eq.0).and.(pt.gt.0).and.(mod(je,pt).eq.0)) then
+         if (print(1).eq.1) then
+             call print_vmd_full(r,nb,na,nm,boxlxyz,32)
+         endif
+         if (print(2).eq.1) then
+             call print_vmd_full_forces(dvdr,dvdr2,nb,na,boxlxyz,33)
+         endif
+         if (print(3).eq.1) then
+             call print_vmd_full_vels(p,mass,nb,na,boxlxyz,34)
+         endif
+     endif
+
      if (mod(je,jout) .eq. 0) then
-        
+
         ! Kinetic Energy
-        
+
         call kinetic(p,na,tk,mass,nb,beta)
 
         ! Calculate the contribution of the ring-polymer harmonic
@@ -232,7 +271,7 @@ subroutine md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
               enddo
            enddo
         endif
-        
+
         temp = toK*(2.d0*tk/(dble(3*na-nctot-3)*dble(nb)))/dble(nb)
         write (20,*) tps,temp
         write (10,'(3f14.6)') tps,v,toKjmol*(v/na)
@@ -248,7 +287,7 @@ subroutine md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
 
         rmsq = 0.d0
         call center_water(r,rcm,nm,nb) !calculates the centroid of the ring-polymer and not the center of mass
-        
+
         do i = 1,nm
            do k = 1,3
               dr = rcm(k,i)-rst(k,i)
@@ -276,11 +315,11 @@ subroutine md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
      endif
 
      ! Progress indicator
-     
+
      if (mod(je,nprog).eq.0) then
         write(6,*) 10*(je/nprog), ' %'
      endif
-     
+
   enddo
   close (unit=10)
   close (unit=20)
@@ -298,6 +337,17 @@ subroutine md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   close (unit=40)
   close (unit=50)
   close (unit=55)
+  if (ng.eq.0.and.pt.gt.0) then
+      if (print(1).eq.1) then
+          close(unit=32)
+      endif
+      if (print(2).eq.1) then
+          close(unit=33)
+      endif
+      if (print(3).eq.1) then
+          close(unit=34)
+      endif
+  endif
 
   write (6,*)'* Equilibration complete. '
   if (ens.eq.'NPT') then
