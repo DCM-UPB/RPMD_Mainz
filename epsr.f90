@@ -31,7 +31,7 @@ subroutine epsr_run(r,boxlxyz)
 end subroutine
 
 
-subroutine epsr_read(r,boxlxyz)
+subroutine epsr_read(boxlxyz)
   implicit none
   include "globals.inc"
   real(8) r(3,ina),boxlxyz(3)
@@ -125,14 +125,14 @@ subroutine epsr_driver(r,dvdr,v,vir,list,point,na,boxlxyz,njump)
 #ifdef EPSR_STARTUP_READ
   ! Only read once on startup
   if (istep.eq.0) then
-    call epsr_read(r,boxlxyz)
+    call epsr_read(boxlxyz)
   else if (mod(istep,epsr_update).eq.0) then
     call epsr_run(r,boxlxyz)
   endif
 #else
   if (mod(istep,epsr_update).eq.0) then
     call epsr_run(r,boxlxyz)
-    call epsr_read(r,boxlxyz)
+    call epsr_read(boxlxyz)
   endif
 #endif
 
