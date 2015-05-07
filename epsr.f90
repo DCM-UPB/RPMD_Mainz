@@ -97,7 +97,7 @@ subroutine epsr_read()
     endif
   enddo
 
-  open(123456, file="test.dat", action="write")
+  open(123456, file="internal_epsr_potential.dat", action="write")
   do i=1,1000
     write(123456,*) pos(i),potOO(i),frcOO(i),potOH(i),frcOH(i),potHH(i),frcHH(i)
   enddo
