@@ -5,10 +5,9 @@ subroutine epsr_run(r,boxlxyz)
   ! Calculate EPSR correction
   ! ------------------------------------------------------------------
   real(8) r(3,ina),boxlxyz(3)
-  real(8) diff
-  character(len=255) :: cwd,cmd,line
+  character(len=255) :: cwd,cmd
   integer epsr_update
-  logical epsr, file_exists
+  logical epsr
   real(8) pos(1000),potOO(1000),frcOO(1000),potOH(1000),frcOH(1000),potHH(1000),frcHH(1000)
   common /EPSR/ epsr, epsr_update, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
 
@@ -31,12 +30,11 @@ subroutine epsr_run(r,boxlxyz)
 end subroutine
 
 
-subroutine epsr_read(boxlxyz)
+subroutine epsr_read()
   implicit none
   include "globals.inc"
-  real(8) r(3,ina),boxlxyz(3)
   real(8) diff
-  character(len=255) :: cwd,cmd,line
+  character(len=255) :: line
   integer i, io_err
   integer epsr_update
   logical epsr, file_exists
@@ -125,14 +123,14 @@ subroutine epsr_driver(r,dvdr,v,vir,list,point,na,boxlxyz,njump)
 #ifdef EPSR_STARTUP_READ
   ! Only read once on startup
   if (istep.eq.0) then
-    call epsr_read(boxlxyz)
+    call epsr_read()
   else if (mod(istep,epsr_update).eq.0) then
     call epsr_run(r,boxlxyz)
   endif
 #else
   if (mod(istep,epsr_update).eq.0) then
     call epsr_run(r,boxlxyz)
-    call epsr_read(boxlxyz)
+    call epsr_read()
   endif
 #endif
 
@@ -167,9 +165,9 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
   integer na,i,j,njump, bin
   real(8) r(3,na),dvdr(3,na),vir(3,3),boxlxyz(3),v
   real(8) onboxx,onboxy,onboxz
-  real(8) boxx,boxy,boxz,vij
-  real(8) drsq,fij,dfx,dfy,dfz
-  real(8) dx,dy,dz,vscale,dscale,sq
+  real(8) boxx,boxy,boxz
+  real(8) drsq,dfx,dfy,dfz
+  real(8) dx,dy,dz,sq
   logical epsr
   integer epsr_update, which_H
   real(8) pos(1000),potOO(1000),frcOO(1000),potOH(1000),frcOH(1000),potHH(1000),frcHH(1000)
