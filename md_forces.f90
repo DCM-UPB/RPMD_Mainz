@@ -234,15 +234,6 @@ subroutine potenl_opt(r,v,dvdr,vir,na,nb,boxlxyz, &
      vir(:,:) = vir(:,:) + vir_oo(:,:)
      deallocate (dvdroo)
 
-     if(epsr.eqv..true.) then
-       allocate (dvdrepsr(3,na))
-       ! Calculate epsr contribution and fix forces/virial/energy
-       call epsr_driver(r,dvdrepsr,vepsr,vir_epsr,list,point,na,boxlxyz,3)
-       dvdr(:,:) = dvdr(:,:) + dvdrepsr(:,:)
-       v = v + vepsr
-       vir(:,:) = vir(:,:) + vir_epsr(:,:)
-       deallocate(dvdrepsr)
-     endif
     
     !e3b-Correction     
      if (rpmde3b.ne.0) then              
@@ -272,9 +263,20 @@ subroutine potenl_opt(r,v,dvdr,vir,na,nb,boxlxyz, &
      endif
      v = v + vint
      vir(:,:) = vir(:,:) + vir_int(:,:)
-        
+
+
+     if(epsr.eqv..true.) then
+       allocate (dvdrepsr(3,na))
+       ! Calculate epsr contribution and fix forces/virial/energy
+       call epsr_driver(r,dvdrepsr,vepsr,vir_epsr,list,point,na,boxlxyz,3)
+       dvdr(:,:) = dvdr(:,:) + dvdrepsr(:,:)
+       v = v + vepsr
+       vir(:,:) = vir(:,:) + vir_epsr(:,:)
+       deallocate(dvdrepsr)
+     endif
+
   endif
-  
+
   !Corrections
   if (iopt.eq.8) then
     !e3b-Correction
