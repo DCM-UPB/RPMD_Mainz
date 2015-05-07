@@ -202,7 +202,7 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
         drsq = dx*dx + dy*dy + dz*dz
         sq = sqrt(drsq)
         bin = sq/(pos(2)-pos(1))
-        if (bin .lt. 1000) then
+        if (bin .lt. 1000 .and. bin.gt.0) then
         !if (drsq .lt. rcutsq) then
            v = v + potOO(bin)
            dfx = frcOO(bin) * dx*dx/drsq
@@ -238,7 +238,7 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
           drsq = dx*dx + dy*dy + dz*dz
           sq = sqrt(drsq)
           bin = sq/(pos(2)-pos(1))
-          if (bin .lt. 1000) then
+          if (bin .lt. 1000 .and. bin.gt.0) then
           !if (drsq .lt. rcutsq) then
              v = v + potOH(bin)
              dfx = frcOH(bin) * dx*dx/drsq
@@ -272,7 +272,7 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
           drsq = dx*dx + dy*dy + dz*dz
           sq = sqrt(drsq)
           bin = sq/(pos(2)-pos(1))
-          if (bin .lt. 1000) then
+          if (bin .lt. 1000 .and. bin.gt.0) then
           !if (drsq .lt. rcutsq) then
              v = v + potOH(bin)
              dfx = frcOH(bin) * dx*dx/drsq
@@ -308,7 +308,7 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
         drsq = dx*dx + dy*dy + dz*dz
         sq = sqrt(drsq)
         bin = sq/(pos(2)-pos(1))
-        if (bin .lt. 1000) then
+        if (bin .lt. 1000 .and. bin.gt.0) then
         !if (drsq .lt. rcutsq) then
            v = v + potOO(bin)
            dfx = frcHH(bin) * dx*dx/drsq
@@ -341,7 +341,7 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
         drsq = dx*dx + dy*dy + dz*dz
         sq = sqrt(drsq)
         bin = sq/(pos(2)-pos(1))
-        if (bin .lt. 1000) then
+        if (bin .lt. 1000 .and. bin.gt.0) then
         !if (drsq .lt. rcutsq) then
            v = v + potOO(bin)
            dfx = frcHH(bin) * dx*dx/drsq
@@ -377,7 +377,7 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
           drsq = dx*dx + dy*dy + dz*dz
           sq = sqrt(drsq)
           bin = sq/(pos(2)-pos(1))
-          if (bin .lt. 1000) then
+          if (bin .lt. 1000 .and. bin.gt.0) then
           !if (drsq .lt. rcutsq) then
              v = v + potHH(bin)
              dfx = frcHH(bin) * dx*dx/drsq
@@ -411,7 +411,7 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
           drsq = dx*dx + dy*dy + dz*dz
           sq = sqrt(drsq)
           bin = sq/(pos(2)-pos(1))
-          if (bin .lt. 1000) then
+          if (bin .lt. 1000 .and. bin.gt.0) then
           !if (drsq .lt. rcutsq) then
              v = v + potHH(bin)
              dfx = frcHH(bin) * dx*dx/drsq
