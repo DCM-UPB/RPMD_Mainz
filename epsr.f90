@@ -7,7 +7,6 @@ subroutine epsr_run(r,boxlxyz)
   real(8) r(3,ina),boxlxyz(3)
   real(8) diff
   character(len=255) :: cwd,cmd,line
-  integer i, io_err
   integer epsr_update
   logical epsr, file_exists
   real(8) pos(1000),potOO(1000),frcOO(1000),potOH(1000),frcOH(1000),potHH(1000),frcHH(1000)
@@ -167,18 +166,15 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
   ! ----------------------------------------------------------------
   integer na,i,j,njump, bin
   real(8) r(3,na),dvdr(3,na),vir(3,3),boxlxyz(3),v
-  real(8) onboxx,onboxy,onboxz,oo_eps,oo_sig,oo_gam,rcut
-  real(8) sigsq,rcutsq,boxx,boxy,boxz,vij
-  real(8) drsq,onr2,fij,dfx,dfy,dfz,sr2,sr6,wij
+  real(8) onboxx,onboxy,onboxz
+  real(8) boxx,boxy,boxz,vij
+  real(8) drsq,fij,dfx,dfy,dfz
   real(8) dx,dy,dz,vscale,dscale,sq
-  common /oo_param/ oo_eps,oo_sig,oo_gam,rcut
   logical epsr
   integer epsr_update, which_H
   real(8) pos(1000),potOO(1000),frcOO(1000),potOH(1000),frcOH(1000),potHH(1000),frcHH(1000)
   common /EPSR/ epsr, epsr_update, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
 
-  sigsq = oo_sig*oo_sig
-  rcutsq = rcut*rcut
   boxx = boxlxyz(1)
   boxy = boxlxyz(2)
   boxz = boxlxyz(3)
@@ -203,7 +199,6 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
         sq = sqrt(drsq)
         bin = sq/(pos(2)-pos(1))
         if (bin .lt. 1000 .and. bin.gt.0) then
-        !if (drsq .lt. rcutsq) then
            v = v + potOO(bin)
            dfx = frcOO(bin) * dx*dx/drsq
            dfy = frcOO(bin) * dy*dy/drsq
@@ -239,7 +234,6 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
           sq = sqrt(drsq)
           bin = sq/(pos(2)-pos(1))
           if (bin .lt. 1000 .and. bin.gt.0) then
-          !if (drsq .lt. rcutsq) then
              v = v + potOH(bin)
              dfx = frcOH(bin) * dx*dx/drsq
              dfy = frcOH(bin) * dy*dy/drsq
@@ -273,7 +267,6 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
           sq = sqrt(drsq)
           bin = sq/(pos(2)-pos(1))
           if (bin .lt. 1000 .and. bin.gt.0) then
-          !if (drsq .lt. rcutsq) then
              v = v + potOH(bin)
              dfx = frcOH(bin) * dx*dx/drsq
              dfy = frcOH(bin) * dy*dy/drsq
@@ -309,7 +302,6 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
 !!!        sq = sqrt(drsq)
 !!!        bin = sq/(pos(2)-pos(1))
 !!!        if (bin .lt. 1000 .and. bin.gt.0) then
-!!!        !if (drsq .lt. rcutsq) then
 !!!           v = v + potOO(bin)
 !!!           dfx = frcHH(bin) * dx*dx/drsq
 !!!           dfy = frcHH(bin) * dy*dy/drsq
@@ -342,7 +334,6 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
 !!!        sq = sqrt(drsq)
 !!!        bin = sq/(pos(2)-pos(1))
 !!!        if (bin .lt. 1000 .and. bin.gt.0) then
-!!!        !if (drsq .lt. rcutsq) then
 !!!           v = v + potOO(bin)
 !!!           dfx = frcHH(bin) * dx*dx/drsq
 !!!           dfy = frcHH(bin) * dy*dy/drsq
@@ -378,7 +369,6 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
           sq = sqrt(drsq)
           bin = sq/(pos(2)-pos(1))
           if (bin .lt. 1000 .and. bin.gt.0) then
-          !if (drsq .lt. rcutsq) then
              v = v + potHH(bin)
              dfx = frcHH(bin) * dx*dx/drsq
              dfy = frcHH(bin) * dy*dy/drsq
@@ -412,7 +402,6 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
           sq = sqrt(drsq)
           bin = sq/(pos(2)-pos(1))
           if (bin .lt. 1000 .and. bin.gt.0) then
-          !if (drsq .lt. rcutsq) then
              v = v + potHH(bin)
              dfx = frcHH(bin) * dx*dx/drsq
              dfy = frcHH(bin) * dy*dy/drsq
@@ -438,17 +427,6 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
         enddo ! O--H
      enddo
   enddo
-
-  !vscale = 1.0d0 !4.d0*oo_eps
-  !dscale = 1.0d0 !48.d0*oo_eps
-
-  !v = vscale * v
-  !vir(:,:) = dscale * vir(:,:)
-  !do i = 1,na,njump
-  !   dvdr(1,i) = dscale*dvdr(1,i)
-  !   dvdr(2,i) = dscale*dvdr(2,i)
-  !   dvdr(3,i) = dscale*dvdr(3,i)
-  !enddo
 
   return
 end subroutine epsr_basic
