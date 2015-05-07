@@ -298,73 +298,73 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
           endif
         enddo ! O--H
 
-        ! H--H on same molecule
-        dx = r(1,i+1)-r(1,i+2)
-        dy = r(2,i+1)-r(2,i+2)
-        dz = r(3,i+1)-r(3,i+2)
-        dx = dx - boxx*dble(nint(onboxx*dx))
-        dy = dy - boxy*dble(nint(onboxy*dy))
-        dz = dz - boxz*dble(nint(onboxz*dz))
-        drsq = dx*dx + dy*dy + dz*dz
-        sq = sqrt(drsq)
-        bin = sq/(pos(2)-pos(1))
-        if (bin .lt. 1000 .and. bin.gt.0) then
-        !if (drsq .lt. rcutsq) then
-           v = v + potOO(bin)
-           dfx = frcHH(bin) * dx*dx/drsq
-           dfy = frcHH(bin) * dy*dy/drsq
-           dfz = frcHH(bin) * dz*dz/drsq
-           !write(6,*) bin, frcOO(bin), dfx,dfy,dfz
-           !write(6,*) dx, dy, dz, sq
-           dvdr(1,i+1) = dvdr(1,i+1) - dfx
-           dvdr(2,i+1) = dvdr(2,i+1) - dfy
-           dvdr(3,i+1) = dvdr(3,i+1) - dfz
-           dvdr(1,i+2) = dvdr(1,i+2) + dfx
-           dvdr(2,i+2) = dvdr(2,i+2) + dfy
-           dvdr(3,i+2) = dvdr(3,i+2) + dfz
-           vir(1,1) = vir(1,1) - dx * dfx
-           vir(2,2) = vir(2,2) - dy * dfy
-           vir(3,3) = vir(3,3) - dz * dfz
-           vir(1,2) = vir(1,2) - dx * dfy
-           vir(1,3) = vir(1,3) - dx * dfz
-           vir(2,1) = vir(2,1) - dy * dfx
-           vir(2,3) = vir(2,3) - dy * dfz
-           vir(3,1) = vir(3,1) - dz * dfx
-           vir(3,2) = vir(3,2) - dz * dfy
-        endif
-        dx = r(1,j+1)-r(1,j+2)
-        dy = r(2,j+1)-r(2,j+2)
-        dz = r(3,j+1)-r(3,j+2)
-        dx = dx - boxx*dble(nint(onboxx*dx))
-        dy = dy - boxy*dble(nint(onboxy*dy))
-        dz = dz - boxz*dble(nint(onboxz*dz))
-        drsq = dx*dx + dy*dy + dz*dz
-        sq = sqrt(drsq)
-        bin = sq/(pos(2)-pos(1))
-        if (bin .lt. 1000 .and. bin.gt.0) then
-        !if (drsq .lt. rcutsq) then
-           v = v + potOO(bin)
-           dfx = frcHH(bin) * dx*dx/drsq
-           dfy = frcHH(bin) * dy*dy/drsq
-           dfz = frcHH(bin) * dz*dz/drsq
-           !write(6,*) bin, frcHH(bin), dfx,dfy,dfz
-           !write(6,*) dx, dy, dz, sq
-           dvdr(1,j+1) = dvdr(1,j+1) - dfx
-           dvdr(2,j+1) = dvdr(2,j+1) - dfy
-           dvdr(3,j+1) = dvdr(3,j+1) - dfz
-           dvdr(1,j+2) = dvdr(1,j+2) + dfx
-           dvdr(2,j+2) = dvdr(2,j+2) + dfy
-           dvdr(3,j+2) = dvdr(3,j+2) + dfz
-           vir(1,1) = vir(1,1) - dx * dfx
-           vir(2,2) = vir(2,2) - dy * dfy
-           vir(3,3) = vir(3,3) - dz * dfz
-           vir(1,2) = vir(1,2) - dx * dfy
-           vir(1,3) = vir(1,3) - dx * dfz
-           vir(2,1) = vir(2,1) - dy * dfx
-           vir(2,3) = vir(2,3) - dy * dfz
-           vir(3,1) = vir(3,1) - dz * dfx
-           vir(3,2) = vir(3,2) - dz * dfy
-        endif
+!!!        ! H--H on same molecule
+!!!        dx = r(1,i+1)-r(1,i+2)
+!!!        dy = r(2,i+1)-r(2,i+2)
+!!!        dz = r(3,i+1)-r(3,i+2)
+!!!        dx = dx - boxx*dble(nint(onboxx*dx))
+!!!        dy = dy - boxy*dble(nint(onboxy*dy))
+!!!        dz = dz - boxz*dble(nint(onboxz*dz))
+!!!        drsq = dx*dx + dy*dy + dz*dz
+!!!        sq = sqrt(drsq)
+!!!        bin = sq/(pos(2)-pos(1))
+!!!        if (bin .lt. 1000 .and. bin.gt.0) then
+!!!        !if (drsq .lt. rcutsq) then
+!!!           v = v + potOO(bin)
+!!!           dfx = frcHH(bin) * dx*dx/drsq
+!!!           dfy = frcHH(bin) * dy*dy/drsq
+!!!           dfz = frcHH(bin) * dz*dz/drsq
+!!!           !write(6,*) bin, frcHH(bin), dfx,dfy,dfz
+!!!           !write(6,*) dx, dy, dz, sq
+!!!           dvdr(1,i+1) = dvdr(1,i+1) - dfx
+!!!           dvdr(2,i+1) = dvdr(2,i+1) - dfy
+!!!           dvdr(3,i+1) = dvdr(3,i+1) - dfz
+!!!           dvdr(1,i+2) = dvdr(1,i+2) + dfx
+!!!           dvdr(2,i+2) = dvdr(2,i+2) + dfy
+!!!           dvdr(3,i+2) = dvdr(3,i+2) + dfz
+!!!           vir(1,1) = vir(1,1) - dx * dfx
+!!!           vir(2,2) = vir(2,2) - dy * dfy
+!!!           vir(3,3) = vir(3,3) - dz * dfz
+!!!           vir(1,2) = vir(1,2) - dx * dfy
+!!!           vir(1,3) = vir(1,3) - dx * dfz
+!!!           vir(2,1) = vir(2,1) - dy * dfx
+!!!           vir(2,3) = vir(2,3) - dy * dfz
+!!!           vir(3,1) = vir(3,1) - dz * dfx
+!!!           vir(3,2) = vir(3,2) - dz * dfy
+!!!        endif
+!!!        dx = r(1,j+1)-r(1,j+2)
+!!!        dy = r(2,j+1)-r(2,j+2)
+!!!        dz = r(3,j+1)-r(3,j+2)
+!!!        dx = dx - boxx*dble(nint(onboxx*dx))
+!!!        dy = dy - boxy*dble(nint(onboxy*dy))
+!!!        dz = dz - boxz*dble(nint(onboxz*dz))
+!!!        drsq = dx*dx + dy*dy + dz*dz
+!!!        sq = sqrt(drsq)
+!!!        bin = sq/(pos(2)-pos(1))
+!!!        if (bin .lt. 1000 .and. bin.gt.0) then
+!!!        !if (drsq .lt. rcutsq) then
+!!!           v = v + potOO(bin)
+!!!           dfx = frcHH(bin) * dx*dx/drsq
+!!!           dfy = frcHH(bin) * dy*dy/drsq
+!!!           dfz = frcHH(bin) * dz*dz/drsq
+!!!           !write(6,*) bin, frcHH(bin), dfx,dfy,dfz
+!!!           !write(6,*) dx, dy, dz, sq
+!!!           dvdr(1,j+1) = dvdr(1,j+1) - dfx
+!!!           dvdr(2,j+1) = dvdr(2,j+1) - dfy
+!!!           dvdr(3,j+1) = dvdr(3,j+1) - dfz
+!!!           dvdr(1,j+2) = dvdr(1,j+2) + dfx
+!!!           dvdr(2,j+2) = dvdr(2,j+2) + dfy
+!!!           dvdr(3,j+2) = dvdr(3,j+2) + dfz
+!!!           vir(1,1) = vir(1,1) - dx * dfx
+!!!           vir(2,2) = vir(2,2) - dy * dfy
+!!!           vir(3,3) = vir(3,3) - dz * dfz
+!!!           vir(1,2) = vir(1,2) - dx * dfy
+!!!           vir(1,3) = vir(1,3) - dx * dfz
+!!!           vir(2,1) = vir(2,1) - dy * dfx
+!!!           vir(2,3) = vir(2,3) - dy * dfz
+!!!           vir(3,1) = vir(3,1) - dz * dfx
+!!!           vir(3,2) = vir(3,2) - dz * dfy
+!!!        endif
 
         ! H--H on different molecule
         do which_H=1,2
