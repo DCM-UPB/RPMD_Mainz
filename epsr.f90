@@ -8,7 +8,7 @@ subroutine epsr_run(r,boxlxyz)
   character(len=255) :: cwd,cmd
   integer epsr_update
   logical epsr
-  real(8) pos(1000),potOO(1000),frcOO(1000),potOH(1000),frcOH(1000),potHH(1000),frcHH(1000)
+  real(8) pos(5000),potOO(5000),frcOO(5000),potOH(5000),frcOH(5000),potHH(5000),frcHH(5000)
   common /EPSR/ epsr, epsr_update, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
 
   !write(6,*) "Calculating EPSR correction"
@@ -38,7 +38,7 @@ subroutine epsr_read()
   integer i, io_err
   integer epsr_update
   logical epsr, file_exists
-  real(8) pos(1000),potOO(1000),frcOO(1000),potOH(1000),frcOH(1000),potHH(1000),frcHH(1000)
+  real(8) pos(5000),potOO(5000),frcOO(5000),potOH(5000),frcOH(5000),potHH(5000),frcHH(5000)
   common /EPSR/ epsr, epsr_update, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
   ! Get results
   potOO(:) = 0.0d0
@@ -57,7 +57,7 @@ subroutine epsr_read()
   else
     write(6,*) "EPSR correction file vmd_current.EPSR.p01 not found!"
     write(6,*) "Setting everything to zero..."
-    do i=1,1000
+    do i=1,5000
         pos(i) = i
     enddo
     return
@@ -66,13 +66,13 @@ subroutine epsr_read()
   open(123456, file="EPSRrun/vmd_current.EPSR.p01", action="read")
 #endif
   read(123456,*) line
-  do i=1,1000
+  do i=1,5000
     read(123456,*,iostat=io_err) pos(i),potOO(i),frcOO(i),potOH(i),frcOH(i),potHH(i),frcHH(i)
     if(io_err.ne.0) then
       exit
     endif
   enddo
-  do i=2,1000
+  do i=2,5000
     pos(i-1) = pos(i)
     potOO(i-1) = potOO(i)
     potOH(i-1) = potOH(i)
@@ -88,7 +88,7 @@ subroutine epsr_read()
   pos(:) = pos(:)/toA
 
   ! calculate force as it is not (yet) implemented in EPSR
-  do i = 2,999
+  do i = 2,4999
     diff = (pos(i+1)-pos(i-1))
     if (diff.gt.1.0d-5.or.diff.lt.-1.0d-5) then
       frcOO(i) = -(potOO(i+1)-potOO(i-1))/diff
@@ -98,7 +98,7 @@ subroutine epsr_read()
   enddo
 
   open(123456, file="internal_epsr_potential.dat", action="write")
-  do i=1,1000
+  do i=1,5000
     write(123456,*) pos(i),potOO(i),frcOO(i),potOH(i),frcOH(i),potHH(i),frcHH(i)
   enddo
   close(123456)
@@ -116,7 +116,7 @@ subroutine epsr_driver(r,dvdr,v,vir,list,point,na,boxlxyz,njump)
   real(8) v,oo_eps,oo_sig,oo_gam,rcut,boxmax
   logical epsr
   integer epsr_update
-  real(8) pos(1000),potOO(1000),frcOO(1000),potOH(1000),frcOH(1000),potHH(1000),frcHH(1000)
+  real(8) pos(5000),potOO(5000),frcOO(5000),potOH(5000),frcOH(5000),potHH(5000),frcHH(5000)
   common /EPSR/ epsr, epsr_update, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
   common /oo_param/ oo_eps,oo_sig,oo_gam,rcut
 
@@ -170,7 +170,7 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
   real(8) dx,dy,dz,sq
   logical epsr
   integer epsr_update, which_H
-  real(8) pos(1000),potOO(1000),frcOO(1000),potOH(1000),frcOH(1000),potHH(1000),frcHH(1000)
+  real(8) pos(5000),potOO(5000),frcOO(5000),potOH(5000),frcOH(5000),potHH(5000),frcHH(5000)
   common /EPSR/ epsr, epsr_update, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
 
   boxx = boxlxyz(1)
@@ -195,8 +195,8 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
         dz = dz - boxz*dble(nint(onboxz*dz))
         drsq = dx*dx + dy*dy + dz*dz
         sq = sqrt(drsq)
-        bin = int(sq/(pos(2)-pos(1)))
-        if (bin .lt. 1000 .and. bin.gt.0) then
+        bin = int(sq/(pos(5)-pos(4)))
+        if (bin .lt. 5000 .and. bin.gt.0) then
            v = v + potOO(bin)
            dfx = frcOO(bin) * dx*dx/drsq
            dfy = frcOO(bin) * dy*dy/drsq
@@ -230,8 +230,8 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
           dz = dz - boxz*dble(nint(onboxz*dz))
           drsq = dx*dx + dy*dy + dz*dz
           sq = sqrt(drsq)
-          bin = int(sq/(pos(2)-pos(1)))
-          if (bin .lt. 1000 .and. bin.gt.0) then
+          bin = int(sq/(pos(5)-pos(4)))
+          if (bin .lt. 5000 .and. bin.gt.0) then
              v = v + potOH(bin)
              dfx = frcOH(bin) * dx*dx/drsq
              dfy = frcOH(bin) * dy*dy/drsq
@@ -263,8 +263,8 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
           dz = dz - boxz*dble(nint(onboxz*dz))
           drsq = dx*dx + dy*dy + dz*dz
           sq = sqrt(drsq)
-          bin = int(sq/(pos(2)-pos(1)))
-          if (bin .lt. 1000 .and. bin.gt.0) then
+          bin = int(sq/(pos(5)-pos(4)))
+          if (bin .lt. 5000 .and. bin.gt.0) then
              v = v + potOH(bin)
              dfx = frcOH(bin) * dx*dx/drsq
              dfy = frcOH(bin) * dy*dy/drsq
@@ -298,8 +298,8 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
 !!!        dz = dz - boxz*dble(nint(onboxz*dz))
 !!!        drsq = dx*dx + dy*dy + dz*dz
 !!!        sq = sqrt(drsq)
-!!!        bin = int(sq/(pos(2)-pos(1)))
-!!!        if (bin .lt. 1000 .and. bin.gt.0) then
+!!!        bin = int(sq/(pos(5)-pos(4)))
+!!!        if (bin .lt. 5000 .and. bin.gt.0) then
 !!!           v = v + potOO(bin)
 !!!           dfx = frcHH(bin) * dx*dx/drsq
 !!!           dfy = frcHH(bin) * dy*dy/drsq
@@ -330,8 +330,8 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
 !!!        dz = dz - boxz*dble(nint(onboxz*dz))
 !!!        drsq = dx*dx + dy*dy + dz*dz
 !!!        sq = sqrt(drsq)
-!!!        bin = int(sq/(pos(2)-pos(1)))
-!!!        if (bin .lt. 1000 .and. bin.gt.0) then
+!!!        bin = int(sq/(pos(5)-pos(4)))
+!!!        if (bin .lt. 5000 .and. bin.gt.0) then
 !!!           v = v + potOO(bin)
 !!!           dfx = frcHH(bin) * dx*dx/drsq
 !!!           dfy = frcHH(bin) * dy*dy/drsq
@@ -365,8 +365,8 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
           dz = dz - boxz*dble(nint(onboxz*dz))
           drsq = dx*dx + dy*dy + dz*dz
           sq = sqrt(drsq)
-          bin = int(sq/(pos(2)-pos(1)))
-          if (bin .lt. 1000 .and. bin.gt.0) then
+          bin = int(sq/(pos(5)-pos(4)))
+          if (bin .lt. 5000 .and. bin.gt.0) then
              v = v + potHH(bin)
              dfx = frcHH(bin) * dx*dx/drsq
              dfy = frcHH(bin) * dy*dy/drsq
@@ -398,8 +398,8 @@ subroutine epsr_basic(r,dvdr,v,vir,na,boxlxyz,njump)
           dz = dz - boxz*dble(nint(onboxz*dz))
           drsq = dx*dx + dy*dy + dz*dz
           sq = sqrt(drsq)
-          bin = int(sq/(pos(2)-pos(1)))
-          if (bin .lt. 1000 .and. bin.gt.0) then
+          bin = int(sq/(pos(5)-pos(4)))
+          if (bin .lt. 5000 .and. bin.gt.0) then
              v = v + potHH(bin)
              dfx = frcHH(bin) * dx*dx/drsq
              dfy = frcHH(bin) * dy*dy/drsq
@@ -446,7 +446,7 @@ subroutine epsr_list(r,dvdr,v,vir,na,boxlxyz,list,point,njump)
   common /oo_param/ oo_eps,oo_sig,oo_gam,rcut
   logical epsr
   integer epsr_update
-  real(8) pos(1000),potOO(1000),frcOO(1000),potOH(1000),frcOH(1000),potHH(1000),frcHH(1000)
+  real(8) pos(5000),potOO(5000),frcOO(5000),potOH(5000),frcOH(5000),potHH(5000),frcHH(5000)
   common /EPSR/ epsr, epsr_update, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
 
   ! clear arrays
@@ -551,7 +551,7 @@ subroutine epsr_cell(r,v,vir,dvdr,na,boxlxyz,njump)
   common /oo_param/ oo_eps,oo_sig,oo_gam,rcut
   logical epsr
   integer epsr_update
-  real(8) pos(1000),potOO(1000),frcOO(1000),potOH(1000),frcOH(1000),potHH(1000),frcHH(1000)
+  real(8) pos(5000),potOO(5000),frcOO(5000),potOH(5000),frcOH(5000),potHH(5000),frcHH(5000)
   common /EPSR/ epsr, epsr_update, pos, potOO, frcOO, potOH, frcOH, potHH, frcHH
 
   ! generate linked cell list
