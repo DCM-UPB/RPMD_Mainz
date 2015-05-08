@@ -22,7 +22,7 @@ program qmd
     character(len=240) line
     common /reftraj/ reftraj,line
   
-    integer nc_ice(3),nc_wat(3),nm_ice,nm_wat,nctot,nbond,vacfac
+    integer nc_ice(3),nc_wat(3),nm_ice,nm_wat,nctot,nbond,vacfac,na_expected
     integer natoms ! Used in reftraj mode for obtaining read in atoms for consitency check
     real(8) temp,rho,dtfs,ecut,test,beta,dt,dtps,boxmin,pres
     real(8) teqm,tsim,trdf,gaussian,wmass,rcut,om,ttaufs
@@ -326,6 +326,11 @@ if(myid.eq.0) then
                 enddo
             endif
             close (unit=61)
+            na_expected = ncellxyz(1)*ncellxyz(2)*ncellxyz(3)
+            if (na.ne.na_expected) then
+                write(6,*) "The restart file contains a different number of atoms than expected:", na, "vs.", na_expected
+                stop
+            endif
         else
             ! Thrid argument is trajectories file
             write(6,*)
