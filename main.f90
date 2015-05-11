@@ -326,7 +326,7 @@ if(myid.eq.0) then
                 enddo
             endif
             close (unit=61)
-            na_expected = ncellxyz(1)*ncellxyz(2)*ncellxyz(3)
+            na_expected = 3.0*ncellxyz(1)*ncellxyz(2)*ncellxyz(3)
             if (na.ne.na_expected) then
                 write(6,*) "The restart file contains a different number of atoms than expected:", na, "vs.", na_expected
                 stop
