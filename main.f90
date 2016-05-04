@@ -11,8 +11,8 @@ program qmd
     !--------------------------------------------------------------------
     !Classical/RPMD/PACMD Simulation Program for Flexible water
     !--------------------------------------------------------------------
-    integer nt,ne,nb,m,ng,npre_eq,pt,pb,irun,nm,na,narg,iargc,nbdf1,nbdf2,nbdf3,rctdk,i,j,k
-    integer nbr,mts,nlat,itcf(3),itst(3),ncellxyz(3),print(3),ntherm,iskip!,sizeMPI(9)
+    integer nt,ne,nb,m,ng,npre_eq,pt,pb,irun,nm,na,narg,iargc,nbdf1,nbdf2,nbdf3,rctdk,i,j,k,ptd
+    integer nbr,mts,nlat,itcf(3),itst(3),ncellxyz(3),print(4),ntherm,iskip!,sizeMPI(9)
 
     ! used for reftrj and RPMD-DFT
     integer reftraj,rpmddft,ierr,rpmddfthelp,myid,numid,epsr_update,rpmde3b
@@ -28,7 +28,7 @@ program qmd
     real(8) teqm,tsim,trdf,gaussian,wmass,rcut,om,ttaufs
     real(8) taufs,v,vew,vlj,vint,pi,vir(3,3),cell(3,3)
     real(8) qo,qh,alpha,oo_sig,oo_eps,oo_gam,theta,reoh,thetad
-    real(8) apot,bpot,alp,alpb,wm,wh,omass,hmass,sig,boxlxyz(3),vdum
+    real(8) apot,bpot,alp,alpb,wm,wh,omass,hmass,dmass,sig,boxlxyz(3),vdum
     real(8) box_ice(3),box_wat(3),rcut_old
     real(8) vave
     real(8), allocatable :: mass(:),z(:),r(:,:,:)
@@ -36,16 +36,18 @@ program qmd
     character(len=25) filename
     character(len=4) type
     character(len=3) lattice,ens,therm_backup
+    character(len=3) isotope
     logical iamcub,iamrigid
     logical epsr
+    logical H2O,HDO,D2O
     external gaussian
 
-    namelist/input/ens,temp,pres,rho,lattice,vacfac,iamcub,dtfs, &
+    namelist/input/ens,isotope,temp,pres,rho,lattice,vacfac,iamcub,dtfs, &
     ecut,nt,ne,npre_eq,ntherm,nb,m,ng,print,reftraj,iskip,pt,pb, &
     ncellxyz,irun,itcf,itst,rcut, &
     type,therm,ttaufs,baro,taufs,mts,om,nbdf1,nbdf2,sig,rpmddft, &
     CP2K_path,nbdf3,rctdk,epsr,epsr_update,rpmde3b
-    namelist/param/ wmass,omass,hmass,qo,alpha,oo_sig,oo_eps,oo_gam, &
+    namelist/param/ wmass,omass,hmass,dmass,qo,alpha,oo_sig,oo_eps,oo_gam, &
     thetad,reoh,apot,bpot,alp,alpb,wm,wh
 
     common /path_i/ om,type
@@ -66,7 +68,9 @@ program qmd
     common /RPMDDFT/ rpmddft,nbdf3,rctdk
     common /EPSR/ epsr, epsr_update
     common /E3B/ rpmde3b
+    common /isotope/ H2O,D2O,HDO
     common /global_input/ print,pb,pt,ng
+
   
     vacfac = 1
     ntherm = 0
@@ -83,6 +87,12 @@ program qmd
     itst(3) = 0 ! itst 3 argument is for RMS calculation
     epsr = .false.
     epsr_update = 1
+    isotope = "H2O"
+    dmass = 0.d0
+    print(4) = 0 !print 4 argument is for printing mol-dipole
+    H2O = .false.
+    D2O = .false.
+    HDO = .false. 
 
 		! Using CP2K parallel?
 #ifdef PARALLEL_BINDING
@@ -163,10 +173,11 @@ if(myid.eq.0) then
     trdf = ng*dtps
     rcut = rcut / ToA
 
-    write(6,60) ens,temp,pres,dtfs,teqm,tsim,trdf,m,mts,irun, &
+    write(6,60) isotope,ens,temp,pres,dtfs,teqm,tsim,trdf,m,mts,irun, &
     rho,ncellxyz(1),ncellxyz(2),ncellxyz(3)
 60  format (' Simulation Parameters:' /1x &
     '-----------------------' /1x &
+    'isotope =',a9 /1x &
     'ens    = ',a9 /1x &
     'temp   = ',f9.2,' K'/1x, &
     'pres   = ',f9.2,' bar'/1x &
@@ -180,7 +191,8 @@ if(myid.eq.0) then
     'rho    = ',f9.3,' g/cm**3'/1x,  &
     'ncellx = ',i9,' unit cells'/1x, &
     'ncelly = ',i9,' unit cells'/1x, &
-    'ncellz = ',i9,' unit cells')
+    'ncellz = ',i9,' unit cells') 
+    
 
     ! ACMD frequencies
     ! -----------------
@@ -198,6 +210,7 @@ if(myid.eq.0) then
     else
         om = 0.d0
     endif
+ 
 
     ! Thermostat setup
     ! -----------------
@@ -267,6 +280,17 @@ if(myid.eq.0) then
     endif
 59  format (' taufs  = ',f9.3,' ps')
 58  format (' dv     = ',f9.3)
+
+    if (epsr.eqv..true.) then
+        write (6,*) "Using EPSR"
+#ifdef EPSR_STARTUP_READ
+        write (6,*) "Reading EPSR on STARTUP"
+#else
+        write (6,*) "NOT reading EPSR on STARTUP"
+#endif
+    else
+        write (6,*) "NOT using EPSR"
+    endif
 
     ! Initialize the random number generator:
     ! ---------------------------------------
@@ -399,7 +423,7 @@ if(myid.eq.0) then
 
             call setup_interface(r,na,ne,irun,nm_ice,nm_wat,box_ice, &
             box_wat,boxlxyz,nc_ice,nc_wat, &
-            wmass,omass,hmass,qo,beta,dt,nb)
+            wmass,omass,hmass,dmass,qo,beta,dt,nb)
 
             therm=therm_backup
             rcut = rcut_old
@@ -502,12 +526,57 @@ if(myid.eq.0) then
     allocate (mass(na),z(na))
     z(:) = 0.d0
     mass(:) = 0.d0
+   
+   if(isotope.ne.'H2O' .and. dmass.eq. 0) then 
+        write(6,*)
+        write(6,*) 'Please specify mass of deuterium (dmass) in parameter-input!'
+        write(6,*)
+        stop
+   
+ 
+     else if(isotope.eq.'H2O')then                !Isotope selection H20, D2O or HDO resp. DHO.
+        H2O = .true.
+        do i = 1,na,3                             !D/H resp. H/D Mixture mode H2O/D2O not yet implemented.
+          mass(i) = omass      ! Oxygen
+          mass(i+1) = hmass    ! Hydrogen
+          mass(i+2) = hmass    ! Hydrogen
+        enddo
+    
+     else if(isotope.eq.'D2O') then
+       D2O = .true.
+       do i = 1,na,3
+          mass(i) = omass      ! Oxygen
+          mass(i+1) = dmass    ! Deuterium
+          mass(i+2) = dmass    ! Deuterium
+       enddo
+    
+     else if(isotope.eq.'HDO'.or.isotope.eq.'DHO') then
+       HDO = .true.
+       do i = 1,na,3
+          mass(i) = omass      ! Oxygen
+          mass(i+1) = dmass    ! Deuterium
+          mass(i+2) = hmass    ! Hydrogen
+       enddo
+    
+     !else if(isotope.eq.'H/D'.or.isotope.eq.'D/H') then        Doesn't work for uneven
+       !do i = 1,na,6                                           number of molecules.
+          !mass(i) = omass      ! Oxygen
+          !mass(i+1) = dmass    ! Hydrogen
+          !mass(i+2) = dmass    ! Hydrogen
+       !enddo
 
-    do i = 1,na,3
-        mass(i) = omass      ! Oxygen
-        mass(i+1) = hmass    ! Hydrogen
-        mass(i+2) = hmass    ! Hydrogen
-    enddo
+      !do i = 2,na,6
+          !mass(i) = omass      ! Oxygen
+          !mass(i+1) = dmass    ! Deuterium
+          !mass(i+2) = dmass    ! Deuterium
+      !enddo
+
+      else
+        write(6,*)
+        write(6,*) 'Please choose isotope = H2O, D2O or HDO!'
+        write(6,*)
+        stop
+   endif   
 
     qh = -0.5d0*qo
     do i = 1,na,3
@@ -613,7 +682,27 @@ if(myid.eq.0) then
         else 
            write(6,*) '* Three body correction WILL NOT be calculated...' 
         endif
-        write(6,*)
+     
+
+    
+    !pt Check for dipole printing 
+    if (ng .gt. 0) then
+      if((print(4).eq.1).and.(mod(pt,10).ne.0)) then !dipolemoment is calculated every 10th step in md_static  
+        if(pt.lt.10) then                            !therefore this Warning
+          ptd = 10
+        else 
+          ptd = pt-mod(pt,10)
+        endif
+      write(6,*)
+      write(6,*) 'WARNING:The molecular dipole moment is calculated every 10th step.'  
+      write(6,*) 'Therefore the dipole moment will be calculated every', ptd, 'step.'
+      write(6,*) 'Instead of every', pt, 'as the other parameters (position etc.).'
+      else
+       ptd = pt
+      endif
+    endif
+
+    write(6,*)
 
         if (epsr.eqv..true.) then
             write (6,*) "EPSR WILL be used..."
@@ -637,6 +726,7 @@ if(myid.eq.0) then
     write(10,*) ' Water mass              = ', wmass
     write(10,*) ' Oxygen mass             = ', omass
     write(10,*) ' Hydrogen mass           = ', hmass
+    write(10,*) ' Deuterium mass          = ', dmass
     write(10,*) ' Charge on Oxygen        = ', qo
     write(10,*) ' Alpha (M-site)          = ', alpha
     write(10,*) ' LJ Sigma                = ', oo_sig
@@ -779,7 +869,7 @@ endif
 #endif
 
 						call md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta,&
-            dt,mass,irun,itst,pt,pb,print,vave)
+            dt,mass,irun,itst,pt,pb,print,vave,ptd)
         endif
     else
         if (reftraj.lt.0) then
@@ -883,7 +973,7 @@ end program
             dt,mass,irun,itst,pt,pb,print)
     implicit none
     integer nt,ne,nb,m,ng,npre_eq,pt,pb,irun,nm,na,narg,iargc,nbdf1,nbdf2,nbdf3,rctdk,i,j,k
-    integer nbr,mts,nlat,itcf(3),itst(3),ncellxyz(3),print(3),ntherm,iskip!,sizeMPI(9)
+    integer nbr,mts,nlat,itcf(3),itst(3),ncellxyz(3),print(4),ntherm,iskip!,sizeMPI(9)
 
     ! used for reftrj and RPMD-DFT
     integer reftraj,rpmddft,ierr,rpmddfthelp,myid,numid
