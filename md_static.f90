@@ -4,7 +4,7 @@ subroutine md_static_prepare_traj(nb,pt,pb,print)
   implicit none
   include 'globals.inc'
   integer nb,pt,pb
-  integer print(3)
+  integer print(4)
   integer ib
   character(len=128) file_name
 
@@ -17,6 +17,9 @@ subroutine md_static_prepare_traj(nb,pt,pb,print)
     endif
     if (print(3).eq.1) then
       open(34,file='vmd_traj.vel',STATUS='replace')
+    endif
+    if (print(4).eq.1)then
+      open(41,file='mol-dipole_traj.txt',STATUS='replace')
     endif
   endif
   if (pb.gt.0) then
@@ -50,6 +53,9 @@ subroutine md_static_prepare_traj(nb,pt,pb,print)
      if (print(3).eq.1) then
        close(unit=34)
      endif
+     if (print(4).eq.1) then
+       close(unit=41)
+     endif
   endif
   if (pb.gt.0) then
      if (print(1).eq.1) then
@@ -71,7 +77,7 @@ subroutine md_static_prepare_traj(nb,pt,pb,print)
 end subroutine md_static_prepare_traj
 
 subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
-                     dt,mass,irun,itst,pt,pb,print,vave)
+                     dt,mass,irun,itst,pt,pb,print,vave,ptd)
   use thermostat
   use barostat
   implicit none
@@ -82,8 +88,8 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   ! ------------------------------------------------------------------
   ! Routine to calculate the static properties
   ! ------------------------------------------------------------------
-  integer na,nb,ng,irun,nrdf,nbdf1,nbdf2,nbaro,pt,pb,myid,ierr
-  integer no,i,je,k,j,ii,jj,ibin,nm,itst(3),ib,print(3)
+  integer na,nb,ng,irun,nrdf,nbdf1,nbdf2,nbaro,pt,pb,myid,ierr,ptd
+  integer no,i,je,k,j,ii,jj,ibin,nm,itst(3),ib,print(4)
   integer(8), allocatable :: ihhh(:),ihoo(:),ihoh(:)
   real(8) boxlxyz(3),beta,v,dt
   real(8) p(3,na,nb), dvdr(3,na,nb),dvdr2(3,na,nb),ran2,z(na)
@@ -100,6 +106,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   real(8) pres,volav,pav,pvav,xav,yav,zav,denav,wmass,v_corr
   real(8) dvdr_corr(3,na,nb),vir_corr(3,3)
   real(8), allocatable :: dist(:,:), dvdre(:,:,:)
+  real(8), allocatable :: m_dipole(:,:)
   character(len=3) ens
   character(len=128) file_name
   external ran2
@@ -119,6 +126,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
 #endif
   allocate (dist(na,na),dvdre(3,na,nb))
   allocate (ihhh(imaxbin),ihoo(imaxbin),ihoh(imaxbin))
+  allocate (m_dipole(3,na/3))
 
     ! Define some useful local constants and zero-out arrays
   v = 0.d0
@@ -229,6 +237,9 @@ if(myid.eq.0) then
      if (print(3).eq.1) then
         open(34,file='vmd_traj.vel',position='APPEND')
      endif
+    if (print(4).eq.1)then
+      open(41,file='mol-dipole_traj.txt',position='APPEND')
+    endif
     else
      if (print(1).eq.1) then
         open(32,file='vmd_traj.xyz')
@@ -238,6 +249,9 @@ if(myid.eq.0) then
      endif
      if (print(3).eq.1) then
         open(34,file='vmd_traj.vel')
+     endif
+     if (print(4).eq.1)then
+       open(41,file='mol-dipole_traj.txt')
      endif
     endif
   endif
@@ -435,12 +449,19 @@ if (myid.eq.0) then
 
         ! System dipole and dipole squared
 
-        call dipole(r,dipx,dipy,dipz,dip2,dipm,z,na,nb)
+        call dipole(r,dipx,dipy,dipz,dip2,dipm,z,na,nb,m_dipole)
         tavdip = tavdip + dipm
         tavdipx = tavdipx + dipx
         tavdipy = tavdipy + dipy
         tavdipz = tavdipz + dipz
         tavdip2 = tavdip2 + dip2
+
+        if ((ptd.gt.0).and.(mod(je,ptd).eq.0)) then
+            if (print(4).eq.1) then
+              call print_mol_dipole(na,m_dipole, 41)
+            endif
+        endif
+
 
         ! Check convergence of average system dipole moment
 
@@ -611,6 +632,9 @@ if (myid.eq.0) then
      endif
      if (print(3).eq.1) then
        close(unit=34)
+     endif
+     if (print(4).eq.1) then
+       close(unit=41)
      endif
   endif
   if (pb.gt.0) then
@@ -793,7 +817,7 @@ if (myid.eq.0) then
 #ifdef PARALLEL_BINDING
 endif
 #endif
-  deallocate (dist,ihhh,ihoo,ihoh)
+  deallocate (dist,ihhh,ihoo,ihoh,m_dipole)
 
   return
 end subroutine md_static

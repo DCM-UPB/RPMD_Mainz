@@ -25,7 +25,7 @@ subroutine md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   common /inp/ npre_eq
   common /thinp/ ttaufs
   character(128) file_name
-  integer print(3),ib,pb,pt,ng,reftraj
+  integer print(4),ib,pb,pt,ng,reftraj
   common /global_input/ print,pb,pt,ng,reftraj
 
   if (ng.eq.0.and.pt.gt.0) then

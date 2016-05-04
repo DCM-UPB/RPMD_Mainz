@@ -318,9 +318,10 @@ subroutine print_vmd_full(r,nb,na,nm,boxlxyz,nunit)
     real(8) dh1x,dh2x,dh1y,dh2y,dh1z,dh2z
     real(8), allocatable :: rc(:,:)
 
-    integer reftraj,DOH
+    integer reftraj
+    logical H2O,D2O,HDO
     common /reftraj/ reftraj
-		common /other/ DOH
+    common /isotope/ H2O,D2O,HDO
 
     allocate (rc(3,na))
     rc(:,:) = 0.d0
@@ -374,20 +375,33 @@ subroutine print_vmd_full(r,nb,na,nm,boxlxyz,nunit)
     endif
     write(nunit,*) na
     write(nunit,*) "BOX ", toA*xbox, toA*ybox, toA*zbox          !!GLE: PRINT ALSO BOX PARS, THIS IS A GOOD PLACE!!!
-  	if (DOH.eq.1) then
+  	if (HDO.eqv..true.) then
 		do k = 1,na,3
-        write(nunit,*) 'O ', toA*rc(1,k), toA*rc(2,k),toA*rc(3,k)
-        write(nunit,*) 'H ', toA*rc(1,k+1), toA*rc(2,k+1),toA*rc(3,k+1)
-        write(nunit,*) 'D ', toA*rc(1,k+2), toA*rc(2,k+2),toA*rc(3,k+2)
-    enddo
-		else  
+                  write(nunit,*) 'O ', toA*rc(1,k), toA*rc(2,k),toA*rc(3,k)
+                  write(nunit,*) 'D ', toA*rc(1,k+1), toA*rc(2,k+1),toA*rc(3,k+1)
+                  write(nunit,*) 'H ', toA*rc(1,k+2), toA*rc(2,k+2),toA*rc(3,k+2)
+                enddo
+         
+       else if (D2O.eqv..true.) then
 		do k = 1,na,3
-        write(nunit,*) 'O ', toA*rc(1,k), toA*rc(2,k),toA*rc(3,k)
-        write(nunit,*) 'H ', toA*rc(1,k+1), toA*rc(2,k+1),toA*rc(3,k+1)
-        write(nunit,*) 'H ', toA*rc(1,k+2), toA*rc(2,k+2),toA*rc(3,k+2)
-    enddo
-		endif
+                  write(nunit,*) 'O ', toA*rc(1,k), toA*rc(2,k),toA*rc(3,k)
+                  write(nunit,*) 'D ', toA*rc(1,k+1), toA*rc(2,k+1),toA*rc(3,k+1)
+                  write(nunit,*) 'D ', toA*rc(1,k+2), toA*rc(2,k+2),toA*rc(3,k+2)
+                enddo
+        
+       else if (H2O.eqv..true.) then 
+		do k = 1,na,3
+                  write(nunit,*) 'O ', toA*rc(1,k), toA*rc(2,k),toA*rc(3,k)
+                  write(nunit,*) 'H ', toA*rc(1,k+1), toA*rc(2,k+1),toA*rc(3,k+1)
+                  write(nunit,*) 'H ', toA*rc(1,k+2), toA*rc(2,k+2),toA*rc(3,k+2)
+                enddo
+       else
+         write(6,*) 'Error no isotope is set. Please Check the program code.'
+         stop
+       endif
+
     deallocate (rc)
+
     return
 end subroutine print_vmd_full
 
@@ -397,13 +411,14 @@ subroutine print_vmd_full_forces(dvdr,dvdr2,nb,na,boxlxyz,nunit)
     ! ------------------------------------------------------------------
     ! VMD output
     ! ------------------------------------------------------------------
-    integer na,nb,i,j,k,nunit,DOH
+    integer na,nb,i,j,k,nunit
     real(8) dvdr(3,na,nb),dvdr2(3,na,nb),boxlxyz(3)
     real(8) xbox,ybox,zbox
     real(8), allocatable :: frc(:,:)
+    logical H2O,D2O,HDO
 
-		common /other/ DOH
-
+    common /isotope/ H2O,D2O,HDO
+    
     allocate (frc(3,na))
     frc(:,:) = 0.d0
 
@@ -430,20 +445,33 @@ subroutine print_vmd_full_forces(dvdr,dvdr2,nb,na,boxlxyz,nunit)
     frc(:,:) = - frc(:,:)
     write(nunit,*) na
     write(nunit,*) "BOX ", toA*xbox, toA*ybox, toA*zbox          !!GLE: PRINT ALSO BOX PARS, THIS IS A GOOD PLACE!!!
-		if(DOH.eq.1) then
-    do k = 1,na,3
-        write(nunit,*) 'O ', frc(1,k+0), frc(2,k+0),frc(3,k+0)
-        write(nunit,*) 'H ', frc(1,k+1), frc(2,k+1),frc(3,k+1)
-        write(nunit,*) 'D ', frc(1,k+2), frc(2,k+2),frc(3,k+2)
-    enddo
-		else
-    do k = 1,na,3
-        write(nunit,*) 'O ', frc(1,k+0), frc(2,k+0),frc(3,k+0)
-        write(nunit,*) 'H ', frc(1,k+1), frc(2,k+1),frc(3,k+1)
-        write(nunit,*) 'H ', frc(1,k+2), frc(2,k+2),frc(3,k+2)
-    enddo
-		endif
+ 	if (HDO.eqv..true.) then
+		    do k = 1,na,3
+                      write(nunit,*) 'O ', frc(1,k+0), frc(2,k+0),frc(3,k+0)
+                      write(nunit,*) 'D ', frc(1,k+1), frc(2,k+1),frc(3,k+1)
+                      write(nunit,*) 'H ', frc(1,k+2), frc(2,k+2),frc(3,k+2)
+                    enddo
+         
+       else if (D2O.eqv..true.) then
+		    do k = 1,na,3
+                      write(nunit,*) 'O ', frc(1,k+0), frc(2,k+0),frc(3,k+0)
+                      write(nunit,*) 'D ', frc(1,k+1), frc(2,k+1),frc(3,k+1)
+                      write(nunit,*) 'D ', frc(1,k+2), frc(2,k+2),frc(3,k+2)
+                    enddo
+        
+       else if (H2O.eqv..true.) then 
+                    do k = 1,na,3
+                      write(nunit,*) 'O ', frc(1,k+0), frc(2,k+0),frc(3,k+0)
+                      write(nunit,*) 'H ', frc(1,k+1), frc(2,k+1),frc(3,k+1)
+                      write(nunit,*) 'H ', frc(1,k+2), frc(2,k+2),frc(3,k+2)
+                    enddo
+       else
+         write(6,*) 'Error no isotope is set. Please Check the program code.'
+         stop
+       endif
+	
     deallocate (frc)
+
     return
 end subroutine print_vmd_full_forces
 
@@ -453,11 +481,13 @@ subroutine print_vmd_full_vels(p,mass,nb,na,boxlxyz,nunit)
     ! ------------------------------------------------------------------
     ! VMD output
     ! ------------------------------------------------------------------
-    integer na,nb,i,j,k,nunit,DOH
+    integer na,nb,i,j,k,nunit
     real(8) p(3,na,nb),mass(na),boxlxyz(3)
     real(8) xbox,ybox,zbox
     real(8), allocatable :: vel(:,:)
-		common /other/ DOH
+    logical H2O,D2O,HDO
+
+    common /isotope/ H2O,D2O,HDO
 
     allocate (vel(3,na))
     vel(:,:) = 0.d0
@@ -483,20 +513,35 @@ subroutine print_vmd_full_vels(p,mass,nb,na,boxlxyz,nunit)
 
     write(nunit,*) na
     write(nunit,*) "BOX ", toA*xbox, toA*ybox, toA*zbox          !!GLE: PRINT ALSO BOX PARS, THIS IS A GOOD PLACE!!!
-		if(DOH.eq.1) then
-    do k = 1,na,3
-        write(nunit,*) 'O ', vel(1,k+0), vel(2,k+0),vel(3,k+0)
-        write(nunit,*) 'H ', vel(1,k+1), vel(2,k+1),vel(3,k+1)
-        write(nunit,*) 'D ', vel(1,k+2), vel(2,k+2),vel(3,k+2)
-    enddo
-		else
-    do k = 1,na,3
-        write(nunit,*) 'O ', vel(1,k+0), vel(2,k+0),vel(3,k+0)
-        write(nunit,*) 'H ', vel(1,k+1), vel(2,k+1),vel(3,k+1)
-        write(nunit,*) 'H ', vel(1,k+2), vel(2,k+2),vel(3,k+2)
-    enddo
-		endif
+       if (HDO.eqv..true.) then
+		     do k = 1,na,3
+                       write(nunit,*) 'O ', vel(1,k+0), vel(2,k+0),vel(3,k+0)
+                       write(nunit,*) 'D ', vel(1,k+1), vel(2,k+1),vel(3,k+1)
+                       write(nunit,*) 'H ', vel(1,k+2), vel(2,k+2),vel(3,k+2)
+                     enddo
+         
+       else if (D2O.eqv..true.) then		    
+		     do k = 1,na,3
+                       write(nunit,*) 'O ', vel(1,k+0), vel(2,k+0),vel(3,k+0)
+                       write(nunit,*) 'D ', vel(1,k+1), vel(2,k+1),vel(3,k+1)
+                       write(nunit,*) 'D ', vel(1,k+2), vel(2,k+2),vel(3,k+2)
+                     enddo
+        
+       else if (H2O.eqv..true.) then 
+                     do k = 1,na,3
+                       write(nunit,*) 'O ', vel(1,k+0), vel(2,k+0),vel(3,k+0)
+                       write(nunit,*) 'H ', vel(1,k+1), vel(2,k+1),vel(3,k+1)
+                       write(nunit,*) 'H ', vel(1,k+2), vel(2,k+2),vel(3,k+2)
+                     enddo
+       else
+         write(6,*) 'Error no isotope is set. Please Check the program code.'
+         stop
+       endif
+
+
+		
     deallocate (vel)
+
     return
 end subroutine print_vmd_full_vels
 
@@ -506,15 +551,16 @@ subroutine print_vmd_bead(r,nb,ib,na,nm,boxlxyz,nunit)
     ! ------------------------------------------------------------------
     ! VMD output
     ! ------------------------------------------------------------------
-    integer na,nb,ib,nm,i,j,k,ni,nunit,DOH
+    integer na,nb,ib,nm,i,j,k,ni,nunit
     real(8) r(3,na,nb),boxlxyz(3)
     real(8) xbox,ybox,zbox,onboxlx,onboxly,onboxlz
     real(8) dh1x,dh2x,dh1y,dh2y,dh1z,dh2z
     real(8), allocatable :: rb(:,:)
-
+    logical H2O,D2O,HDO
     integer reftraj
+
     common /reftraj/ reftraj
-		common /other/ DOH
+    common /isotope/ H2O,D2O,HDO
 
     allocate (rb(3,na))
     rb(:,:) = 0.d0
@@ -565,20 +611,33 @@ subroutine print_vmd_bead(r,nb,ib,na,nm,boxlxyz,nunit)
     endif
     write(nunit,*) na
     write(nunit,*) "BOX ", toA*xbox, toA*ybox, toA*zbox          !!GLE: PRINT ALSO BOX PARS, THIS IS A GOOD PLACE!!!
-		if(DOH.eq.1) then
-    do k = 1,na,3
-        write(nunit,*) 'O ', toA*rb(1,k+0), toA*rb(2,k),toA*rb(3,k)
-        write(nunit,*) 'H ', toA*rb(1,k+1), toA*rb(2,k+1),toA*rb(3,k+1)
-        write(nunit,*) 'D ', toA*rb(1,k+2), toA*rb(2,k+2),toA*rb(3,k+2)
-    enddo
-		else
-    do k = 1,na,3
-        write(nunit,*) 'O ', toA*rb(1,k+0), toA*rb(2,k),toA*rb(3,k)
-        write(nunit,*) 'H ', toA*rb(1,k+1), toA*rb(2,k+1),toA*rb(3,k+1)
-        write(nunit,*) 'H ', toA*rb(1,k+2), toA*rb(2,k+2),toA*rb(3,k+2)
-    enddo
-		endif
+       if (HDO.eqv..true.) then
+		    do k = 1,na,3
+                      write(nunit,*) 'O ', toA*rb(1,k+0), toA*rb(2,k),toA*rb(3,k)
+                      write(nunit,*) 'D ', toA*rb(1,k+1), toA*rb(2,k+1),toA*rb(3,k+1)
+                      write(nunit,*) 'H ', toA*rb(1,k+2), toA*rb(2,k+2),toA*rb(3,k+2)
+                    enddo
+         
+       else if (D2O.eqv..true.) then		    
+                    do k = 1,na,3
+                      write(nunit,*) 'O ', toA*rb(1,k+0), toA*rb(2,k),toA*rb(3,k)
+                      write(nunit,*) 'D ', toA*rb(1,k+1), toA*rb(2,k+1),toA*rb(3,k+1)
+                      write(nunit,*) 'D ', toA*rb(1,k+2), toA*rb(2,k+2),toA*rb(3,k+2)
+                    enddo
+        
+       else if (H2O.eqv..true.) then 
+                    do k = 1,na,3
+                      write(nunit,*) 'O ', toA*rb(1,k+0), toA*rb(2,k),toA*rb(3,k)
+                      write(nunit,*) 'H ', toA*rb(1,k+1), toA*rb(2,k+1),toA*rb(3,k+1)
+                      write(nunit,*) 'H ', toA*rb(1,k+2), toA*rb(2,k+2),toA*rb(3,k+2)
+                    enddo
+       else
+         write(6,*) 'Error no isotope is set. Please Check the program code.'
+         stop
+       endif
+				
     deallocate (rb)
+
     return
 end subroutine print_vmd_bead
 
@@ -588,11 +647,13 @@ subroutine print_vmd_bead_forces(dvdr,dvdr2,nb,ib,na,boxlxyz,nunit)
     ! ------------------------------------------------------------------
     ! VMD output
     ! ------------------------------------------------------------------
-    integer na,nb,ib,i,j,k,nunit,DOH
+    integer na,nb,ib,i,j,k,nunit
     real(8) dvdr(3,na,nb),dvdr2(3,na,nb),boxlxyz(3)
     real(8) xbox,ybox,zbox
     real(8), allocatable :: frc(:,:)
-		common /other/ DOH
+    logical H2O,D2O,HDO
+
+    common /isotope/ H2O,D2O,HDO
 
     allocate (frc(3,na))
     frc(:,:) = 0.d0
@@ -613,20 +674,33 @@ subroutine print_vmd_bead_forces(dvdr,dvdr2,nb,ib,na,boxlxyz,nunit)
     frc(:,:) = - frc(:,:)
     write(nunit,*) na
     write(nunit,*) "BOX ", toA*xbox, toA*ybox, toA*zbox          !!GLE: PRINT ALSO BOX PARS, THIS IS A GOOD PLACE!!!
-		if(DOH.eq.1) then
-    do k = 1,na,3
-        write(nunit,*) 'O ', frc(1,k+0), frc(2,k+0),frc(3,k+0)
-        write(nunit,*) 'H ', frc(1,k+1), frc(2,k+1),frc(3,k+1)
-        write(nunit,*) 'D ', frc(1,k+2), frc(2,k+2),frc(3,k+2)
-    enddo
-		else
-    do k = 1,na,3
-        write(nunit,*) 'O ', frc(1,k+0), frc(2,k+0),frc(3,k+0)
-        write(nunit,*) 'H ', frc(1,k+1), frc(2,k+1),frc(3,k+1)
-        write(nunit,*) 'H ', frc(1,k+2), frc(2,k+2),frc(3,k+2)
-    enddo
-		endif
+       if (HDO.eqv..true.) then
+                    do k = 1,na,3
+                      write(nunit,*) 'O ', frc(1,k+0), frc(2,k+0),frc(3,k+0)
+                      write(nunit,*) 'D ', frc(1,k+1), frc(2,k+1),frc(3,k+1)
+                      write(nunit,*) 'H ', frc(1,k+2), frc(2,k+2),frc(3,k+2)
+                    enddo
+         
+       else if (D2O.eqv..true.) then		    
+                    do k = 1,na,3
+                      write(nunit,*) 'O ', frc(1,k+0), frc(2,k+0),frc(3,k+0)
+                      write(nunit,*) 'D ', frc(1,k+1), frc(2,k+1),frc(3,k+1)
+                      write(nunit,*) 'D ', frc(1,k+2), frc(2,k+2),frc(3,k+2)
+                    enddo
+        
+       else if (H2O.eqv..true.) then 
+                    do k = 1,na,3
+                      write(nunit,*) 'O ', frc(1,k+0), frc(2,k+0),frc(3,k+0)
+                      write(nunit,*) 'H ', frc(1,k+1), frc(2,k+1),frc(3,k+1)
+                      write(nunit,*) 'H ', frc(1,k+2), frc(2,k+2),frc(3,k+2)
+                    enddo
+       else
+         write(6,*) 'Error no isotope is set. Please Check the program code.'
+         stop
+       endif
+
     deallocate (frc)
+
     return
 end subroutine print_vmd_bead_forces
 
@@ -636,12 +710,13 @@ subroutine print_vmd_bead_vels(p,mass,nb,ib,na,boxlxyz,nunit)
     ! ------------------------------------------------------------------
     ! VMD output
     ! ------------------------------------------------------------------
-    integer na,nb,ib,i,j,k,nunit,DOH
+    integer na,nb,ib,i,j,k,nunit
     real(8) p(3,na,nb),mass(na),boxlxyz(3)
     real(8) xbox,ybox,zbox
     real(8), allocatable :: vel(:,:)
+    logical H2O,D2O,HDO
 
-		common /other/ DOH
+    common /isotope/ H2O,D2O,HDO
 
     allocate (vel(3,na))
     vel(:,:) = 0.d0
@@ -663,19 +738,50 @@ subroutine print_vmd_bead_vels(p,mass,nb,ib,na,boxlxyz,nunit)
 
     write(nunit,*) na
     write(nunit,*) "BOX ", toA*xbox, toA*ybox, toA*zbox          !!GLE: PRINT ALSO BOX PARS, THIS IS A GOOD PLACE!!!
-		if(DOH.eq.1) then
-    do k = 1,na,3
-        write(nunit,*) 'O ', vel(1,k+0), vel(2,k+0),vel(3,k+0)
-        write(nunit,*) 'H ', vel(1,k+1), vel(2,k+1),vel(3,k+1)
-        write(nunit,*) 'D ', vel(1,k+2), vel(2,k+2),vel(3,k+2)
-    enddo
-		else
-    do k = 1,na,3
-        write(nunit,*) 'O ', vel(1,k+0), vel(2,k+0),vel(3,k+0)
-        write(nunit,*) 'H ', vel(1,k+1), vel(2,k+1),vel(3,k+1)
-        write(nunit,*) 'H ', vel(1,k+2), vel(2,k+2),vel(3,k+2)
-    enddo
-		endif
+       if (HDO.eqv..true.) then
+                    do k = 1,na,3
+                      write(nunit,*) 'O ', vel(1,k+0), vel(2,k+0),vel(3,k+0)
+                      write(nunit,*) 'D ', vel(1,k+1), vel(2,k+1),vel(3,k+1)
+                      write(nunit,*) 'H ', vel(1,k+2), vel(2,k+2),vel(3,k+2)
+                    enddo
+         
+       else if (D2O.eqv..true.) then		    
+                    do k = 1,na,3
+                      write(nunit,*) 'O ', vel(1,k+0), vel(2,k+0),vel(3,k+0)
+                      write(nunit,*) 'D ', vel(1,k+1), vel(2,k+1),vel(3,k+1)
+                      write(nunit,*) 'D ', vel(1,k+2), vel(2,k+2),vel(3,k+2)
+                    enddo
+        
+       else if (H2O.eqv..true.) then 
+                    do k = 1,na,3
+                      write(nunit,*) 'O ', vel(1,k+0), vel(2,k+0),vel(3,k+0)
+                      write(nunit,*) 'H ', vel(1,k+1), vel(2,k+1),vel(3,k+1)
+                      write(nunit,*) 'H ', vel(1,k+2), vel(2,k+2),vel(3,k+2)
+                    enddo
+       else
+         write(6,*) 'Error no isotope is set. Please Check the program code.'
+         stop
+       endif
+		
     deallocate (vel)
+
     return
 end subroutine print_vmd_bead_vels
+
+subroutine print_mol_dipole(na,m_dipole,nc)
+implicit none
+   include 'globals.inc'
+integer na,j,nc
+real(8) dconver
+real(8) m_dipole(3,na/3)
+
+    dconver = (ToA * 1d-10 * echarge) / ToDebye
+    write(nc,*)
+
+  do j = 1, na/3
+    write(nc,*) dsqrt(m_dipole(1,j)*m_dipole(1,j) + m_dipole(2,j)*m_dipole(2,j) & 
+                  + m_dipole(3,j)*m_dipole(3,j))*dconver
+  enddo
+ 
+ return
+end subroutine print_mol_dipole

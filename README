@@ -92,6 +92,7 @@ Possible Future additions:
 Input parameters:
 ------------------
 ens      -   ensemble - option of NVT or NPT
+isotope  -   Type of molecule (D2O, HDO, H2O (Default))
 temp     -   temperature in K
 pres     -   pressure in bar
 rho      -   density in g cm**(-3)
@@ -106,7 +107,7 @@ ntherm   -   Number of Steps between parallel trajectories
 nb       -   Number of beads
 m        -   Number of dynamic trajectories
 ng       -   Number of static property sampling steps
-print    -   Integers controlling which properties should be printed/saved (3 integers, 1 or 0: Positions, Forces, Velocities)
+print    -   Integers controlling which properties should be printed/saved (4 integers, 1 or 0: Positions, Forces, Velocities, molecular dipolemoment)
 pt       -   Print trajectory interval
 pb       -   Print beads interval
 ncellxyz -   Number of cells in each direction for initialization (3 integers)
@@ -130,7 +131,7 @@ rpmddft  -   Use RPMDDFT force Calculation
 rpmde3b  -   ALso calculate E3B (in addition to the usual force field). Does not work with RPMDDFT.
 rctdk    -   Use the T.D. Kühne Method (important nbdf1 and nbdf2 have to be 0, nbdf3 is the 							 delta Force contraction)
 aieq     -   Use RPMDDFT forces for equilibration too
-DOH      -   Use DOH for AND thermostat and the kinetic energy calculation
+
 
 
 Parameters for popular water model

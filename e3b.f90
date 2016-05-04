@@ -378,6 +378,8 @@ subroutine e3b_convert_forces(nm,f3B,vir_e3b,PE,dvdr_e3b)
 
   !Conversion of potential Energy PE
   PE=PE/toKjmol
+
+  !vir_e3b = transpose(vir_e3b) <-- didn't work properly 
   
   !Conversion of Virial
   do i=1,3
@@ -389,9 +391,9 @@ subroutine e3b_convert_forces(nm,f3B,vir_e3b,PE,dvdr_e3b)
   !Conversion Forces
     do  h=1,nm
       do i=1,3
-        dvdr_e3b(1,i+3*h-3)=f3B(h,i,1)/toKjmol*toA/10
-        dvdr_e3b(2,i+3*h-3)=f3B(h,i,2)/toKjmol*toA/10
-        dvdr_e3b(3,i+3*h-3)=f3B(h,i,3)/toKjmol*toA/10
+        dvdr_e3b(1,i+3*h-3)=f3B(h,i,1)/toKjmol*toA/10.0d0
+        dvdr_e3b(2,i+3*h-3)=f3B(h,i,2)/toKjmol*toA/10.0d0
+        dvdr_e3b(3,i+3*h-3)=f3B(h,i,3)/toKjmol*toA/10.0d0         !f3B(h,4,:) is M-site and zero
       end do
     end do
   End

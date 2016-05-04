@@ -12,7 +12,7 @@ dt,mass,irun,itcf,itst,pt,pb,print,iskip,ntherm,vacfac)
     ! Routine to calculate dynamical properties
     ! ------------------------------------------------------------------
     integer nt,m,na,nm,nb,irun,itcf(3),itst(3),pt,pb
-    integer k,i,ib,print(3),iskip,ntherm,vacfac,ierr,myid,eefile
+    integer k,i,ib,print(4),iskip,ntherm,vacfac,ierr,myid,eefile
     real(8) r(3,na,nb),p(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb)
     real(8) boxlxyz(3),z(na),mass(na),vir(3,3),vir_lf(3,3)
     real(8) beta,dt,dtfs,dtps,cscale,wt,tv,pe,dqq,dqx,dqy,dqz,ran2,thresh,ttaufs
@@ -101,7 +101,13 @@ if(myid.eq.0) then
         if (print(3).eq.1) then
             open(38,file='vmd_traj.vel')
         endif
+        if (print(4).eq.1) then
+           open(39,file='mol-dipole_traj.txt')
+        endif       
     endif
+
+ 
+    
     if (pb.gt.0) then
         if (print(1).eq.1) then
             do ib = 1,nb
@@ -251,7 +257,13 @@ endif
         if (print(3).eq.1) then
             close(unit=38)
         endif
+        if(print(4).eq.1) then
+          close(unit=39)
+        endif
     endif
+    
+  
+
     if (pb.gt.0) then
         if (print(1).eq.1) then
             do ib = 1,nb
@@ -345,7 +357,7 @@ dcvintra,dke,pt,pb,print,iskip,vacfac,eefile)
     ! Sample dynamic properties over NVE trajectory.
     ! -----------------------------------------------------------------
     integer na,nb,nt,itcf(3),itst(3),nm,irun,myid,ierr,eefile
-    integer i,ib,j,jt,it,it10,jt10,k,pt,pb,print(3),iskip,vacfac,rpmddft,nbdf1,nbdf2,ibin,ii,jj
+    integer i,ib,j,jt,it,it10,jt10,k,pt,pb,print(4),iskip,vacfac,rpmddft,nbdf1,nbdf2,ibin,ii,jj
     real(8) dt,beta,alpha,alpha2,wm,wh,v,v1,v2,v3,w1,w2,w3,dx,dy,dz,rij,delr,boxmax
     real(8) em,tv,dipx,dipy,dipz,tbar,wt,wt1,vir(3,3),vir_lf(3,3)
     real(8) fac1,fac2,pe,dtq1,dtq2,ecut,tvxyz(3)
@@ -375,6 +387,8 @@ dcvintra,dke,pt,pb,print,iskip,vacfac,eefile)
     real(8), allocatable :: idmxr(:,:,:),idmyr(:,:,:),idmzr(:,:,:)
     real(8), allocatable :: idmxv(:,:,:),idmyv(:,:,:),idmzv(:,:,:)
     real(8), allocatable :: dist(:,:),dvdre(:,:,:)
+    real(8), allocatable :: m_dipole(:,:)
+write(6,*) 'Start'
 
     ! Allocate arrays
 
@@ -393,8 +407,14 @@ dcvintra,dke,pt,pb,print,iskip,vacfac,eefile)
         allocate (ay2(6,nm,0:(2*nt/iskip)))
         allocate (az2(6,nm,0:(2*nt/iskip)))
     end if
+    
+   allocate (m_dipole(3,na/3))
+   if (itcf(1).eq.1 .or. itcf(2).eq.1 .or. itst(1).eq.1 .or. itst(2).eq.1) then
+       allocate (pc(3,nm,0:2*nt),pca(3,na),rca(3,na),dvdre(3,na,nb),dist(na,na))
+       dist(:,:) = 0.d0
+   endif
+    
 
-    allocate (pc(3,nm,0:2*nt),pca(3,na),rca(3,na),dvdre(3,na,nb),dist(na,na))
 
     ! Define some useful constants and zero-out arrays
 
@@ -460,7 +480,6 @@ dcvintra,dke,pt,pb,print,iskip,vacfac,eefile)
     tv = 0.d0
     pe = 0.d0
     nm = na/3
-    dist(:,:) = 0.d0
 
     if (3*nm .ne. na) stop 'trajectory : na is NOT 3*nm !'
 #ifdef PARALLEL_BINDING
@@ -527,14 +546,21 @@ dcvintra,dke,pt,pb,print,iskip,vacfac,eefile)
                 endif
             endif
 
+            
             call virial_ke(r,dvdr,dvdr2,dtv,tvxyz,dtq1,dtq2,beta,na,nb)
-            call dipole (r,dipx,dipy,dipz,dip2,dipm,z,na,nb)
+            call dipole (r,dipx,dipy,dipz,dip2,dipm,z,na,nb,m_dipole)
             davx = davx + dipx
             davy = davy + dipy
             davz = davz + dipz
             dqq = dqq + dip2
             tv = tv + dtv
             pe = pe + v
+           
+        if ((pt.gt.0).and.(mod(jt,pt).eq.0)) then
+            if (print(4).eq.1) then
+              call print_mol_dipole(na,m_dipole,39)
+            endif
+        endif
 
             ! Store PE contributions at time t.
             if (nb.gt.1) then
@@ -920,7 +946,10 @@ dcvintra,dke,pt,pb,print,iskip,vacfac,eefile)
 #endif
     ! Deallocate arrays
 
-    deallocate(pc,pca,rca,dvdre,dist)
+    deallocate(m_dipole)
+   if (itcf(1).eq.1 .or. itcf(2).eq.1 .or. itst(1).eq.1 .or. itst(2).eq.1) then
+        deallocate(pc,pca,rca,dvdre,dist)
+    endif
 
     if (itcf(2).eq.1) then
         deallocate(dmxr,dmyr,dmzr,dmxv,dmyv,dmzv)

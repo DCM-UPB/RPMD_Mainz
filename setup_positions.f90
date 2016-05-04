@@ -11,7 +11,10 @@ subroutine setup_positions(r,na,nb,nm,boxlxyz,qo,irun)
   real(8) r(3,na,nb),boxlxyz(3)
   real(8) dip,dipx,dipy,dipz,dip2,dipm,qh,qo
   real(8), allocatable :: z_tmp(:)
+  real(8), allocatable :: m_dipole(:,:)
   common /lattice/ ncellxyz,nlat
+
+  allocate (m_dipole(3,na/3))
 
   if (3*nm.ne.na) then
      write(6,*)'* Error in setup',nm,na
@@ -58,7 +61,7 @@ subroutine setup_positions(r,na,nb,nm,boxlxyz,qo,irun)
               r(3,i,k) = r(3,i,1)
            enddo
         enddo
-        call dipole(r,dipx,dipy,dipz,dip2,dipm,z_tmp,na,nb)
+        call dipole(r,dipx,dipy,dipz,dip2,dipm,z_tmp,na,nb,m_dipole)
         dip = dsqrt(dipx**2+dipy**2+dipz**2)/0.393456d0
      enddo
      if (it.ge.itmax) then
@@ -80,6 +83,9 @@ subroutine setup_positions(r,na,nb,nm,boxlxyz,qo,irun)
         r(3,i,k) = r(3,i,1)
      enddo
   enddo
+
+!Deallocate Arrays
+deallocate (m_dipole)
 
   return
 end subroutine setup_positions

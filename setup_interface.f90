@@ -66,7 +66,7 @@ end subroutine setup_int_size
 
 subroutine setup_interface(r,na,ne,irun,nm_ice,nm_wat,box_ice, &
                            box_wat,boxlxyz,nc_ice,nc_wat, &
-                           wmass,omass,hmass,qo,beta,dt,nb)
+                           wmass,omass,hmass,dmass,qo,beta,dt,nb)
   implicit none
   include 'globals.inc'
   !------------------------------------------------------------------
@@ -77,11 +77,12 @@ subroutine setup_interface(r,na,ne,irun,nm_ice,nm_wat,box_ice, &
   integer i,j,k,irun,nb,nc_ice(3),nc_wat(3)
   integer na,nm_ice,na_ice,nm_wat,na_wat,ne,neq
   real(8) r(3,na,nb),box_ice(3),box_wat(3),boxlxyz(3)
-  real(8) wmass,omass,hmass,qo,beta,dt,theta,reoh
+  real(8) wmass,omass,hmass,dmass,qo,beta,dt,theta,reoh
   real(8) rcut,dx,dy,dz,boxmin,vol,den,dip,dipx,dipy,dipz,dip2,dipm
   real(8) oo_eps,oo_sig,oo_gam
   logical iamrigid
   real(8), allocatable :: r_ice(:,:,:),r_wat(:,:,:),z(:)
+  real(8), allocatable :: m_dipole(:,:)
   common /geometry/ theta,reoh
   common /oo_param/ oo_eps,oo_sig,oo_gam,rcut
   common /structure/ iamrigid
@@ -96,6 +97,7 @@ subroutine setup_interface(r,na,ne,irun,nm_ice,nm_wat,box_ice, &
 
   allocate (r_ice(3,na_ice,nb))
   r_ice(:,:,:) = 0.d0
+  allocate (m_dipole(3,na/3))
 
   ! Generate an ice lattice
 
@@ -118,7 +120,7 @@ subroutine setup_interface(r,na,ne,irun,nm_ice,nm_wat,box_ice, &
            r_ice(3,j,k) = r_ice(3,j,1)
         enddo
      enddo
-     call dipole(r_ice,dipx,dipy,dipz,dip2,dipm,z,na_ice,nb)
+     call dipole(r_ice,dipx,dipy,dipz,dip2,dipm,z,na_ice,nb,m_dipole)
      dip = dsqrt(dipx**2+dipy**2+dipz**2)/0.393456d0
   enddo
   write(6,'(a,f8.3,a)') ' ice dip   = ', dip ,' D'
@@ -141,7 +143,7 @@ subroutine setup_interface(r,na,ne,irun,nm_ice,nm_wat,box_ice, &
   neq = max(neq,500)
   write(6,'(a,f8.3,a)') ' Pre-eq Ice   = ', 1d-3*dt*neq/tofs, ' ps'
   call quick_eq(neq,r_ice,na_ice,nb,box_ice,beta,dt, &
-                irun,omass,hmass,qo,26,1)
+                irun,omass,hmass,dmass,qo,26,1)
   close (unit=26)
   close (unit=27)
 
@@ -216,7 +218,7 @@ subroutine setup_interface(r,na,ne,irun,nm_ice,nm_wat,box_ice, &
   neq = max(neq,500)
   write(6,'(a,f8.3,a)') ' Pre-eq Water = ', 1d-3*dt*neq/tofs, ' ps'
   call quick_eq(neq,r_wat,na_wat,nb,box_wat,beta,dt, &
-                irun,omass,hmass,qo,26,0)
+                irun,omass,hmass,dmass,qo,26,0)
   close (unit=26)
 
   open (unit=12,file='vmd_wat_start.xyz')
@@ -295,12 +297,12 @@ subroutine setup_interface(r,na,ne,irun,nm_ice,nm_wat,box_ice, &
 
   ! Deallocate temporary arrays
 
-  deallocate (r_ice,r_wat)
+  deallocate (r_ice,r_wat,m_dipole)
 
   return
 end subroutine setup_interface
 
-subroutine quick_eq(nqe,r,na,nb,box,beta,dt,irun,omass,hmass,qo, &
+subroutine quick_eq(nqe,r,na,nb,box,beta,dt,irun,omass,hmass,dmass,qo, &
                     nunit,nbaro)
   use thermostat
   implicit none
@@ -310,7 +312,7 @@ subroutine quick_eq(nqe,r,na,nb,box,beta,dt,irun,omass,hmass,qo, &
   ! ------------------------------------------------------------------
   integer j,je,i,k,k1,k2,irun,na,nb,nqe,nunit,nbaro,ibaro
   real(8) r(3,na,nb),box(3),vir(3,3),vir_lf(3,3)
-  real(8) beta,dt,omass,hmass,qo,qh
+  real(8) beta,dt,omass,hmass,dmass,qo,qh
   real(8) v,v1,v2,v3,ran2,vrp,tk,dx,dy,dz,dist,omegan,dtfs,tps
   real(8) den,vol,wmass
   external ran2

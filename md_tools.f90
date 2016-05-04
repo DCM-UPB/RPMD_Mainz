@@ -72,7 +72,7 @@ subroutine molprop (r,avang,avoh,nm,nb,z,na)
   return
 end subroutine molprop
 
-subroutine dipole(r,dipx,dipy,dipz,dip2,dipm,z,na,nb)
+subroutine dipole(r,dipx,dipy,dipz,dip2,dipm,z,na,nb,m_dipole)
   implicit none
   ! ------------------------------------------------------------------
   ! Calculate the value of the total system dipole moment.
@@ -85,6 +85,7 @@ subroutine dipole(r,dipx,dipy,dipz,dip2,dipm,z,na,nb)
   integer na,nb,k,j,nm
   real(8) r(3,na,nb),z(na),dipx,dipy,dipz,dip2
   real(8) dipm,dipmx,dipmy,dipmz
+  real(8) m_dipole(3,na/3)
   real(8) alpha,ecut,alpha2,fac1,fac2,wm,wh
   common /ew_param/ alpha,ecut,wm,wh
 
@@ -94,6 +95,7 @@ subroutine dipole(r,dipx,dipy,dipz,dip2,dipm,z,na,nb)
   dipz = 0.d0
   dipm = 0.d0
   dip2 = 0.d0
+  m_dipole(:,:) = 0.d0 
 
   do k = 1, nb
      do j = 1,na,3
@@ -108,6 +110,9 @@ subroutine dipole(r,dipx,dipy,dipz,dip2,dipm,z,na,nb)
         dipx = dipx + dipmx
         dipy = dipy + dipmy
         dipz = dipz + dipmz
+        m_dipole(1,(j-1)/3+1)=m_dipole(1,(j-1)/3+1) + dipmx
+        m_dipole(2,(j-1)/3+1)=m_dipole(2,(j-1)/3+1) + dipmy
+        m_dipole(3,(j-1)/3+1)=m_dipole(3,(j-1)/3+1) + dipmz        
         dipm = dipm + dsqrt(dipmx*dipmx + dipmy*dipmy + dipmz*dipmz)
      enddo
   enddo
@@ -117,6 +122,7 @@ subroutine dipole(r,dipx,dipy,dipz,dip2,dipm,z,na,nb)
   dipy = dipy / dble(nb)
   dipz = dipz / dble(nb)
   dip2 = dipx*dipx + dipy*dipy + dipz*dipz
+  m_dipole(:,:)= m_dipole(:,:) / nb 
 
   return
 end subroutine dipole
