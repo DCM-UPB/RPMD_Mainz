@@ -682,9 +682,8 @@ if(myid.eq.0) then
         else 
            write(6,*) '* Three body correction WILL NOT be calculated...' 
         endif
-     
-
     
+
     !pt Check for dipole printing 
     if (ng .gt. 0) then
       if((print(4).eq.1).and.(mod(pt,10).ne.0)) then !dipolemoment is calculated every 10th step in md_static  
@@ -714,6 +713,15 @@ if(myid.eq.0) then
         else
             write (6,*) "EPSR WILL NOT be used..."
         endif
+
+    !isotope Warninng
+    if (D2O .or. HDO) then
+      write(6,*)
+      write(6,*) '     !!RPMD will use deuterium for the simulation!!'
+      write(6,*) 'If you want to use some calculated properties like the radial distribution function.'
+      write(6,*) 'Please check if the routines in this program are handling deuterium properly.'
+      write(6,*)   
+    endif
 
 
     endif
