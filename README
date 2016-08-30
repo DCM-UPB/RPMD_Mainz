@@ -96,7 +96,8 @@ isotope  -   Type of molecule (D2O, HDO, H2O (Default))
 temp     -   temperature in K
 pres     -   pressure in bar
 rho      -   density in g cm**(-3)
-lattice  -   Starting lattice : CUB, FCC or ICE
+lattice  -   Starting lattice : CUB, FCC, ICE or VAC
+vacfac   -   Factor for Surface (VACuum) Calculation ncellxyz = x y z*vacfac
 iamcub   -   Allows selection of non-cubic vs cubic energy evaluation
 dtfs     -   time step in fs
 ecut     -   Ewald sum accuracy parameter. Set to 0.d0 for automatic
