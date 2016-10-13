@@ -2,18 +2,24 @@ MF=	Makefile src/globals.inc src/2DPMF.inc
 FC=	gfortran 
 CC=     gcc
 FCFLAGS= -ccp -DCP2K_BINDING #-DPARALLEL_BINDING
-LIBS =  -L/home/cp2k/trunk/cp2k/lib/Linux-x86-64-gfortran/sopt \
+LIBS =  -L/root/cp2k/lib/Linux-x86-64-gfortran/sopt \
         -lcp2k_lib -lcp2k_base_lib -lcp2k_fft_lib -lcp2k_ma_lib \
         -lcp2k_dbcsr_lib \
         -L/usr/lib -llapack -lblas -lstdc++ -lfftw3\
-        -L/home/grizzly/Programme_fuer_CP2K/libint-1.1.4/lib/ -lderiv -lint
-INCLUDE= -I/home/cp2k/trunk/cp2k/obj/Linux-x86-64-gfortran/sopt/
+        -L/usr/lib64/libint/ -lderiv -lint
+INCLUDE= -I/root/obj/Linux-x86-64-gfortran/sopt/ \
+	 -I/usr/include/libint
+#-----------------------------------------------------
+#check whether a cp2k build is actually available
+#-----------------------------------------------------
 ifeq ($(wildcard /home/cp2k/trunk/cp2k/lib/Linux-x86-64-gfortran/sopt),)
 FC=	gfortran 
 FCFLAGS= -cpp
+INCLUDE= ""
 LIBS = -lfftw3
 NOCP2K="WARNING: CP2K_BINDINGS NOT COMPILED"
 endif
+
 # warnings that could result in wrong code
 FCFLAGS+=	-Wall -pedantic -Waliasing -Wcharacter-truncation -Wconversion -Wsurprising -Wintrinsic-shadow
 
@@ -114,4 +120,4 @@ tar:
 	tar cvf $(EXE).tar $(MF) $(SRC)
 
 clean:
-	rm -f $(OBJ) $(EXE) core
+	rm -rf $(EXE) $(OBJPATH)
