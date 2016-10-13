@@ -1,3 +1,4 @@
 qmd.x
 *.o
 *.mod
+build/*

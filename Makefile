@@ -1,38 +1,46 @@
-MF=	Makefile sockets.c globals.inc 2DPMF.inc
-FC=	gfortran -cpp -DCP2K_BINDING #-DPARALLEL_BINDING
-#LIBS = -lfftw3
-LIBS = -L/home/cp2k/trunk/cp2k/lib/Linux-x86-64-gfortran/sopt -lcp2k_lib -lcp2k_base_lib -lcp2k_fft_lib -lcp2k_ma_lib -lcp2k_dbcsr_lib \
-				-L/usr/lib -llapack -lblas -lstdc++ -lfftw3\
-				/home/grizzly/Programme_fuer_CP2K/libint-1.1.4/lib/libderiv.a \
-        /home/grizzly/Programme_fuer_CP2K/libint-1.1.4/lib/libint.a \
-
+MF=	Makefile src/globals.inc src/2DPMF.inc
+FC=	gfortran 
+CC=     gcc
+FCFLAGS= -ccp -DCP2K_BINDING #-DPARALLEL_BINDING
+LIBS =  -L/home/cp2k/trunk/cp2k/lib/Linux-x86-64-gfortran/sopt \
+        -lcp2k_lib -lcp2k_base_lib -lcp2k_fft_lib -lcp2k_ma_lib \
+        -lcp2k_dbcsr_lib \
+        -L/usr/lib -llapack -lblas -lstdc++ -lfftw3\
+        -L/home/grizzly/Programme_fuer_CP2K/libint-1.1.4/lib/ -lderiv -lint
+INCLUDE= -I/home/cp2k/trunk/cp2k/obj/Linux-x86-64-gfortran/sopt/
 ifeq ($(wildcard /home/cp2k/trunk/cp2k/lib/Linux-x86-64-gfortran/sopt),)
-FC=	gfortran -cpp
+FC=	gfortran 
+FCFLAGS= -cpp
 LIBS = -lfftw3
 NOCP2K="WARNING: CP2K_BINDINGS NOT COMPILED"
 endif
 # warnings that could result in wrong code
-FC+=	-Wall -pedantic -Waliasing -Wcharacter-truncation -Wconversion -Wsurprising -Wintrinsic-shadow
+FCFLAGS+=	-Wall -pedantic -Waliasing -Wcharacter-truncation -Wconversion -Wsurprising -Wintrinsic-shadow
 
 # speed warnings
-FC+=	-Warray-temporaries
+FCFLAGS+=	-Warray-temporaries
 
-FC+= 	-fbounds-check -g 
+FCFLAGS+= 	-fbounds-check -g 
 
 # Read EPSR only on startup
-FC+=	-DEPSR_STARTUP_READ
+FCFLAGS+=	-DEPSR_STARTUP_READ
 
 FFLAGS= -O2
 LFLAGS=	$(FFLAGS)
+FCFLAGS+= $(FFLAGS)
 
-EXE= qmd.x
-
-SRC= \
+EXE:= qmd.x
+WD=$(shell pwd)
+SRCDIR:=src
+OBJDIR:=build
+SRCPATH=$(addprefix $(WD)/,$(SRCDIR))
+SRCFILES=\
 	module_thermostat.f90 \
 	module_barostat.f90 \
 	module_gle.f90 \
 	module_f_env.f90 \
-        main.f90 \
+	intmod.f90 \
+	trajavmod.f90 \
 	RPMDDFT.f90\
 	setup_positions.f90\
 	setup_ice.f90 \
@@ -58,8 +66,6 @@ SRC= \
 	random.f90 \
 	kinetic.f90 \
 	fourier.f90 \
-	intmod.f90 \
-	trajavmod.f90 \
 	io.f90 \
 	ljones.f90 \
 	epsr.f90 \
@@ -77,27 +83,29 @@ SRC= \
 	blas_lapack.f90 \
 	md_pressure.f90 \
         e3b.f90 \
+        main.f90 
+SRC=$(addprefix $(SRCPATH)/,$(SRCFILES) sockets.c)
 ###############################
 
 .SUFFIXES:
 .SUFFIXES: .f90 .o
+.PHONY: directories
+OBJPATH=$(addprefix $(WD)/,$(OBJDIR))
+OBJ=	$(addprefix $(OBJPATH)/,$(SRCFILES:.f90=.o) sockets.o)
 
-OBJ=	$(SRC:.f90=.o) sockets.o
+all:	directories $(EXE)
 
-.f90.o:
-	echo $(NOCP2K)
-	$(FC) $(FFLAGS) -c $<
-
-all:	$(EXE)
-
+directories:
+	mkdir -p build
 $(EXE):	$(OBJ)
 	echo $(NOCP2K)
-	$(FC) $(LFLAGS) -o $@ $(OBJ) $(LIBS)
+	$(FC) $(LFLAGS) $^ $(LIBS) -o $@
 
-$(OBJ):	$(MF)
-
-sockets.o:	sockets.c
-	gcc -O2 -c sockets.c -o sockets.o
+#$(OBJ):	$(MF) 
+$(OBJPATH)/%.o: $(SRCPATH)/%.f90 $(MF)
+	$(FC) -c $(FCFLAGS) $(INCDIR) $< -J $(OBJPATH) -o $@	
+$(OBJPATH)/%.o: $(SRCPATH)/%.c $(MF)
+	$(CC) -O2 -c $< -o $@
 
 zip:
 	zip $(EXE).zip $(MF) $(SRC)
