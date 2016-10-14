@@ -1,4 +1,6 @@
 qmd.x
+qmd.dbg.x
 *.o
 *.mod
 build/*
+Make.inc
