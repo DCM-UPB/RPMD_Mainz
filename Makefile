@@ -73,7 +73,7 @@ all: $(EXE) directories
 	@echo ' ***Build complete*** '
 	@echo '----------------------'
 directories:
-	mkdir -p build
+	mkdir -p $(OBJPATH)
 $(EXE):	$(OBJ)
 	$(FC) $(LDFLAGS) $^ $(LIBS) -o $@
 
