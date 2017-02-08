@@ -68,7 +68,7 @@ SRC=$(addprefix $(SRCPATH)/,$(SRCFILES) sockets.c)
 OBJPATH=$(addprefix $(WD)/,$(OBJDIR))
 OBJ=	$(addprefix $(OBJPATH)/,$(SRCFILES:.f90=.o) sockets.o)
 
-all: $(EXE) directories 
+all: directories $(EXE) 
 	@echo '----------------------'
 	@echo ' ***Build complete*** '
 	@echo '----------------------'
