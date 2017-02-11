@@ -127,7 +127,7 @@ subroutine md_melt(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   ! Open output files
 
   open (unit=20,file='temperature.out')
-  open (unit=35,file='density.out')
+  open (unit=735,file='density.out')
   open (unit=37,file='box_len.out')
   open (unit=40,file='E.out')
   open (unit=50,file='pressure.out')
@@ -177,7 +177,7 @@ subroutine md_melt(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
      ! Current Density
 
      if (mod(je,100).eq.0) then
-        write(35,*) tps , den
+        write(735,*) tps , den
         write(37,'(f10.3,3f10.5)') tps, boxlxyz(1), &
                                    boxlxyz(2),boxlxyz(3)
      endif
@@ -249,7 +249,7 @@ subroutine md_melt(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
 
   enddo
   close (unit=20)
-  close (unit=35)
+  close (unit=735)
   close (unit=37)
   close (unit=40)
   close (unit=50)

@@ -12,6 +12,9 @@ SRCDIR:=src
 OBJDIR:=build
 SRCPATH=$(addprefix $(WD)/,$(SRCDIR))
 SRCFILES=\
+	useful.f90 \
+	FileMod.f90 \
+	RDF_obj.f90 \
 	module_thermostat.f90 \
 	module_barostat.f90 \
 	module_gle.f90 \

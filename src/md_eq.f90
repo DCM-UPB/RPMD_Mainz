@@ -166,12 +166,12 @@ subroutine md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   open (unit=30,file='RMS_eq.out')
   if (ens.eq.'NPT') then
      if (iamcub) then
-        open (unit=35,file='density_eq.out')
-        open (unit=36,file='density_av_eq.out')
+        open (unit=735,file='density_eq.out')
+        open (unit=736,file='density_av_eq.out')
      else
-        open (unit=35,file='density_eq.out')
-        open (unit=36,file='density_av_eq.out')
-        open (unit=37,file='box_len_eq.out')
+        open (unit=735,file='density_eq.out')
+        open (unit=736,file='density_av_eq.out')
+        open (unit=737,file='box_len_eq.out')
      endif
   endif
   open (unit=40,file='E_eq.out')
@@ -205,10 +205,10 @@ subroutine md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
 
         if (mod(je,10).eq.0) then
            if (iamcub) then
-              write(35,*) tps , den
+              write(735,*) tps , den
            else
-              write(35,*) tps , den
-              write(37,'(f10.3,3f10.5)') tps, boxlxyz(1), &
+              write(735,*) tps , den
+              write(737,'(f10.3,3f10.5)') tps, boxlxyz(1), &
                                          boxlxyz(2),boxlxyz(3)
            endif
         endif
@@ -219,7 +219,7 @@ subroutine md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
            denav = denav + den
            nden = nden + 1
            if (mod(je,1000).eq.0) then
-              write(36,*) tps , denav/dble(nden)
+              write(736,*) tps , denav/dble(nden)
            endif
         endif
      endif
@@ -326,12 +326,12 @@ subroutine md_eq(ne,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
   close (unit=30)
   if (ens.eq.'NPT') then
      if (iamcub) then
-        close (unit=35)
-        close (unit=36)
+        close (unit=735)
+        close (unit=736)
      else
-        close (unit=35)
-        close (unit=36)
-        close (unit=37)
+        close (unit=735)
+        close (unit=736)
+        close (unit=737)
      endif
   endif
   close (unit=40)
