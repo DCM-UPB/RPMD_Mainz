@@ -47,7 +47,9 @@ contains
                     dist_vec = dist_vec*dble(nint(dist_vec*inv_box))
                     distance=sqrt(sum(dist_vec**2))
                     bin=inBin(distance,rdf_lbound,rdf_ubound,size(rdf,1))
-                    rdf(bin)=rdf(bin)+1
+                    if( bin.le.size(rdf))then
+                        rdf(bin)=rdf(bin)+1
+                    end if
                 end do
             end do
         end do
