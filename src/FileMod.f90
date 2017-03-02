@@ -12,6 +12,7 @@ type                                    :: FileHandle
         procedure,pass(this),public     :: open
         procedure,pass(this),public     :: close
         procedure,pass(this),public     :: unit=>get_unit
+        procedure,pass(this),public     :: isOpen
 end type    
 interface FileHandle
     module procedure fh_cnstr1
@@ -41,6 +42,10 @@ contains
     !<param name="this"> the binding type</param>
     !<param name="status">referring to the preexistence of file</param>
     !<param name="action">what is to be done with the file</param>
+    !<param name="access">set r/w permissions for file</param>
+    !<param name="iostat">return the IO status number </param>
+    !<param name="iomsg"> return the IO message associated with IO stat </param>
+    !<param name="position">set the file pointer </param>
     !<returns>whether the file was successfully opened</returns>
     !------------------------------------------------------------------
     logical function open(this,status,action,access,iostat,iomsg,position)
@@ -98,15 +103,21 @@ contains
     !   close an open file
     !</summary>
     !<param name=this>the binding type</param>
+    !<param name="status">what shall happen with file upon closing</param>
     !<return>whether the closing succedes</return>
     !------------------------------------------------------------------
-    logical function close(this)
+    logical function close(this,status)
         implicit none
         character(*),parameter :: routineN='close'
         character(*),parameter :: routineP=moduleN//":"//routineN
-        class(FileHandle),intent(inout) :: this
+        class(FileHandle),intent(inout)         :: this
+        character(LEN=*),optional,intent(in)    :: status
+        character(LEN=:),allocatable            :: loc_status
+        allocate(character(LEN=25) :: loc_status)
+        loc_status='KEEP'
+        if(present(status))loc_status=status
         if (this%opened)then
-            close(this%my_unit)
+            close(this%my_unit,STATUS=loc_status)
             close=.TRUE. 
             this%opened=.FALSE.
             this%my_unit=-1
@@ -122,11 +133,25 @@ contains
     !<param name="this"> the binding type</param>
     !<return>the unit number of the associated file</return>
     !------------------------------------------------------------------
-    integer function get_unit(this)
+    integer pure function get_unit(this)
         implicit none
         character(*),parameter :: routineN='get_unit'
         character(*),parameter :: routineP=moduleN//":"//routineN
         class(FileHandle),intent(in)    :: this
         get_unit=this%my_unit
+    end function
+    !------------------------------------------------------------------
+    !<summary>
+    !   get procedure for the opened property
+    !</summary>
+    !<param name="this"> the binding type</param>
+    !<return>the value of the type's opened field</return>
+    !------------------------------------------------------------------
+    logical pure function isOpen(this)
+        implicit none
+        character(*),parameter :: routineN='isOpen'
+        character(*),parameter :: routineP=moduleN//":"//routineN
+        class(FileHandle),intent(in)    :: this
+        isOpen=this%opened
     end function
 end module

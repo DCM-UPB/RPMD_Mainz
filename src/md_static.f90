@@ -1,40 +1,52 @@
 module static_files
 use FileMod, only : FileHandle
 implicit none
+public
 character(LEN=4),Dimension(3),parameter :: suffix=(/'.xyz','.frc','.vel'/)
 type(FileHandle),Dimension(3) :: vmd_traj_set
 type(FileHandle),Dimension(:,:),allocatable :: vmd_bead_set
+type(FileHandle) :: fh_mol_Dipole,fh_vt,fh_dielec_conv,fh_NPT_prop
+type(FileHandle) :: fh_density,fh_pressure,fh_MSD,fh_dipole_sys
 logical print_traj,print_beads
 logical,Dimension(4):: print_set_element
 end module
 !----------------------------------------------------------------------
 !<summary>
-!   prepare the output files for a static calculation, by making sure
-!   eventually existing files are replaced
+!   open all files neccessary and requested for a static calculation
 !</summary>
 !<param name="nb">the number of beads</param>
 !<param name="print_traj">activates the output of trajectory files</param>
 !<param name="print_beads">activates the output of bead files</param>
 !<param name="print">
+!<param name="reftraj">information about restarts</param>
 !   an array that controls the printing of the varios output species
 !</param>
+!<param name=printNPT>should files with NPT output be opened</param>
+!<param name=printMSD>should the MSD be printed </param>
 !----------------------------------------------------------------------
-subroutine md_static_prepare_traj(nb,pt,pb,print)
+subroutine md_static_prepare_traj(nb,pt,pb,print,reftraj,printNPT,printMSD)
     use thermostat
     use barostat
     use useful, only : toChar
     use FileMod, only : FileHandle
     use static_files, only : vmd_traj_set,vmd_bead_set,print_traj,print_beads
-    use static_files, only : print_set_element,suffix
+    use static_files, only : print_set_element,suffix,fh_mol_dipole
+    use static_files, only : fh_vt,fh_dielec_conv,fh_NPT_prop
+    use static_files, only : fh_density,fh_pressure,fh_MSD,fh_dipole_sys
+
     implicit none
     include 'globals.inc'
-    integer,intent(in)  :: nb,pt,pb
+    character(*),parameter :: routineN="md_static_prepare_traj"
+    character(*),parameter :: routineP="__NONE__"//":"//routineN
+    integer,intent(in)  :: nb,pt,pb,reftraj
     integer,intent(in)  :: print(4)
     logical worked
     integer ib
     character(len=128) file_name
+    character(LEN=25) file_position,file_status
     integer iter,j
-    logical isOpen_dipole_traj
+    logical printNPT,printMSD
+
     print_set_element(:) = print(:).eq.1
     print_traj=pt.gt.0
     print_beads=pb.gt.0
@@ -47,17 +59,54 @@ subroutine md_static_prepare_traj(nb,pt,pb,print)
             vmd_bead_set(j,iter)=FileHandle('vmd_bead-'//toChar(ib)//suffix(iter))
         end do
     end do
+    fh_mol_dipole=FileHandle('mol-dipole_traj.txt')
 
+    fh_vt=FileHandle('vt_st.out') !probably for E_pot and virial E_kin
+    fh_dipole_sys=FileHandle('dipole_sys_st.out')
+    fh_dielec_conv=FileHandle('dielec_con_st.out')
+    fh_NPT_prop=FileHandle('NPT_prop_st.out')
+    fh_density=FileHandle('density_st.out')
+    fh_pressure=FileHandle('pressure_st.out')
+    fh_MSD=FileHandle('MSD_st.out')
+
+    !---------------------------------------------
+    !set appropriate options for restarted run or 
+    !new run
+    if (reftraj.ne.0) then
+        file_position="append"
+        file_status="old"
+    else 
+        file_position="asis"
+        file_status="replace"
+    end if
+    worked = fh_vt%open(STATUS=file_status,ACTION='write',&
+    POSITION=file_position)
+    worked = fh_dipole_sys%open(STATUS=file_status,ACTION='write',&
+    POSITION=file_position)
+    worked = fh_dielec_conv%open(STATUS=file_status,ACTION='write',&
+    POSITION=file_position)
+    worked = fh_pressure%open(STATUS=file_status,ACTION='write',&
+    POSITION=file_position)
+    if(printNPT)then
+        worked = fh_NPT_prop%open(STATUS=file_status,ACTION='write',&
+        POSITION=file_position)
+        worked = fh_density%open(STATUS=file_status,ACTION='write',&
+        POSITION=file_position)
+    end if
+    if(printMSD)then
+        worked = fh_MSD%open(STATUS=file_status,ACTION='write',&
+        POSITION=file_position)
+    end if
     if (print_traj) then
         do iter=lbound(vmd_traj_set,1),ubound(vmd_traj_set,1),1
             if(print_set_element(iter))then
-            worked=vmd_traj_set(iter)%open(STATUS='replace',ACTION='write')
-            worked=vmd_traj_set(iter)%close()
+                worked=vmd_traj_set(iter)%open(STATUS=file_status,ACTION='write',&
+                POSITION=file_position)
             end if
         end do
         if (print_set_element(4))then
-            open(35,FILE='mol-dipole_traj.txt',STATUS='replace')
-            !why the hell does this file stay open?
+            worked = fh_mol_dipole%open(STATUS=file_status,ACTION='write',&
+            POSITION='file_position')
         endif
     endif
     !-----------------------------------------------
@@ -67,9 +116,8 @@ subroutine md_static_prepare_traj(nb,pt,pb,print)
         do iter=lbound(vmd_bead_set,1),ubound(vmd_bead_set,1),1
             if(print_set_element(iter))then
                 do ib=1,nb
-                    worked=vmd_bead_set(ib,iter)%open(STATUS='replace',&
-                    ACTION='write')
-                    worked=vmd_bead_set(ib,iter)%close()
+                    worked=vmd_bead_set(ib,iter)%open(STATUS=file_status,&
+                    ACTION='write',POSITION=file_position)
                 end do
             end if
         end do
@@ -90,20 +138,29 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
     use barostat
     use useful, only : get_Unit
     use static_files, only : vmd_traj_set,vmd_bead_set,print_traj,print_beads
-    use static_files, only : print_set_element,suffix
+    use static_files, only : print_set_element,suffix,fh_mol_dipole
+    use static_files, only : fh_vt,fh_dielec_conv,fh_NPT_prop
+    use static_files, only : fh_density,fh_pressure,fh_MSD,fh_dipole_sys
     use RDFMod, only : calc_rdf
     implicit none
     include 'globals.inc'
 #ifdef PARALLEL_BINDING
     include 'mpif.h' !parallel
+    integer myid
 #endif
-    integer na,nb,ng,irun,nrdf,nbdf1,nbdf2,nbaro,pt,pb,myid,ierr,ptd
-    integer no,i,je,k,j,ii,jj,ibin,nm,itst(3),ib,print(4)
+#if RDF_IN_THIS_ROUTINE == 1
+    integer jj,ibin
+    real(8),rij,dx,dy,dz
+#endif
+    character(*),parameter :: routineN='md_static'
+    character(*),parameter :: routineP="__NONE__"//":"//routineN
+    integer na,nb,ng,irun,nrdf,nbdf1,nbdf2,nbaro,pt,pb,ierr,ptd
+    integer no,i,je,k,j,ii,nm,itst(3),ib,print(4)
     real(8), allocatable :: ihhh(:),ihoo(:),ihoh(:)
     real(8) boxlxyz(3),beta,v,dt
     real(8) p(3,na,nb), dvdr(3,na,nb),dvdr2(3,na,nb),ran2,z(na)
     real(8) r(3,na,nb),mass(na),vir(3,3),vir_lf(3,3),rcm(3,na/3),rst(3,na/3),r0(3,na,nb)
-    real(8) delr,dx,dy,dz,rij,thresh,dconv,dconv2,pi,fac,vol
+    real(8) delr,thresh,dconv,dconv2,pi,fac,vol
     real(8) avang,avoh,tavang,tavoh,msd,msdO
     real(8) ttaufs
     real(8) vave,tave,tq1ave,tq2ave,tv,tvxyz(3),tavee,tq1aee,tq2aee
@@ -117,15 +174,9 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
     real(8), allocatable :: dist(:,:), dvdre(:,:,:)
     real(8), allocatable :: m_dipole(:,:)
     character(len=3) ens
-    character(len=128) file_name
-    character(LEN=10)               :: file_open_param
     character(LEN=2),Dimension(:),allocatable :: element
     integer                         :: iter
     logical                         :: worked
-    !legacy stuff
-    character(LEN=19),Dimension(4)  :: fTrajectory_list
-    integer,Dimension(4)            :: fTrajectory_units
-    !end legacy stuff
     external ran2
     common /ensemble/ ens
     common /beaddiabatic/ nbdf1,nbdf2
@@ -228,55 +279,9 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
     end do
     r0 = r
 
-    ! Open a file to print out the potential energy and
-    ! virial kinetic energy.
+    call md_static_prepare_traj(nb,pt,pb,print,reftraj,ens.eq.'NPT',&
+    itst(3).eq.1.AND.nb.eq.1)
 
-    open(20,file='vt_st.out')
-    open(21,file='dipole_sys_st.out')
-    open(22,file='dielec_conv_st.out')
-    if (ens.eq.'NPT') then
-        open(23,file='NPT_prop_st.out')
-        open(25,file='density_st.out')
-    endif
-    open (24,file='pressure_st.out')
-    if(itst(3).eq.1 .and. nb.eq.1) then
-        open (333,file='MSD_st.out')
-    end if
-
-    !legacy setup. Mol dipole should be included in traj set
-    fTrajectory_list(4)='mol-dipole_traj.txt'
-    fTrajectory_units(4)=35
-
-    if (reftraj.ne.0) then
-        file_open_param="append"
-    else 
-        file_open_param="asis"
-        end if
-    if (print_traj) then
-        do iter=lbound(vmd_traj_set,1),ubound(vmd_traj_set,1),1
-            if(print_set_element(iter))then
-                worked=vmd_traj_set(iter)%open(STATUS='old',ACTION='write',&
-                POSITION=file_open_param)
-            end if
-        end do
-        if(print_set_element(4))then
-            open(UNIT=fTrajectory_units(4),ACTION='write',&
-            FILE=fTrajectory_list(iter),POSITION=file_open_param)
-        end if
-    end if
-    !-----------------------------------
-    !print trajectroy data for every
-    !individual bead
-    if (print_beads) then
-        do iter=lbound(vmd_bead_set,2),ubound(vmd_bead_set,2),1
-            if( print_set_element(iter) )then
-                do ib=lbound(vmd_bead_set,1),ubound(vmd_bead_set,1),1
-                    worked=vmd_bead_set(ib,iter)%open(STATUS='old',&
-                    ACTION='write',POSITION=file_open_param)
-                end do
-            end if
-        end do
-    end if
 #ifdef PARALLEL_BINDING
     endif
 #endif
@@ -295,9 +300,10 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
         call MPI_bcast(vir,SIZE(vir),MPI_real8,0,MPI_COMM_WORLD,ierr)   
         call MPI_bcast(vir_lf,SIZE(vir_lf),MPI_real8,0,MPI_COMM_WORLD,ierr)   
 #endif
+
         call evolve(p,r,v,v1,v2,v3,dvdr,dvdr2,dt,mass,na,nb, &
         boxlxyz,z,beta,vir,vir_lf,irun,nbaro)
-        ! Potential Energy
+
 #ifdef PARALLEL_BINDING
         if (myid.eq.0) then
 #endif
@@ -331,14 +337,12 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
                 do ib = lbound(vmd_bead_set,1),ubound(vmd_bead_set,1),1
                     call print_vmd_bead_forces(dvdr,dvdr2,nb,ib,na,boxlxyz,&
                     vmd_bead_set(ib,2)%Unit())
-                    !100127+ib)
                 end do
             end if
             if(print_set_element(3))then
                 do ib = lbound(vmd_bead_set,1),ubound(vmd_bead_set,1),1
                     call print_vmd_bead_vels(p,mass,nb,ib,na,boxlxyz,&
                     vmd_bead_set(ib,2)%Unit())
-                    !200127+ib)
                 end do
             end if
         end if
@@ -354,14 +358,14 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
                     tq2ave = tq2ave + tq2
                 end if
                 if (mod(je,100).eq.0) then
-                    write(20,*) je*dtps,v,tv/nm
+                    write(fh_vt%unit(),*) je*dtps,v,tv/nm
                 end if
                 ! Calculate pressure
                 vol = boxlxyz(1)*boxlxyz(2)*boxlxyz(3)
                 call pressure(pres,vir,tv,na,boxlxyz)
                 pav = pav + pres
                 if (mod(je,100).eq.0) then
-                    write(24,*) je*dtps,tobar*pres
+                    write(fh_pressure%unit(),*) je*dtps,tobar*pres
                 end if
                 ! In NPT simulations calculate volume and PV contribution
                 if (ens.eq.'NPT') then
@@ -371,9 +375,9 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
                     zav = zav + boxlxyz(3)
                     pvav = pvav + pres*vol
                     if (mod(je,100).eq.0) then
-                        write(23,*) je*dtps,tokjmol*pres*vol,vol
+                        write(fh_NPT_prop%unit(),*) je*dtps,tokjmol*pres*vol,vol
                         denc = (dble(nm)*wmass*tokgcm3)/vol
-                        write(25,*) je*dtps,denc
+                        write(fh_density%unit(),*) je*dtps,denc
                     end if
                 end if
                 if ((itst(2).eq.1).and.(rpmddft.eq.0)) then   ! not usable for AI-RPMD use
@@ -429,8 +433,9 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
                 end if
                 ! Check convergence of average system dipole moment
                 if (mod(je,500).eq.0) then
-                    write(21,'(4f12.5)')je*dtps,dconv*tavdipx/dble(nrdf), &
-                    dconv*tavdipy/dble(nrdf),dconv*tavdipz/dble(nrdf)
+                    write(fh_dipole_sys%unit(),'(4f12.5)')&
+                    je*dtps,dconv*tavdipx/dble(nrdf),dconv*tavdipy/dble(nrdf),&
+                    dconv*tavdipz/dble(nrdf)
                 end if
                 ! Check convergence of dielectric constant
                 if (mod(je,500).eq.0) then
@@ -438,7 +443,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
                     fac = (4.d0*pi*beta)/(3.d0*vol*nrdf)
                     tavdipsq=(tavdipx**2+tavdipy**2+tavdipz**2)/dble(nrdf)
                     eps = 1.d0 + fac*(tavdip2-tavdipsq)
-                    write(22,*) je*dtps,eps
+                    write(fh_dielec_conv%unit(),*) je*dtps,eps
                 end if
                 ! RDF
                 !old method of calculating RDF can be found at the bottom of
@@ -505,7 +510,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
                     enddo
                 enddo
                 msdO = msdO / dble(nm)
-                write (333,'(3f12.6)') je*dtps, msd*toA*toA, msdO*toA*toA
+                write(fh_MSD%unit(),'(3f12.6)')je*dtps,msd*toA*toA,msdO*toA*toA
             endif
         endif
 #ifdef PARALLEL_BINDING
@@ -515,31 +520,24 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
 #ifdef PARALLEL_BINDING
     if (myid.eq.0) then
 #endif
-    close(unit=20)
-    close(unit=21)
-    close(unit=22)
-    if (ens.eq.'NPT') then
-        close(unit=23)
-        close(unit=25)
-    endif
-    close (unit=24)
+    !closing of any handled file can be unconditional, because 
+    !the routine throws no error if the file is closed
+    worked = fh_vt%close()
+    worked = fh_dipole_sys%close()
+    worked = fh_dielec_conv%close()
+    worked = fh_pressure%close()
+    worked = fh_density%close()     
     if (print_traj) then
         do iter=lbound(vmd_traj_set,1),ubound(vmd_traj_set,1),1
-            if(print_set_element(iter))then
-                worked=vmd_traj_set(iter)%close()
-            end if
+            worked=vmd_traj_set(iter)%close()
         end do
-        if (print_set_element(4))then
-            close(unit=fTrajectory_Units(4))
-        endif
+        worked = fh_mol_dipole%close()
     endif
     if(print_beads)then
         do iter=lbound(vmd_bead_set,2),ubound(vmd_bead_set,2),1
-            if(print_set_element(iter))then
-                do ib = lbound(vmd_bead_set,1),ubound(vmd_bead_set,1),1
-                    worked=vmd_bead_set(ib,iter)%close()
-                end do
-            endif
+            do ib = lbound(vmd_bead_set,1),ubound(vmd_bead_set,1),1
+                worked=vmd_bead_set(ib,iter)%close()
+            end do
         end do
     endif
 
@@ -707,68 +705,3 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
 
     return
 end subroutine md_static
-!----------------------------------------------------------------------
-! this is the old code that performed the RDF calculation
-!----------------------------------------------------------------------
-!                if (itst(1).eq.1) then
-!                    do k = 1, nb
-!                        do i = 2, na
-!                            do j = 1, i-1
-!                                dx = r(1,i,k) - r(1,j,k)
-!                                dy = r(2,i,k) - r(2,j,k)
-!                                dz = r(3,i,k) - r(3,j,k)
-!                                dx = dx-boxlxyz(1)*dble(nint(dx/boxlxyz(1)))
-!                                dy = dy-boxlxyz(2)*dble(nint(dy/boxlxyz(2)))
-!                                dz = dz-boxlxyz(3)*dble(nint(dz/boxlxyz(3)))
-!                                dist(i,j) = dsqrt(dx*dx+dy*dy+dz*dz)
-!                                dist(j,i) = dist(i,j)
-!                            end do
-!                        end do
-!                        do i = 1,na
-!                            dist(i,i) = 0.d0
-!                        end do
-!                        ! calculate and bin O - O pair distances
-!                        boxmax = max(boxlxyz(1),boxlxyz(2),boxlxyz(3))
-!                        delr = dble(0.5d0*boxmax/dble(imaxbin))
-!                        do i = 1, no - 1
-!                            do j = i + 1, no
-!                                ii = 3*i - 2
-!                                jj = 3*j - 2
-!                                rij = dist(ii,jj)
-!                                ibin = int(rij/delr) + 1
-!                                if (ibin.le.imaxbin) then
-!                                    ihoo(ibin) = ihoo(ibin) + 2
-!                                end if
-!                            end do
-!                        end do
-!                        ! calculate and bin O - H pair distances
-!                        do i = 1, no
-!                            do j = 1, na, 3
-!                                ii = 3*i - 2
-!                                jj = j+1
-!                                rij = dist(ii,jj)
-!                                ibin = int( rij / delr) + 1
-!                                if (ibin.le.imaxbin) then
-!                                    ihoh(ibin) = ihoh(ibin) + 1
-!                                end if
-!                                rij=dist(ii,jj+1)
-!                                ibin = int( rij / delr) + 1
-!                                if (ibin.le.imaxbin) then
-!                                    ihoh(ibin) = ihoh(ibin) + 1
-!                                end if
-!                            end do
-!                        end do
-!                        ! calculate and bin H - H pair distances
-!                        do i = 1, na-1
-!                            do j = i+1, na
-!                                if (mod(i-1,3).ne.0.and.mod(j-1,3).ne.0) then
-!                                    rij = dist(i,j)
-!                                    ibin = int(rij/delr) + 1
-!                                    if (ibin.le.imaxbin) then
-!                                        ihhh(ibin) = ihhh(ibin) + 2
-!                                    end if
-!                                end if
-!                            end do
-!                        end do
-!                    end do
-!                end if
