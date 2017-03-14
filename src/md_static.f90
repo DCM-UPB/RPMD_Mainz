@@ -56,7 +56,8 @@ subroutine md_static_prepare_traj(nb,pt,pb,print,reftraj,printNPT,printMSD)
     do iter=lbound(vmd_bead_set,2),ubound(vmd_bead_set,2),1
         vmd_traj_set(iter)=FileHandle('vmd_traj'//suffix(iter)) 
         do j=lbound(vmd_bead_set,1),ubound(vmd_bead_set,1),1
-            vmd_bead_set(j,iter)=FileHandle('vmd_bead-'//toChar(ib)//suffix(iter))
+            vmd_bead_set(j,iter)=FileHandle('vmd_bead-'//toChar(ib)//&
+            suffix(iter))
         end do
     end do
     fh_mol_dipole=FileHandle('mol-dipole_traj.txt')

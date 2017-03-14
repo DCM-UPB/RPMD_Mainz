@@ -24,7 +24,6 @@ contains
         integer,intent(out)                            :: ioUnit
         logical,intent(out),optional                   :: ioIsOpen
         logical                                        :: loc_ioIsOpen
-        integer                                        :: unit_search_start
 
         loc_ioIsOpen=.FALSE.
         inquire(FILE=fName,OPENED=loc_ioIsOpen,NUMBER=ioUnit)
@@ -33,11 +32,12 @@ contains
         !already in use.
         if(.NOT.loc_ioIsOpen)then
             loc_ioIsOpen=.TRUE.
+            ioUnit=unit_search_start
             do while(loc_ioIsOpen)
                 inquire(UNIT=ioUnit,OPENED=loc_ioIsOpen)
-                if(loc_ioIsOpen)unit_search_start=unit_search_start+1
+                if(loc_ioIsOpen)ioUnit=ioUnit+1
             end do
-            ioUnit=unit_search_start
+            unit_search_start=ioUnit
         end if
         if(present(ioIsOpen))ioIsOpen=loc_ioIsOpen
     end subroutine
