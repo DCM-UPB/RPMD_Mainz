@@ -1,0 +1,19 @@
+ Parameters : 
+ -------------
+  Water mass              =    32831.252500000002     
+  Oxygen mass             =    29156.947100000001     
+  Hydrogen mass           =    1837.1527000000001     
+  Deuterium mass          =    0.0000000000000000     
+  Charge on Oxygen        =   -1.1128000000000000     
+  Alpha (M-site)          =   0.73612000000000000     
+  LJ Sigma                =    5.9694599999999998     
+  LJ Epsilon              =    2.9514700000000000E-004
+  Buckingham gamma        =    0.0000000000000000     
+  Equilibrium Bond Angle  =    107.40000000000001     
+  Equilibrium Bond Length =    1.7800000000000000     
+  Bond Stretch De         =   0.18500000000000000     
+  Bond Bend De            =    7.0000000000000007E-002
+  Bond Stretch Alpha      =    1.2100000000000000     
+  Bond Bend Alpha         =    0.0000000000000000     
+  Gaussian Width M-site   =    0.0000000000000000     
+  Gaussian Width Hydrogen =    0.0000000000000000     
