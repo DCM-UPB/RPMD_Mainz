@@ -114,7 +114,7 @@ subroutine md_static_prepare_traj(nb,pt,pb,print,reftraj,printNPT,printMSD)
     !now make sure the vmd_bead files are replaced
     if (print_beads) then
         !bead set ioUnits=127+ , 100127+, 200127+
-        do iter=lbound(vmd_bead_set,1),ubound(vmd_bead_set,1),1
+        do iter=lbound(vmd_bead_set,2),ubound(vmd_bead_set,2),1
             if(print_set_element(iter))then
                 do ib=1,nb
                     worked=vmd_bead_set(ib,iter)%open(STATUS=file_status,&
@@ -343,7 +343,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
             if(print_set_element(3))then
                 do ib = lbound(vmd_bead_set,1),ubound(vmd_bead_set,1),1
                     call print_vmd_bead_vels(p,mass,nb,ib,na,boxlxyz,&
-                    vmd_bead_set(ib,2)%Unit())
+                    vmd_bead_set(ib,3)%Unit())
                 end do
             end if
         end if
