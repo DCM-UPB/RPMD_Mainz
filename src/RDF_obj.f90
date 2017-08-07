@@ -43,8 +43,8 @@ contains
                 do iPartner=lbound(geo,2),ubound(geo,2),1
                     if(iCenter.eq.iPartner)cycle
                     if( lrtrim(element(iPartner)).ne.lrtrim(partner_type) )cycle
-                    dist_vec=geo(:,iBead,iPartner)-geo(:,iBead,iCenter)
-                    dist_vec = dist_vec*dble(nint(dist_vec*inv_box))
+                    dist_vec=geo(:,iPartner,iBead)-geo(:,iCenter,iBead)
+                    dist_vec=dist_vec-box*anint(dist_vec*inv_box)
                     distance=sqrt(sum(dist_vec**2))
                     bin=inBin(distance,rdf_lbound,rdf_ubound,size(rdf,1))
                     if( bin.le.size(rdf))then
@@ -71,7 +71,7 @@ contains
         integer                 :: inBin
         real(8),intent(in)      :: bin_value,lbound,ubound
         integer,intent(in)      :: size
-        inBin=floor((bin_value-lbound)/(ubound-lbound))*size
+        inBin=floor((bin_value-lbound)/(ubound-lbound)*size)
         inBin=inBin+1!becuase fortran arrays start at 
     end function
 end module

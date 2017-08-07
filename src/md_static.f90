@@ -460,7 +460,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
                         end do
                     end if
                     boxmax = max(boxlxyz(1),boxlxyz(2),boxlxyz(3))
-                    delr = dble(0.5d0*boxmax/dble(imaxbin))
+                    delr = 0.5d0*boxmax
                     call calc_rdf(r,element,"O ","O ",boxlxyz,0.0d0,delr,ihoo)
                     call calc_rdf(r,element,"O ","H ",boxlxyz,0.0d0,delr,ihoh)
                     call calc_rdf(r,element,"H ","H ",boxlxyz,0.0d0,delr,ihhh)
