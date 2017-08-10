@@ -4,4 +4,3 @@ qmd-dbg.x
 *.mod
 build/*
 Make.inc
-test/*

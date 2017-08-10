@@ -1,0 +1,187 @@
+ -------------------------------------------
+             Flexible Water Code            
+ -------------------------------------------
+
+ Simulation Parameters:
+ -----------------------
+ isotope =      H2O
+ ens    =       NPT
+ temp   =    298.00 K
+ pres   =      1.00 bar
+ dtfs   =     0.500 fs
+ teqm   =     0.500 ps
+ tsim   =     0.062 ps
+ trdf   =     0.250 ps
+ m      =         2 trajectories
+ mts    =         5 multiple time steps
+ irun   =      4711
+ rho    =     0.997 g/cm**3
+ ncellx =         5 unit cells
+ ncelly =         5 unit cells
+ ncellz =         5 unit cells
+ therm  =  ANDERSEN 
+ baro   = BERENDSEN 
+ taufs  =    10.000 ps
+ NOT using EPSR
+
+ Path Integral Parameters : 
+ ---------------------------
+ type   =      RPMD
+ nb     =         2 beads
+ omega  =     0.000000 t**(-1)
+
+ Ring Polymer Contraction Settings : 
+ ------------------------------------
+ * RP contraction of Ewald with  1 modes
+ * RP contraction of LJ with  1 modes
+ * Electrostatic RP-contraction scheme used
+   with sigma =   8.504 bohr
+
+ System setup : 
+ ---------------
+ na     =       375 atoms
+ nm     =       125 molecules
+ boxlx  =    29.358 bohr
+ boxly  =    29.358 bohr
+ boxlz  =    29.358 bohr
+ rcut   =    14.679 bohr
+
+ Ewald Parameters : 
+ -------------------
+ * Cubic Ewald with : 
+ ecut  =    0.0000
+ wrcut  =   13.1191 bohr 
+ walpha =    0.2395 bohr**(-1)
+ rkmax  =    1.5046 bohr**(-1)
+ kmax   =        7  vectors
+ (Approximation to error function used)
+
+ Operations to be performed : 
+ -----------------------------
+ * RDF WILL be calculated... 
+ * Exact Estimators WILL be calculated... 
+ * MSD WILL NOT be calculated... 
+ * Cvv WILL be calculated... 
+ * Dipole spectra WILL be calculated... 
+ * Orientational CFs WILL be calculated... 
+ * Three body correction WILL NOT be calculated...
+
+ EPSR WILL NOT be used...
+ * Initial energy =  -0.00420 E_h per atom
+
+ * NVT pre-equilibration for:   0.05 ps
+          10  %
+          20  %
+          30  %
+          40  %
+          50  %
+          60  %
+          70  %
+          80  %
+          90  %
+         100  %
+ * Beginning Equilibration
+          10  %
+          20  %
+          30  %
+          40  %
+          50  %
+          60  %
+          70  %
+          80  %
+          90  %
+         100  %
+ * Equilibration complete. 
+Average density =   1.0013 g cm^-3
+ * Sampling Static Properties 
+          10  %
+          20  %
+          30  %
+          40  %
+          50  %
+          60  %
+          70  %
+          80  %
+          90  %
+         100  %
+
+ * Energies 
+ ----------------------------
+ <V> per molecule =   -35.840706975554959     
+ <V>_ew =   -52.835519250416873       KJ mol^-1
+ <V>_lj =    7.1223696045617428       KJ mol^-1
+ <V>_inter =   -45.713149645855133       KJ mol^-1
+ <V>_intra =    9.8724426703002059       KJ mol^-1
+
+ <Virial KE> per molecule =    1248.8486595885324       K 
+ <Virial KE> per molecule =    15.575342797942204       Kjmol-1 
+ <Virial KE>_inter =   0.18542857489789377       KJ mol^-1
+ <Virial KE>_intra =    4.2698911837835150       KJ mol^-1
+
+ * Energies using Exact Estimators 
+ ----------------------------
+ <V> per molecule =   -35.578067396909624       KJ mol^-1
+ <V>_ew =   -52.822699586489087       KJ mol^-1
+ <V>_lj =    7.3265523396567138       KJ mol^-1
+ <V>_inter =   -45.496147246832365       KJ mol^-1
+ <V>_intra =    9.9180798499227389       KJ mol^-1
+
+ <Virial KE> per molecule =    15.784612659253808       KJ mol^-1
+ <Virial KE>_inter =   0.39469843620949868       KJ mol^-1
+ <Virial KE>_intra =    4.2698911837835150       KJ mol^-1
+
+ * Radius of Gyration 
+ ----------------------------
+ RMS Rg Hydrogen =   0.21725659003776604       bohr
+ RMS Rg Oxygen   =    7.9729501371443884E-002  bohr
+ RMS Rg COM      =    7.7843024431918095E-002  bohr
+
+ * Volume,Pressure and Enthalpy
+ -------------------------------
+  Average Pressure =   -1386.7522733201818       bar
+  Average Volume   =    25111.874936269523       bohr^3
+  Average Length x =    29.283728171184208       bohr
+  Average Length y =    29.283728171184208       bohr
+  Average Length z =    29.283728171184208       bohr
+  Average Density  =    1.0046258909355203       g cm^-3
+  Average PV       =   -2.4859275229714246       KJ mol^-1
+
+  * Dielectric constant 
+ -------------------------------------------
+  <M_x>               =     133.31333922046764       Debye
+  <M_y>               =     124.50326839727070       Debye
+  <M_z>               =     18.628811714626298       Debye
+  <M>^2               =     33620.542881613306       Debye
+  <M^2>               =     33702.524839569174       Debye
+  Dielectric constant =     3.2455618285384533     
+
+ * Molecular Properties: 
+ -------------------------------------------
+  Average O-H bond length =    0.96317894281041050       Angstroms 
+  Average bond angle      =     104.57601631838303       degrees 
+  Average dipole          =     2.3157427357483225       Debye 
+
+ * Static properties calculation complete. 
+ * Sampling Dynamical Properties
+ Start
+ * Completed sampling:            1  of            2
+ Start
+ * Completed sampling:            2  of            2
+
+ Diffusion constant  =     0.5166 A**2/ps
+
+ * Electric properties 
+
+ <Dipole**2> =    4992.6225890572305       e**2 bohr**2 
+ <Dipole(x)> =    47.164691566472598       e bohr 
+ <Dipole(y)> =    51.826224232802119       e bohr 
+ <Dipole(z)> =    8.4545745336823188       e bohr 
+ Dielectric constant =    2.8889973543614205     
+
+ -------------------------------------------
+
+ * Calculation results  
+
+ Energies per atom:
+ <KE> =     5.1360 Kj/mol
+ <PE> =   -12.1630 Kj/mol

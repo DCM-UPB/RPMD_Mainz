@@ -1,0 +1,12 @@
+This 'test' directory is intended to serve for regression testing.
+
+Expected output folders of tests are supposed to be placed under 
+cmp/ (e.g. cmp/gentest.cmp). Corresponding test runs should be done
+under run/ (e.g. run/gentest.run). The run folder is ignored by git.
+
+Currently only one test ('gentest') is implemented. It can be easily
+run by executing './gentest.sh $EXEC_PATH', where $EXEC_PATH should be
+the path of the RPMD executable you want to test. If it is the default
+'qmd.x' in RPMD's main directory, you can simply run 'gentest.sh'.
+If the test output differs from the expected output, you can find the
+diff in 'run/gentest.diff'.

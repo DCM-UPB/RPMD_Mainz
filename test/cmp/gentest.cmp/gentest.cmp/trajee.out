@@ -1,0 +1,24 @@
+
+ Trajectory           1
+ ----------------------------
+ <V> per molecule =   -36.200909153906636       KJ mol^-1
+ <V>_ew =   -52.960587710832101       KJ mol^-1
+ <V>_lj =    7.0788133951553824       KJ mol^-1
+ <V>_inter =   -45.881774315676715       KJ mol^-1
+ <V>_intra =    9.6808651617700807       KJ mol^-1
+
+ <Virial KE> per molecule =    15.813743605092027       KJ mol^-1
+ <Virial KE>_inter =   0.35738891831903213       KJ mol^-1
+ <Virial KE>_intra =    4.3363316475121998       KJ mol^-1
+
+ Trajectory           2
+ ----------------------------
+ <V> per molecule =   -36.341517205407733       KJ mol^-1
+ <V>_ew =   -53.727581150806415       KJ mol^-1
+ <V>_lj =    7.7120110766318755       KJ mol^-1
+ <V>_inter =   -46.015570074174541       KJ mol^-1
+ <V>_intra =    9.6740528687668039       KJ mol^-1
+
+ <Virial KE> per molecule =    15.529456610447170       KJ mol^-1
+ <Virial KE>_inter =   0.39370184530944852       KJ mol^-1
+ <Virial KE>_intra =    4.0157317258769254       KJ mol^-1
