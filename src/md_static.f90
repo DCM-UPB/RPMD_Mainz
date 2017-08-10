@@ -696,7 +696,7 @@ subroutine md_static(ng,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta, &
     
         write (6,*)'* Static properties calculation complete. '
         if (itst(1).eq.1) then
-            call print_rdf(ihoo,ihoh,ihhh,na,boxlxyz,ng,nb,nrdf)
+            call print_rdf(ihoo,ihoh,ihhh,na,nb,boxlxyz,nrdf,'')
         endif
     endif
 #ifdef PARALLEL_BINDING

@@ -23,7 +23,7 @@ dt,mass,irun,itcf,itst,pt,pb,print,iskip,ntherm,vacfac)
     real(8), allocatable :: irmtr(:,:,:),irmtv(:,:,:),idmtr(:,:,:),idmtv(:,:,:)
     real(8), allocatable :: dcvinter(:),dcvintra(:),dke(:)
     real(8), allocatable :: cvinter(:), cvintra(:),cke(:)
-    integer(8), allocatable :: ihhh(:),ihoo(:),ihoh(:)
+    real(8), allocatable :: ihhh(:),ihoo(:),ihoh(:)
     character(128) file_name
     external ran2
     common /thinp/ ttaufs
@@ -284,7 +284,7 @@ endif
 
     ! Print the total RDFs.
     if (itst(1).eq.1) then
-      call print_rdf(ihoo,ihoh,ihhh,na,boxlxyz,nt,nb,(2*nt/iskip+1)*m)
+      call print_rdf(ihoo,ihoh,ihhh,na,nb,boxlxyz,(2*nt/iskip+1)*m,'_traj')
     endif
 
     ! Print the (unit.potential) correlation functions.
@@ -348,6 +348,7 @@ dqq,davx,davy,davz,dmot1,ihoo,ihoh,ihhh,nt,na,nb,boxlxyz,z, &
 beta,dt,mass,itcf,itst,nm,pe,irun,dcvinter, &
 dcvintra,dke,pt,pb,print,iskip,vacfac,eefile)
     use intmod
+    use RDFMod, only : calc_rdf
     implicit none
   include 'globals.inc'
 #ifdef PARALLEL_BINDING
@@ -364,6 +365,7 @@ dcvintra,dke,pt,pb,print,iskip,vacfac,eefile)
     real(8) dtv,dqq,davx,davy,davz,dip2,dipm,dotx,doty,dotz
     real(8) emi,vew,vlj,vint,rke
     real(8) tavee,tq1aee,tq2aee,v1eeav,v2eeav,v3eeav,tq1,tq2,tqe
+    character(LEN=2),Dimension(:),allocatable :: element
     common /ew_param/ alpha,ecut,wm,wh
     common /RPMDDFT/ rpmddft
     common /beaddiabatic/ nbdf1,nbdf2
@@ -375,7 +377,7 @@ dcvintra,dke,pt,pb,print,iskip,vacfac,eefile)
     real(8) ct(0:nt),dmot1(6,0:nt)
     real(8) dmtr(0:nt),dmtv(0:nt),idmtr(0:nt,4,2),idmtv(0:nt,4,2)
     real(8) dcvinter(0:2*nt), dcvintra(0:2*nt),dke(0:2*nt)
-    integer(8) ihoo(imaxbin),ihoh(imaxbin),ihhh(imaxbin)
+    real(8) ihoo(imaxbin),ihoh(imaxbin),ihhh(imaxbin)
 
     ! Cvv, OCF and Dipole Working Arrays
 
@@ -599,74 +601,20 @@ write(6,*) 'Start'
         ! RDF g_oo,g_oh,g_hh
         !------------------------
         if ((itst(1).eq.1) .and. (mod(jt,iskip).eq.0)) then
-           do k = 1, nb
-              do i = 2, na
-                 do j = 1, i-1
-                    dx = r(1,i,k) - r(1,j,k)
-                    dy = r(2,i,k) - r(2,j,k)
-                    dz = r(3,i,k) - r(3,j,k)
-                    dx = dx-boxlxyz(1)*dble(nint(dx/boxlxyz(1)))
-                    dy = dy-boxlxyz(2)*dble(nint(dy/boxlxyz(2)))
-                    dz = dz-boxlxyz(3)*dble(nint(dz/boxlxyz(3)))
-                    dist(i,j) = dsqrt(dx*dx+dy*dy+dz*dz)
-                    dist(j,i) = dist(i,j)
-                 enddo
-              enddo
-
-              do i = 1,na
-                 dist(i,i) = 0.d0
-              enddo
-
-              ! calculate and bin O - O pair distances
-
-
-              boxmax = max(boxlxyz(1),boxlxyz(2),boxlxyz(3))
-              delr = dble(0.5d0*boxmax/dble(imaxbin))
-              do i = 1, nm - 1
-                 do j = i + 1, nm
-                    ii = 3*i - 2
-                    jj = 3*j - 2
-                    rij = dist(ii,jj)
-                    ibin = int(rij/delr) + 1
-                    if (ibin.le.imaxbin) then
-                       ihoo(ibin) = ihoo(ibin) + 2
-                    endif
-                 enddo
-              enddo
-
-              ! calculate and bin O - H pair distances
-
-              do i = 1, nm
-                 do j = 1, na, 3
-                    ii = 3*i - 2
-                    jj = j+1
-                    rij = dist(ii,jj)
-                    ibin = int( rij / delr) + 1
-                    if (ibin.le.imaxbin) then
-                       ihoh(ibin) = ihoh(ibin) + 1
-                    endif
-                    rij=dist(ii,jj+1)
-                    ibin = int( rij / delr) + 1
-                    if (ibin.le.imaxbin) then
-                       ihoh(ibin) = ihoh(ibin) + 1
-                    endif
-                 enddo
-              enddo
-
-              ! calculate and bin H - H pair distances
-
-              do i = 1, na-1
-                 do j = i+1, na
-                    if (mod(i-1,3).ne.0.and.mod(j-1,3).ne.0) then
-                       rij = dist(i,j)
-                       ibin = int(rij/delr) + 1
-                       if (ibin.le.imaxbin) then
-                          ihhh(ibin) = ihhh(ibin) + 2
-                       endif
-                    endif
-                 enddo
-              enddo
-           enddo
+           ! for the RDF, create an array that contains the element 
+           ! of the water molecules in  OHH order
+           if(.not.allocated(element))then
+              allocate(element(size(r,2)))
+              do i=lbound(r,2),ubound(r,2),3
+                 element(i)='O'
+                 element(i+1:i+2)='H'
+              end do
+           end if
+           boxmax = max(boxlxyz(1),boxlxyz(2),boxlxyz(3))
+           delr = 0.5d0*boxmax
+           call calc_rdf(r,element,"O ","O ",boxlxyz,0.0d0,delr,ihoo)
+           call calc_rdf(r,element,"O ","H ",boxlxyz,0.0d0,delr,ihoh)
+           call calc_rdf(r,element,"H ","H ",boxlxyz,0.0d0,delr,ihhh)
         endif
 
         ! Exact Estimators for Energies

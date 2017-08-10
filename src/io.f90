@@ -16,26 +16,27 @@ subroutine print_structure(r,boxlxyz,nm,na,nb,iunit)
     return
 end subroutine print_structure
 
-subroutine print_rdf(ihoo,ihoh,ihhh,na,boxlxyz,ng,nb,nrdf)
+subroutine print_rdf(ihoo,ihoh,ihhh,na,nb,boxlxyz,nrdf,suffix)
     implicit none
   include 'globals.inc'
     ! ------------------------------------------------------------------
     ! Outputs RDF
     ! ------------------------------------------------------------------
     real(8) ihoo(imaxbin),ihoh(imaxbin),ihhh(imaxbin)
-    integer na,ng,nb,nrdf
+    integer na,nb,nrdf
     integer no,nh,i
     real(8) delr,rlower,rupper,rh,vol,boxlxyz(3)
     real(8) const,rideal,gr,pi,boxmax
+    character(*) suffix
 
     pi = dacos(-1.d0)
     vol = boxlxyz(1)*boxlxyz(2)*boxlxyz(3)
 
     ! Open RDF output files.
 
-    open (unit=50,file='g_oo.out')
-    open (unit=51,file='g_oh.out')
-    open (unit=52,file='g_hh.out')
+    open (unit=50,file='g_oo'//trim(suffix)//'.out')
+    open (unit=51,file='g_oh'//trim(suffix)//'.out')
+    open (unit=52,file='g_hh'//trim(suffix)//'.out')
 
     boxmax = max(boxlxyz(1),boxlxyz(2),boxlxyz(3))
 
