@@ -1,0 +1,13 @@
+# ff-matching executable
+wff_forces.x
+
+# output files
+parameters.out
+stdout
+vmd.frc
+vmd.frc1
+vmd.frc2
+vmd.frc3
+vmd.frc4
+vmd.frcT
+

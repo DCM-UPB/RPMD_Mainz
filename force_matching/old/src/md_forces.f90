@@ -141,7 +141,7 @@ subroutine potenl_opt(r,v,dvdr,dvdr_split,vir,na,nb,boxlxyz, &
     integer na,nb,mol(na),nm,i,j,imol,ic,iopt,point(na+3),list(maxnab*na),bead
     real(8) z(na),r(3,na),dvdr(3,na),dvdr_split(3,na,4),vir(3,3),vir_ew(3,3),vir_oo(3,3),alphjac(3,3),msmat(3,3)
     real(8) vir_int(3,3),boxlxyz(3)
-    real(8) alpha,alphah,wm,wh,ecut,voo,oo_eps,oo_sig,oo_gam,rcut
+    real(8) alpha,alpha2,alphah,wm,wh,ecut,voo,oo_eps,oo_sig,oo_gam,rcut
     real(8) v,vint,vew,apot,alp,bpot,alpb,boxl
     real(8), allocatable :: ro(:,:),dvdroo(:,:)
     logical iamcub

@@ -3,7 +3,7 @@ FC = gfortran
 LIBS = -lfftw3
 FC += -Wall -fbounds-check
 
-FFLAGS = -O2 -march=native -flto
+FFLAGS = -O2 -march=native
 LFLAGS = $(FFLAGS)
 
 EXE = wff_forces.x

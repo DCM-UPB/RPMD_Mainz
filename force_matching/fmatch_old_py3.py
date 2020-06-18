@@ -369,7 +369,7 @@ class vpres_ffm( object ):
         
         stdoutfile = open("stdout", 'a')
         stdoutfile.write("---    Output of Evaluation No. " + str(self.counteval) + "    ---")
-        stdoutfile.write(output)
+        stdoutfile.write(str(output))
         stdoutfile.write("")
         stdoutfile.close()
         
