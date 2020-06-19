@@ -326,10 +326,11 @@ class vpres_ffm( object ):
             self.nolpars=hparams
             self.fitfun_ffm_phi()
             
-            #self.linpars=bounded_lsq(self.phistore,self.aifrc,self.linpar_bounds[:,0],self.linpar_bounds[:,1])
-            
-            self.linpars=spla.lstsq(self.phistore,self.aifrc)
-            self.linpars=self.linpars[0]
+            #self.linpars=spla.lstsq(self.phistore,self.aifrc)
+            self.linpars = spo.lsq_linear(self.phistore, self.aifrc, (self.linpar_bounds[:,0], self.linpar_bounds[:,1]))
+            self.linpars = self.linpars.x # the actual fit result
+            print("non-linear params:", self.nolpars)
+            print("linear params:", self.linpars)
             
             self.fitfun_ffm()
             
@@ -416,9 +417,8 @@ fitpars=spo.leastsq(testvp,[-0.1,1.0],args=(dataf, Rtest))
 print(fitpars)
 '''
 
-ndata=1500
 linpars0=np.array([1.21,0.00025,0.135,0.062])
-linp_bounds=np.array([[0.5,1.5],[0.0001,0.001],[0.05,0.2],[0.01,0.1]])
+linp_bounds=np.array([[1.0,1.44],[0.0001,0.01],[0.05,0.2],[0.01,0.1]])
 nolpars0=np.array([0.7,5.8,13.0,1.3,1.84,107.0])
 fitparams = lmf.Parameters()
 fitparams.add('alpha',     value = nolpars0[0],  min = 0.500,  max = 1.000)
@@ -435,7 +435,7 @@ traj_fname="all_tray.xyz"
 aifrc_fname="FORCES-PBE-ALL.frc"
 parout_fname="param_PBE-new"
 respower=1.0
-fitftol=1.e-12
+fitftol=1.e-6
 lskwords={'ftol':fitftol}
 
 vpres_ffm_obj=vpres_ffm(natom, ndata, linpars0, linp_bounds, traj_fname, aifrc_fname, parout_fname)
