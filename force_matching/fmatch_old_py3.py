@@ -334,7 +334,11 @@ class vpres_ffm( object ):
             
             self.fitfun_ffm()
             
-        return np.power(np.absolute(self.aifrc-self.funstore),respower)
+        #print("AI-FRC:", self.aifrc)
+        #print("FF-FRC:", self.funstore)
+        print("res:", sum(np.power(self.aifrc-self.funstore, 2)))
+        #return np.power(np.absolute(self.aifrc-self.funstore),respower)
+        return self.aifrc-self.funstore
    
     def fitfun_ffm_phi(self):
         '''Expects cs[0:4],alph[0:6],R[ndata,0:3],ndata,na'''
@@ -417,9 +421,9 @@ fitpars=spo.leastsq(testvp,[-0.1,1.0],args=(dataf, Rtest))
 print(fitpars)
 '''
 
-linpars0=np.array([1.21,0.00025,0.135,0.062])
-linp_bounds=np.array([[1.0,1.44],[0.0001,0.01],[0.05,0.2],[0.01,0.1]])
-nolpars0=np.array([0.7,5.8,13.0,1.3,1.84,107.0])
+linpars0=np.array([0.01,0.00025,0.17,0.07])
+linp_bounds=np.array([[0.01,2],[0.0001,0.001],[0.05,0.25],[0.03,0.15]])
+nolpars0=np.array([0.75,6.0,13.0,1.3,1.84,107.0])
 fitparams = lmf.Parameters()
 fitparams.add('alpha',     value = nolpars0[0],  min = 0.500,  max = 1.000)
 fitparams.add('oo_sig',    value = nolpars0[1],  min = 0.010,  max = 10.000)
@@ -435,7 +439,7 @@ traj_fname="all_tray.xyz"
 aifrc_fname="FORCES-PBE-ALL.frc"
 parout_fname="param_PBE-new"
 respower=1.0
-fitftol=1.e-6
+fitftol=1.e-10
 lskwords={'ftol':fitftol}
 
 vpres_ffm_obj=vpres_ffm(natom, ndata, linpars0, linp_bounds, traj_fname, aifrc_fname, parout_fname)
