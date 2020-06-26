@@ -185,7 +185,7 @@ subroutine potenl_opt(r,v,dvdr,dvdr_split,vir,na,nb,boxlxyz, &
         msmat(2,:) =   (/       1.d0 - alphah       ,           alphah          ,           0.d0            /)
         msmat(3,:) =   (/       1.d0 - alphah       ,           0.d0            ,           alphah          /)
 
-        !alpha2 = 0.5d0 * (1.d0 - alpha)
+        alpha2 = 0.5d0 * (1.d0 - alpha)
 
         ! Assign molecular identities to each atom.
 
