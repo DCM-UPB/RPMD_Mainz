@@ -1,9 +1,9 @@
 MF = Makefile
 FC = gfortran
 LIBS = -lfftw3
-FC += -Wall -fbounds-check
+FC += -Wall
 
-FFLAGS = -O2 -march=native
+FFLAGS = -O3 -march=native
 LFLAGS = $(FFLAGS)
 
 EXE = wff_forces.x

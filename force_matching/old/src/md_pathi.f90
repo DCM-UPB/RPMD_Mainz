@@ -111,6 +111,7 @@ subroutine rp_contract_nm(r,v,dvdr,nb,na,boxlxyz,z,vir, &
   real(8) r(3,na,nb),dvdr(3,na,nb),vir(3,3),z(na),boxlxyz(3)
   real(8) v
   real(8), allocatable :: rb(:,:,:),dvdrb(:,:,:)
+  real(8), allocatable :: dvdrb_split(:,:,:,:) ! dummy variable for forces
 
   ! nbdf = RP Contraction (beadibatic) factor
   ! (determines the number of normal modes to keep)
@@ -124,13 +125,14 @@ subroutine rp_contract_nm(r,v,dvdr,nb,na,boxlxyz,z,vir, &
 
   ! Allocate
 
-  allocate (rb(3,na,nbdf),dvdrb(3,na,nbdf))
+  allocate (rb(3,na,nbdf),dvdrb(3,na,nbdf),dvdrb_split(3,na,nbdf,4))
 
   ! Zero arrays
 
   dvdr(:,:,:) = 0.d0
   rb(:,:,:) = 0.d0
   dvdrb(:,:,:) = 0.d0
+  dvdrb_split(:,:,:,:) = 0.d0
   vir(:,:) = 0.d0
 
   ! Form contracted RP coordinates
@@ -139,13 +141,13 @@ subroutine rp_contract_nm(r,v,dvdr,nb,na,boxlxyz,z,vir, &
 
   ! Evaluate forces on the bead coordinates rb
 
-  call forces(rb,v,dvdrb,nbdf,na,boxlxyz,z,vir,iopt)
+  call forces(rb,v,dvdrb,dvdrb_split,nbdf,na,boxlxyz,z,vir,iopt)
 
   ! Create full bead forces from contracted coordinates
 
   call force_contract(dvdr,dvdrb,na,nb,nbdf)
 
-  deallocate (rb,dvdrb)
+  deallocate (rb,dvdrb,dvdrb_split)
 
   return
 end subroutine rp_contract_nm
