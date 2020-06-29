@@ -38,7 +38,7 @@ def read_xyzdat(filename, nout):
 Fit function (Buckingham): lp[0]*F_Coul(nlp[0]) + lp[1]*F_LJ(nlp[1, 5]) + lp[2]*F_stretch(nlp[2:4]) + lp[3]*F_bend(nlp[4])
 Fit function (LJ):         lp[0]*F_Coul(nlp[0]) + lp[1]*F_LJ(nlp[1]) + lp[2]*F_stretch(nlp[2:4]) + lp[3]*F_bend(nlp[4]) '''
 class vpres_ffm( object ):  
-    def __init__( self, natom, ndata, useBuckingham, linp0, linp_bounds, traj_fname, aifrc_fname, parout_fname):
+    def __init__( self, natom, ndata, useBuckingham, linp0, traj_fname, aifrc_fname, parout_fname):
         ndim = 3
         self.ndim = ndim
         self.natom = natom
@@ -55,12 +55,11 @@ class vpres_ffm( object ):
         self.phistore = np.zeros((self.narr, 4))  # stores the force components
 
         self.linpars = np.array(linp0)              # linear parameters (expected length 4!)
-        self.linpar_bounds = np.array(linp_bounds)  # linear parameter boundaries
         self.parout_fname = parout_fname
         self.traj_fname = traj_fname
 
-        self.aifrc=read_xyzdat(aifrc_fname, self.narr)
-        
+        self.aifrc = read_xyzdat(aifrc_fname, self.narr)
+
         stdoutfile = open("stdout", 'w')
         stdoutfile.write("")
         stdoutfile.write("-------        FFM Script Output        -------")
@@ -82,18 +81,21 @@ class vpres_ffm( object ):
             self.nolpars = hparams
             self.fitfun_ffm_phi()
 
-        self.linpars = spo.lsq_linear(self.phistore, self.aifrc, (self.linpar_bounds[:, 0], self.linpar_bounds[:, 1]))
-        self.linpars = self.linpars.x # the actual fit result
+        #self.linpars = spo.lsq_linear(self.phistore, self.aifrc, (self.linpar_bounds[:, 0], self.linpar_bounds[:, 1]))
+        #self.linpars = self.linpars.x # the actual fit result
+        self.linpars = spo.nnls(self.phistore, self.aifrc)
+        self.linpars = self.linpars[0]  # the actual fit result
+
         print("non-linear params:", self.nolpars)
         print("linear params:", self.linpars)
-            
+        if np.any(self.linpars == 0):
+            print("Error: One or more linear parameters reached 0 in the linear optimization step. Exiting.")
+            quit()
+
         self.fitfun_ffm()
-            
-        #print("AI-FRC:", self.aifrc)
-        #print("FF-FRC:", self.funstore)
-        print("res:", sum(np.power(self.aifrc-self.funstore, 2)))
-        #return np.power(np.absolute(self.aifrc-self.funstore),respower)
-        return self.aifrc-self.funstore
+
+        print("res:", sum(np.power(self.aifrc - self.funstore, 2)))
+        return self.aifrc - self.funstore
    
     def fitfun_ffm_phi(self):
         '''Expects lp[0:4],nlp[0:6],R[ndata,0:3],ndata,na'''
@@ -103,7 +105,7 @@ class vpres_ffm( object ):
         outfile.write('\nwmass = %.16f'%    32831.2525000000000003e0)
         outfile.write('\nomass = %.16f'%    29156.9471000000000001e0)
         outfile.write('\nhmass = %.16f'%    1837.1527000000000001e0)
-        outfile.write('\nqo = %.16f'%       - np.sqrt(self.linpars[0]))
+        outfile.write('\nqo = %.16f'%     - np.sqrt(self.linpars[0]))
         outfile.write('\nalpha = %.16f'%    self.nolpars[0])
         outfile.write('\noo_sig = %.16f'%   self.nolpars[1])
         outfile.write('\noo_eps = %.16f'%   self.linpars[1])
@@ -178,27 +180,26 @@ fitpars=spo.leastsq(testvp,[-0.1,1.0],args=(dataf, Rtest))
 print(fitpars)
 '''
 
-linp0 = np.array([1.0, 0.0002, 0.15, 0.075])
-linp_bounds = np.array([[0.25, 2], [0.00005, 0.01], [0.05, 0.2], [0.01, 0.1]])
+linp0 = np.array([1.5, 0.0001, 0.15, 0.06])
 useBuckingham = False
 
 fitparams = lmf.Parameters()
-fitparams.add('alpha',      value=1., min=0.500, max=1.500)
-fitparams.add('oo_sig',     value=6.0, min=0.010, max=10.000)
+fitparams.add('alpha',      value=0.7,   min=0.500, max=1.000)
+fitparams.add('oo_sig',     value=5.5,   min=5.0,   max=7.0)
 if useBuckingham:
-    fitparams.add('oo_gam', value=13.0, min=0.010, max=50.000)
-fitparams.add('alp',        value=1.3, min=0.010, max=100.0)
-fitparams.add('reoh',       value=1.84, min=1.500, max=2.000)
-fitparams.add('thetad',     value=107.0, min=90.00, max=120.0)
+    fitparams.add('oo_gam', value=13.0,  min=0.010, max=50.000)
+fitparams.add('alp',        value=1.35,  min=0.010, max=100.0)
+fitparams.add('reoh',       value=1.8,   min=1.600, max=2.000)
+fitparams.add('thetad',     value=104.5, min=100.00, max=115.0)
 
 natom = 375
 ndata = 1500
 traj_fname = "all_tray.xyz"
-aifrc_fname = "FORCES-PBE-ALL.frc"
-parout_fname = "param_PBE-new"
+aifrc_fname = "FORCES-TPSS-D3-ALL.frc"
+parout_fname = "param_TPSS-D3-new"
 fitftol = 1.e-12
 
-vpres_ffm_obj = vpres_ffm(natom, ndata, useBuckingham, linp0, linp_bounds, traj_fname, aifrc_fname, parout_fname)
+vpres_ffm_obj = vpres_ffm(natom, ndata, useBuckingham, linp0, traj_fname, aifrc_fname, parout_fname)
 residual = vpres_ffm_obj(fitparams)
 
 fitout = lmf.minimize(vpres_ffm_obj, fitparams, ftol=fitftol)
