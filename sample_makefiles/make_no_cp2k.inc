@@ -1,6 +1,6 @@
 FC=      gfortran                           #which FORTRAN compiler to use
 CC=      gcc                                #which C comiler to use
-CPFLAGS= -DEPSR_STARTUP_READ #-DPARALLEL_BINDING  #Flags for the C preprocessor
+CPFLAGS= -DEPSR_STARTUP_READ #-DPARALLEL_BINDING -DENABLE_IPI_DRIVER  #Flags for the C preprocessor
 
 CCFLAGS= -O2                                #Flags for the C compiler
 FCFLAGS= -cpp -O2 -Wall -pedantic -Waliasing -Wcharacter-truncation \

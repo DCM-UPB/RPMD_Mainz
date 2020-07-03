@@ -57,6 +57,7 @@ SRCFILES=\
 	intra_morse.f90 \
 	intra_morse_harm.f90 \
 	intra_spcfw.f90 \
+	ipi_driver.f90 \
 	linked_cell.f90 \
 	neigh_list.f90 \
 	correct_tem.f90 \

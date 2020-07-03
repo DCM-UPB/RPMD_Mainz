@@ -145,10 +145,10 @@ contains
         !Exponents: 4 chars for '0.E+', Float: 1 char for '.'
         MantSize = merge(MantSize+4,MantSize+1,Exponents)
         select case (ExpBitPat)
-            case(z'000')!handle denormal numbers
+            case(int(z'000', KIND=8))!handle denormal numbers
                 ExpSize=merge(3,1,Exponents)
-            case(z'7ff')!represents infinity or Nan depending on Mantissa
-                sizeof=merge(8+sgnSize,3,MantBitPat.eq.z'00000')
+            case(int(z'7ff', KIND=8))!represents infinity or Nan depending on Mantissa
+                sizeof=merge(8+sgnSize,3,MantBitPat.eq.int(z'00000', KIND=8))
                 return
             case default
                 if(Exponents)then
