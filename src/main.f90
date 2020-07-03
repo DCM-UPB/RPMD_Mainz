@@ -782,7 +782,7 @@ if(myid.eq.0) then
         ! Initial forces and momenta
         ! ---------------------------
 
-        call full_forces(r,na,nb,v,vew,vlj,vint,vir,z,boxlxyz,dvdr,dvdr2,rpmde3b)
+        call full_forces(r,na,nb,v,vew,vlj,vint,vir,z,boxlxyz,dvdr,dvdr2)
         write(6,'(a,f10.5,a)') ' * Initial energy =', v/dble(na), ' E_h per atom'
         write(6,*)
         call sample(p,na,nb,mass,beta,irun,dt)
@@ -889,7 +889,7 @@ endif
             boxlxyz(:) = boxlxyz_traj(:,i)
             r(:,:,:) = r_traj(:,:,:,i)
             call md_static(1,p,r,dvdr,dvdr2,na,nb,boxlxyz,z,beta,&
-            dt,mass,irun,itst,pt,pb,print,vave)
+            dt,mass,irun,itst,pt,pb,print,vave,ptd)
             write (6,*) "potential of snapshot", i, "is", vave*toKjmol, "kJ/mol"
         enddo
         endif
