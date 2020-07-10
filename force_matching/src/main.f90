@@ -29,6 +29,7 @@ program wff_forces
     real(8) vave
     real(8), allocatable :: mass(:),z(:),r(:,:,:)
     real(8), allocatable :: p(:,:,:),dvdr(:,:,:),dvdr2(:,:,:)
+    real(8), allocatable :: dvdr_split(:,:,:,:) ! like dvdr, but with extra dim to separate force components (see md_forces)
     character(len=25) filename
     character(len=4) type
     character(len=3) lattice,ens,therm_backup
@@ -38,7 +39,7 @@ program wff_forces
     logical H2O,HDO,D2O
     external gaussian
 
-    namelist/input/iamcub,ecut,reftraj,ncellxyz,rcut,sig,epsr,epsr_update,rpmde3b
+    namelist/input/iamcub,ecut,reftraj,ncellxyz,rcut,sig
     namelist/param/ wmass,omass,hmass,dmass,qo,alpha,oo_sig,oo_eps,oo_gam, &
     thetad,reoh,apot,bpot,alp,alpb,wm,wh
 
@@ -168,19 +169,15 @@ program wff_forces
     trdf = ng*dtps
     rcut = rcut / ToA
 
-    ! EPSR printout
-    ! ------------------------------------
+    ! EPSR/E3B check
     if (epsr.eqv..true.) then
-        write (6,*) "EPSR WILL be used..."
-#ifdef EPSR_STARTUP_READ
-            write (6,*) "EPSR WILL be read on startup"
-#else
-        write (6,*) "EPSR WILL NOT be read on startup"
-#endif
-    else
-        write (6,*) "EPSR WILL NOT be used..."
+        write (6,*) "EPSR is not supported in FFM. Aborting..."
+        stop
     endif
-
+    if (rpmde3b.ne.0) then
+        write (6,*) "E3B is not supported in FFM. Aborting..."
+        stop
+    endif
 
     ! Number of molecules and starting positions :
     ! --------------------------------------------
@@ -194,7 +191,7 @@ program wff_forces
 
         ! Third argument is trajectories file
         write(6,*)
-        write(6,*) 'The number of reference trajectories is: ', reftraj
+        write(6,*) 'The number of reference trajectory steps is: ', reftraj
         write(6,*) 'And we are loading from file: ', filename
         write(6,*)
 
@@ -242,7 +239,7 @@ program wff_forces
         stop
     endif
 
-    write(6,60) 'FFM',tsim, rho,ncellxyz(1),ncellxyz(2),ncellxyz(3)
+    write(6,60) 'FFM',nt,rho,ncellxyz(1),ncellxyz(2),ncellxyz(3)
     60  format (' Simulation Parameters:' /1x &
             '-----------------------' /1x &
             'mode   = ',a9 /1x &
@@ -322,10 +319,11 @@ program wff_forces
     ! Allocate the evolution arrays
     ! ------------------------------
 
-    allocate (p(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb))
+    allocate (p(3,na,nb),dvdr(3,na,nb),dvdr2(3,na,nb), dvdr_split(3,na,nb,4))
     p(:,:,:) = 0.d0
     dvdr(:,:,:) = 0.d0
     dvdr2(:,:,:) = 0.d0
+    dvdr_split(:,:,:,:) = 0.d0
 
 
     ! Allocate force enviroment id:
@@ -344,14 +342,13 @@ program wff_forces
     do i = 1, reftraj
         boxlxyz(:) = boxlxyz_traj(:,i)
         r(:,:,:) = r_traj(:,:,:,i)
-        !call forces(r,v,dvdr,dvdr_split,nb,na,boxlxyz,z,virial,0)
-        call forces(r,v,dvdr,nb,na,boxlxyz,z,vir,0)
+        call forces(r,v,dvdr,dvdr_split,nb,na,boxlxyz,z,vir,0)
         call print_vmd_full_forces(dvdr,dvdr2,nb,na,boxlxyz,1250)
         do j = 1, 4
             k=1250+j
-            !call print_vmd_full_forces(dvdr_split(:,:,:,j),dvdr2,nb,na,boxlxyz,k)
+            call print_vmd_full_forces(dvdr_split(:,:,:,j),dvdr2,nb,na,boxlxyz,k)
         enddo
-        !call print_vmd_full_forces(sum(dvdr_split(:,:,:,:),4),dvdr2,nb,na,boxlxyz,1255)
+        call print_vmd_full_forces(sum(dvdr_split(:,:,:,:),4),dvdr2,nb,na,boxlxyz,1255)
     enddo
 
     close (unit=1250)
