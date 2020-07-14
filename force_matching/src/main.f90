@@ -82,7 +82,7 @@ program wff_forces
     epsr_update = 1
     isotope = "H2O"
     dmass = 0.d0
-    H2O = .false.
+    H2O = .true.
     D2O = .false.
     HDO = .false.
 
@@ -208,7 +208,6 @@ program wff_forces
         do k = 1, nb
             do i = 1, reftraj
                 read(61,*) natoms
-                write (6,*) "ATOMS", natoms
                 if (natoms.gt.na) then
                     write(6,*) "natoms from reftraj file too big! You must set a bigger cell in the input file !!! Aborting..."
                     stop

@@ -122,27 +122,27 @@ subroutine intra_morse_harm(r,dvdr,dvdr_stretch,dvdr_bend,na,v,vir)
      dvdr(2,j+2) = dvdr(2,j+2) + dvdy2 + dvdy3
      dvdr(3,j+2) = dvdr(3,j+2) + dvdz2 + dvdz3
 
-     !hacked in force split, contains some unnecessary repeated calculations
+     ! hacked-in force split
 
-     dvdr_stretch(1,j) = dvdr_stretch(1,j) - a1*dr1dx1 - a2*dr2dx2
-     dvdr_stretch(2,j) = dvdr_stretch(2,j) - a1*dr1dy1 - a2*dr2dy2
-     dvdr_stretch(3,j) = dvdr_stretch(3,j) - a1*dr1dz1 - a2*dr2dz2
-     dvdr_stretch(1,j+1) = dvdr_stretch(1,j+1) + a1*dr1dx1
-     dvdr_stretch(2,j+1) = dvdr_stretch(2,j+1) + a1*dr1dy1
-     dvdr_stretch(3,j+1) = dvdr_stretch(3,j+1) + a1*dr1dz1
-     dvdr_stretch(1,j+2) = dvdr_stretch(1,j+2) + a2*dr2dx2
-     dvdr_stretch(2,j+2) = dvdr_stretch(2,j+2) + a2*dr2dy2
-     dvdr_stretch(3,j+2) = dvdr_stretch(3,j+2) + a2*dr2dz2
+     dvdr_stretch(1,j) = - a1*dr1dx1 - a2*dr2dx2
+     dvdr_stretch(2,j) = - a1*dr1dy1 - a2*dr2dy2
+     dvdr_stretch(3,j) = - a1*dr1dz1 - a2*dr2dz2
+     dvdr_stretch(1,j+1) = a1*dr1dx1
+     dvdr_stretch(2,j+1) = a1*dr1dy1
+     dvdr_stretch(3,j+1) = a1*dr1dz1
+     dvdr_stretch(1,j+2) = a2*dr2dx2
+     dvdr_stretch(2,j+2) = a2*dr2dy2
+     dvdr_stretch(3,j+2) = a2*dr2dz2
 
-     dvdr_bend(1,j) = dvdr_bend(1,j) - a3*dthetadr1*dr1dx1 - a3*dthetadr2*dr2dx2
-     dvdr_bend(2,j) = dvdr_bend(2,j) - a3*dthetadr1*dr1dy1 - a3*dthetadr2*dr2dy2
-     dvdr_bend(3,j) = dvdr_bend(3,j) - a3*dthetadr1*dr1dz1 - a3*dthetadr2*dr2dz2
-     dvdr_bend(1,j+1) = dvdr_bend(1,j+1) + a3*dthetadr1*dr1dx1 - a3*dthetadr3*dr3dx3
-     dvdr_bend(2,j+1) = dvdr_bend(2,j+1) + a3*dthetadr1*dr1dy1 - a3*dthetadr3*dr3dy3
-     dvdr_bend(3,j+1) = dvdr_bend(3,j+1) + a3*dthetadr1*dr1dz1 - a3*dthetadr3*dr3dz3
-     dvdr_bend(1,j+2) = dvdr_bend(1,j+2) + a3*dthetadr2*dr2dx2 + a3*dthetadr3*dr3dx3
-     dvdr_bend(2,j+2) = dvdr_bend(2,j+2) + a3*dthetadr2*dr2dy2 + a3*dthetadr3*dr3dy3
-     dvdr_bend(3,j+2) = dvdr_bend(3,j+2) + a3*dthetadr2*dr2dz2 + a3*dthetadr3*dr3dz3
+     dvdr_bend(1,j) = - a3*dthetadr1*dr1dx1 - a3*dthetadr2*dr2dx2
+     dvdr_bend(2,j) = - a3*dthetadr1*dr1dy1 - a3*dthetadr2*dr2dy2
+     dvdr_bend(3,j) = - a3*dthetadr1*dr1dz1 - a3*dthetadr2*dr2dz2
+     dvdr_bend(1,j+1) = a3*dthetadr1*dr1dx1 - a3*dthetadr3*dr3dx3
+     dvdr_bend(2,j+1) = a3*dthetadr1*dr1dy1 - a3*dthetadr3*dr3dy3
+     dvdr_bend(3,j+1) = a3*dthetadr1*dr1dz1 - a3*dthetadr3*dr3dz3
+     dvdr_bend(1,j+2) = a3*dthetadr2*dr2dx2 + a3*dthetadr3*dr3dx3
+     dvdr_bend(2,j+2) = a3*dthetadr2*dr2dy2 + a3*dthetadr3*dr3dy3
+     dvdr_bend(3,j+2) = a3*dthetadr2*dr2dz2 + a3*dthetadr3*dr3dz3
 
      ! Virial
 
