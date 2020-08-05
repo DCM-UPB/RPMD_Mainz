@@ -5,6 +5,8 @@ Author: Jan Kessler
 Originally created in 07/2013
 Rebuilt in 06/2020
 '''
+import sys
+import argparse
 import numpy as np
 import numpy.linalg as npla
 import scipy.linalg as spla
@@ -30,6 +32,10 @@ def read_xyzdat(filename, nout):
             xyzdat[it+1] = float(linedat[2])
             xyzdat[it+2] = float(linedat[3])
             it += 3
+
+    if nout != len(xyzdat):
+        print("Error: XYZ file did not contain the expected amount of positions/forces.")
+        quit()
 
     return xyzdat
     
@@ -126,6 +132,7 @@ class varpro_ffm_res(object):
         self.linpars = linfit[0]  # the actual fit result
 
         if np.any(self.linpars == 0):
+            print(self.linpars)
             print("Error: One or more linear parameters reached 0 in the linear optimization step. Exiting.")
             quit()
 
@@ -166,30 +173,50 @@ class varpro_ffm_res(object):
         
 '''                      --------                      '''
 
+# --- Setup CMDLine Parser ---
+parser = argparse.ArgumentParser(prog='FFM', description='Fit 4-Site Water Model using Variable Projection, given a dataset of positions and corresponding ab-initio forces.')
 
-useBuckingham = False
+parser.add_argument('--natom', required=True, type=int, help='Number of atoms in each of the provided snapshots (required)')
+parser.add_argument('--ndata', required=True, type=int, help='Number of provided snapshots in the trajectory/force files (required)')
 
+parser.add_argument('--traj', required=True, help='File containing the trajectory snapshots (required)')
+parser.add_argument('--frcs', required=True, help='File containing the force snapshots (required)')
+
+# flags
+parser.add_argument('--useBuck', action='store_true', help='Use Buckingham potential instead of Lennard-Jones')
+
+# non-linear model parameter init, min and max
+parser.add_argument('--alpha', type=float, nargs=3, metavar=('init', 'min', 'max'), default = [0.7, 0.5, 1.0], help='Init, Min and Max for alpha parameter')
+parser.add_argument('--oo_sig', type=float, nargs=3, metavar=('init', 'min', 'max'), default = [6.0, 1.0, 10.0], help='Init, Min and Max for oo_sig parameter')
+parser.add_argument('--oo_gam', type=float, nargs=3, metavar=('init', 'min', 'max'), default = [12.0, 0.1, 50.0], help='Init, Min and Max for oo_gam parameter')
+parser.add_argument('--alp', type=float, nargs=3, metavar=('init', 'min', 'max'), default = [1.35, 0.01, 100.], help='Init, Min and Max for alp parameter')
+parser.add_argument('--reoh', type=float, nargs=3, metavar=('init', 'min', 'max'), default = [1.8, 1.6, 2.], help='Init, Min and Max for reoh parameter')
+parser.add_argument('--thetad', type=float, nargs=3, metavar=('init', 'min', 'max'), default = [104.5, 100., 115.], help='Init, Min and Max for thetad parameter')
+
+# fitting configuration
+parser.add_argument('--ftol', type=float, default=1.e-8, help='Non-linear fit tolerance (stopping criterium)')
+
+parser.print_help()
+args = parser.parse_args()
+
+# Setup lmf parameter object
 fitparams = lmf.Parameters()
-fitparams.add('alpha',      value=0.7,   min=0.500, max=1.000)
-fitparams.add('oo_sig',     value=6.0,   min=1.0,   max=10.0)
-if useBuckingham:
-    fitparams.add('oo_gam', value=13.0,  min=0.010, max=50.000)
-fitparams.add('alp',        value=1.35,  min=0.010, max=100.0)
-fitparams.add('reoh',       value=1.8,   min=1.600, max=2.000)
-fitparams.add('thetad',     value=104.5, min=100.00, max=115.0)
+fitparams.add('alpha',      value=args.alpha[0], min=args.alpha[1], max=args.alpha[2])
+fitparams.add('oo_sig',     value=args.oo_sig[0], min=args.oo_sig[1], max=args.oo_sig[2])
+if args.useBuck:
+    fitparams.add('oo_gam', value=args.oo_gam[0], min=args.oo_gam[1], max=args.oo_gam[2])
+fitparams.add('alp',        value=args.alp[0], min=args.alp[1], max=args.alp[2])
+fitparams.add('reoh',       value=args.reoh[0], min=args.reoh[1], max=args.reoh[2])
+fitparams.add('thetad',     value=args.thetad[0], min=args.thetad[1], max=args.thetad[2])
 
-natom = 375
-ndata = 1500
-traj_fname = "all_tray.xyz"
-aifrc_fname = "FORCES-PBE-ALL.frc"
-parout_fname = "param_PBE-new"
-fitftol = 1.e-12
-
-varpro_ffm_obj = varpro_ffm_res(natom, ndata, traj_fname, aifrc_fname, parout_fname)
+# Setup variable projection (VP)
+varpro_ffm_obj = varpro_ffm_res(args.natom, args.ndata, args.traj, args.frcs, "params_fit")
 residual = varpro_ffm_obj(fitparams)
 
-fitout = lmf.minimize(varpro_ffm_obj, fitparams, ftol=fitftol)
+# Execute VP
+fitout = lmf.minimize(varpro_ffm_obj, fitparams, ftol=args.ftol)
 
+# Report
 print('Final optimization result:')
 print()
 varpro_ffm_obj.report_linear()
