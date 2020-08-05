@@ -222,7 +222,9 @@ parser.add_argument('--apot', type=float, nargs=2, metavar=('min', 'max'), defau
 parser.add_argument('--bpot', type=float, nargs=2, metavar=('min', 'max'), default = [0., 0.], help='Min and Max for bpot parameter (default: unbound, non-negative)')
 
 # fitting configuration
-parser.add_argument('--ftol', type=float, default=1.e-8, help='Non-linear fit tolerance (stopping criterium)')
+parser.add_argument('--fit_method', default='least_squares', choices=['least_squares', 'trf', 'dogbox'], help='Method used for the bounded non-linear fitting (defaults to Trust-Region-Reflective least squares optimizer)')
+parser.add_argument('--fit_max_nfev', type=int, default=None, help='Maximum number of function evaluations for non-linear fit (stopping criterium, only working with least_squares method)')
+parser.add_argument('--fit_ftol', type=float, default=1.e-8, help='Fit function tolerance for non-linear fit (stopping criterium, only working with least_squares method)')
 
 parser.print_help()
 args = parser.parse_args()
@@ -242,7 +244,10 @@ varpro_ffm_obj = varpro_ffm_res(args.natom, args.ndata, args.traj, args.frcs, [a
 residual = varpro_ffm_obj(fitparams)
 
 # Execute VP
-fitout = lmf.minimize(varpro_ffm_obj, fitparams, ftol=args.ftol)
+if args.fit_method=='least_squares':
+    fitout = lmf.minimize(varpro_ffm_obj, fitparams, method=args.fit_method, nan_policy='raise', max_nfev=args.fit_max_nfev, ftol=args.fit_ftol)
+else:
+    fitout = lmf.minimize(varpro_ffm_obj, fitparams, method=args.fit_method, nan_policy='raise')
 
 # Report
 print('Final optimization result:')
