@@ -44,17 +44,30 @@ class varpro_ffm_res(object):
     '''        Variable Projection Force Field Matching Residual Class (callable)
     Fit function (Buckingham): qo^2*F_Coul(alpha) + ooeps*F_BH(oo_sig, oo_gam) + apot*F_stretch(alp, reoh) + bpot*F_bend(thetad)
     Fit function (LJ):         qo^2*F_Coul(alpha) + oo_eps*F_LJ(oo_sig) + apot*F_stretch(alp, reoh) + bpot*F_bend(thetad) '''
-    def __init__(self, natom, ndata, traj_fname, aifrc_fname, parout_fname):
+    def __init__(self, natom, ndata, traj_fname, aifrc_fname, linpar_bounds):
         ndim = 3
         self.narr = ndim*natom*ndata  # number of values in force & trajectory files
 
-        self.linpars = np.array([1.0, 0.0005, 0.15, 0.07])  # stores linear parameters, use some initial values for the first force evaluation (values have no influence on optimization!!)
         self.funstore = np.zeros(self.narr)  # stores the total forces
         self.phistore = np.zeros((self.narr, 4))  # stores the force components (divided by respective linear factors)
 
         self.traj_fname = traj_fname  # the file containing positions for which the reference forces are given
         self.aifrc = read_xyzdat(aifrc_fname, self.narr)  # the reference forces
-        self.parout_fname = parout_fname  # the file used to pass the FF parameters to the force code
+
+        self.linpars = np.array([1.0, 0.0005, 0.15, 0.07])  # stores linear parameters, use some initial values for the first force evaluation (values have no influence on optimization!!)
+
+        # handle linear parameter boundaries
+        flags_nobounds = [bpair[0] == 0. and bpair[1] == 0. for bpair in linpar_bounds]
+        self.linpar_lbounds = np.empty(4)
+        self.linpar_ubounds = np.empty(4)
+        for it, flag in enumerate(flags_nobounds):
+            if flag: # linear variable may have any non-zero value
+                self.linpar_lbounds[it] = 0.
+                self.linpar_ubounds[it] = np.inf
+            else: # linear variable stays within given boundaries
+                self.linpar_lbounds[it] = linpar_bounds[it][0]
+                self.linpar_ubounds[it] = linpar_bounds[it][1]
+        self.flag_linpar_anybounds = np.any(flags_nobounds)
 
         self.counteval = 0  # counts number of force program executions
 
@@ -80,7 +93,7 @@ class varpro_ffm_res(object):
     def _recompute_force_components(self, params):
         '''Takes lmfit params (+ self.linpars) and calls force code to compute corresponding force components'''
     
-        outfile = open(self.parout_fname, 'w')
+        outfile = open('params_fit', 'w')
         outfile.write('&param')
         outfile.write('\nwmass = %.16f' %      32831.2525000000000003e0)
         outfile.write('\nomass = %.16f' %      29156.9471000000000001e0)
@@ -105,7 +118,7 @@ class varpro_ffm_res(object):
         outfile.write('\n&end\n')
         outfile.close()
     
-        args = ("./wff_forces.x", "input", self.parout_fname, self.traj_fname)
+        args = ("./wff_forces.x", "input", "params_fit", self.traj_fname)
         popen = subprocess.Popen(args, stdout=subprocess.PIPE)
         popen.wait()
         output = popen.stdout.read()
@@ -123,13 +136,22 @@ class varpro_ffm_res(object):
         self.phistore[:, 2] = read_xyzdat("vmd.frc3", self.narr)/self.linpars[2]
         self.phistore[:, 3] = read_xyzdat("vmd.frc4", self.narr)/self.linpars[3]
 
-    def _opt_linpars(self):
-        '''Optimize for a new set of linear parameters'''
-        # left alternative bounded version commented out:
-        # self.linpars = spo.lsq_linear(self.phistore, self.aifrc, (self.linpar_bounds[:, 0], self.linpar_bounds[:, 1]))
-        # self.linpars = self.linpars.x # the actual fit result
+    def _opt_linpars_nonzero(self):
+        '''Optimize for a new set of non-zero linear parameters'''
         linfit = spo.nnls(self.phistore, self.aifrc)
         self.linpars = linfit[0]  # the actual fit result
+
+    def _opt_linpars_bound(self):
+        '''Optimize for a new set of bound linear parameters'''
+        self.linpars = spo.lsq_linear(self.phistore, self.aifrc, (self.linpar_lbounds, self.linpar_ubounds))
+        self.linpars = self.linpars.x # the actual fit result
+
+    def _opt_linpars(self):
+        '''Optimize for a new set of linear parameters'''
+        if self.flag_linpar_anybounds:
+            self._opt_linpars_bound()
+        else:
+            self._opt_linpars_nonzero()
 
         if np.any(self.linpars == 0):
             print(self.linpars)
@@ -193,6 +215,12 @@ parser.add_argument('--alp', type=float, nargs=3, metavar=('init', 'min', 'max')
 parser.add_argument('--reoh', type=float, nargs=3, metavar=('init', 'min', 'max'), default = [1.8, 1.6, 2.], help='Init, Min and Max for reoh parameter')
 parser.add_argument('--thetad', type=float, nargs=3, metavar=('init', 'min', 'max'), default = [104.5, 100., 115.], help='Init, Min and Max for thetad parameter')
 
+# linear model parameter min and max
+parser.add_argument('--qo2', type=float, nargs=2, metavar=('min', 'max'), default = [0., 0.], help='Min and Max for qo2 (qo*qo) parameter (default: unbound, non-negative)')
+parser.add_argument('--oo_eps', type=float, nargs=2, metavar=('min', 'max'), default = [0., 0.], help='Min and Max for oo_eps parameter (default: unbound, non-negative)')
+parser.add_argument('--apot', type=float, nargs=2, metavar=('min', 'max'), default = [0., 0.], help='Min and Max for apot parameter (default: unbound, non-negative)')
+parser.add_argument('--bpot', type=float, nargs=2, metavar=('min', 'max'), default = [0., 0.], help='Min and Max for bpot parameter (default: unbound, non-negative)')
+
 # fitting configuration
 parser.add_argument('--ftol', type=float, default=1.e-8, help='Non-linear fit tolerance (stopping criterium)')
 
@@ -210,7 +238,7 @@ fitparams.add('reoh',       value=args.reoh[0], min=args.reoh[1], max=args.reoh[
 fitparams.add('thetad',     value=args.thetad[0], min=args.thetad[1], max=args.thetad[2])
 
 # Setup variable projection (VP)
-varpro_ffm_obj = varpro_ffm_res(args.natom, args.ndata, args.traj, args.frcs, "params_fit")
+varpro_ffm_obj = varpro_ffm_res(args.natom, args.ndata, args.traj, args.frcs, [args.qo2, args.oo_eps, args.apot, args.bpot])
 residual = varpro_ffm_obj(fitparams)
 
 # Execute VP
