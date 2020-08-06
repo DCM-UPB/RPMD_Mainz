@@ -1,0 +1,26 @@
+# Example of force field matching
+
+In this example directory you can find some fiels that will allow you to
+perform a demonstrative force field fitting. This includes the file ´input´,
+which contains the necessary configuration options for the RPMD code and both
+a short trajectory file and a corresponding reference ab-initio force file.
+Just execute the following steps:
+
+1) Compile the RPMD code adapted for force field calculation, by switching to
+   the code directory (`cd ../src`) and running `make`. Note that the provided
+   Makefile assumes the usage of gfortran and hence needs to be adapted for
+   other compilers, although likely the code will not compile with a different
+   compiler anyway.
+
+2) Copy the resulting executable `wff.x` to this example directory.
+
+3) Run the linked force-matchign script with the following minimal command-line
+   call:
+   `python fmatch.py --natom 375 --ndata 100 --traj example_positions.xyz --frcs example_forces.frc`
+   Check the printed usage information for all the possible options to the script.
+   Especially noteworthy is possibility to set a lower boundary on the oo_eps
+   parameter, which in turn prevents oo_sig from growing too big (default <=10).
+
+4) Extract the fit result either from the optimization report of the script or
+   from the file `params_fit`, which is the params file used to run the force
+   code in the last optimization step.

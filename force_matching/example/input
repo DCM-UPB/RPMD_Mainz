@@ -1,0 +1,9 @@
+&input
+iamcub = .true.
+ecut = 0.d0
+reftraj = 100 ! important to adapt this number to the number of provided snapshots
+ncellxyz = 5 5 5 ! and here 5*5*5 must match the number of atoms in the snapshot
+rcut = 9.d0
+sig = 4.5d0
+&end
+

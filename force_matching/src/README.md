@@ -2,7 +2,7 @@ Special version of RPMD code, adapted for variable projection force matching. Al
 Due to the code being cut to the minimum required for force calculation, a lot of input variables are useless and left out of the input list. See the force matching example for details.
 
 NOTES:
-- fixed nb=1 setting
+- hard-coded nb=1 setting
 - rigid mode not supported
 - RPMDDFT force mode not supported
 - EPSR correction not supported

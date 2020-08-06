@@ -3,6 +3,7 @@ wff_forces.x
 
 # output files
 parameters.out
+params_fit
 stdout
 vmd.frc
 vmd.frc1
